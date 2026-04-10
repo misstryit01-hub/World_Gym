@@ -357,14 +357,13 @@
     }
 
     .toggle-item.active {
-      background: #C8E6C9;
-      /* 較明顯的淺綠色 */
-      border-color: #4CAF50;
-      color: #2E7D32;
+      background: #C8E6C9 !important;
+      border-color: #4CAF50 !important;
+      color: #1B5E20 !important;
       scale: 0.96;
-      box-shadow:
-        inset 5px 5px 10px rgba(0, 0, 0, 0.15),
-        inset -5px -5px 10px rgba(255, 255, 255, 0.5) !important;
+      box-shadow: 
+        inset 5px 5px 12px rgba(0, 0, 0, 0.2), 
+        inset -5px -5px 12px rgba(255, 255, 255, 0.6) !important;
     }
 
     .trainer-ctrl-row {
@@ -943,14 +942,14 @@
     var COACH_DATA = { 'Buzz': '#D32F2F', 'Hulk': '#2E7D32', 'Kelly': '#6A1B9A', 'Seven': '#006064', 'Mark': '#1976D2' };
     var selectedTrainer = "";
     var memberConfirmed = {}, trainerConfirmed = {}, memberSession = {}, trainerSession = {}, pendingCoachRemovals = {};
-    var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, isConsecutiveLocked = false, isCancelCoachMode = false;
+    var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, consecutiveLocking = false, isCancelCoachMode = false;
 
     // --- 改良版：雲端存檔 ---
     function saveData() {
       DATA_DOC.set({
         memberConfirmed,
         trainerConfirmed,
-        isConsecutiveLocked
+        consecutiveLocking
       }).then(() => {
         console.log("雲端同步成功");
       }).catch(err => {
@@ -966,7 +965,7 @@
           const d = doc.data();
           memberConfirmed = d.memberConfirmed || {};
           trainerConfirmed = d.trainerConfirmed || {};
-          isConsecutiveLocked = (d.isConsecutiveLocked !== undefined) ? d.isConsecutiveLocked : false;
+          consecutiveLocking = (d.consecutiveLocking !== undefined) ? d.consecutiveLocking : false;
 
           // 數據變動後，自動刷新目前的視圖
           if (document.getElementById('screen-member').classList.contains('active')) renderMemberCal();
@@ -977,7 +976,7 @@
           updateLockUI();
         } else {
           // 若資料庫是空的，初始化一份 (預設為 OFF)
-          isConsecutiveLocked = false;
+          consecutiveLocking = false;
           saveData();
         }
       });
@@ -1024,9 +1023,9 @@
     function updateFilterText() { const txt = document.getElementById('filter-text'); if (txt) txt.textContent = selectedTrainer ? `只顯示 ${selectedTrainer} 的課程` : '只顯示您的課程'; }
     function updateLockUI() {
       const elM = document.getElementById('lock-toggle');
-      if (elM) { elM.classList.toggle('active', isConsecutiveLocked); document.getElementById('lock-status').textContent = isConsecutiveLocked ? 'ON' : 'OFF'; }
+      if (elM) { elM.classList.toggle('active', consecutiveLocking); document.getElementById('lock-status').textContent = consecutiveLocking ? 'ON' : 'OFF'; }
     }
-    function toggleLockMode() { isConsecutiveLocked = !isConsecutiveLocked; updateLockUI(); saveData(); }
+    function toggleLockMode() { consecutiveLocking = !consecutiveLocking; updateLockUI(); saveData(); }
     function toggleOnlyMy() { if (!selectedTrainer) { showToast('請先選擇您的身份', 2, true); return; } isOnlyMy = !isOnlyMy; document.getElementById('only-my-btn').classList.toggle('active', isOnlyMy); initCoachPicker(); renderTrainerCal(); }
     function doMemberLogin() { if (document.getElementById('login-user').value === '1') { showScreen('member'); renderMemberCal(); } }
     function doTrainerLogin() { selectedTrainer = ""; isOnlyMy = false; document.getElementById('only-my-btn').classList.remove('active'); showScreen('trainer'); initCoachPicker(); renderTrainerCal(); }
@@ -1143,7 +1142,7 @@
           else if (other) { slot.className = 'time-slot booked-by-other'; slot.innerHTML = `${h}:00<br><span style="font-size:9px">${other}已約</span>`; }
           else {
             let isSoftLocked = false;
-            if (isConsecutiveLocked && !isPicked) { if (isMemAvail && (memberConfirmed[panelKey] || []).indexOf(h - 1) >= 0 && !isBookedLocally(h - 1)) isSoftLocked = true; }
+            if (consecutiveLocking === true && !isPicked) { if (isMemAvail && (memberConfirmed[panelKey] || []).indexOf(h - 1) >= 0 && !isBookedLocally(h - 1)) isSoftLocked = true; }
             slot.className = 'time-slot' + (isPicked ? ' confirmed' : '') + (isSoftLocked ? ' consecutive-soft-locked' : '');
             if (isSoftLocked) {
               slot.style.position = 'relative';
@@ -1165,7 +1164,8 @@
       let i = panelTempSlots.indexOf(h); const isPicked = i >= 0;
 
       // 核心邏輯恢復：會員是超級管理員，控制教練端的限制
-      if (panelMode === 'trainer' && isConsecutiveLocked) {
+      // 核心邏輯恢復：會員是超級管理員，控制教練端的限制
+      if (panelMode === 'trainer' && consecutiveLocking === true) {
         if (!isPicked) {
           // 檢查前一個時段：如果「會員有釋出該時段」且「目前沒人約」
           const memAvail = memberConfirmed[panelKey] || [];
