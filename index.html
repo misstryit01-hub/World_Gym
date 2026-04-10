@@ -951,34 +951,27 @@
     var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, consecutiveLocking = false, isCancelCoachMode = false;
 
     var isDataLoaded = false;
-    // --- 加強版：雲端存檔 ---
+    // --- 穩定版：雲端存檔 ---
     function saveData() {
-      if (!isDataLoaded) { console.warn("數據尚未載入完成，攔截非法存檔行為"); return; }
-      
       const dot = document.getElementById('status-dot');
       DATA_DOC.set({
         memberConfirmed,
         trainerConfirmed,
-        consecutiveLocking,
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        consecutiveLocking
       }).then(() => {
-        if (dot) dot.classList.add('online');
-        console.log("雲端同步成功 v1.3");
+        if (dot) dot.className = 'status-dot online';
+        console.log("雲端同步成功 v1.4");
       }).catch(err => {
         if (dot) dot.className = 'status-dot offline';
         console.error("同步失敗:", err);
-        showToast("雲端同步失敗，請檢查權限", 3, true);
       });
     }
 
-    // --- 改良版：即時監聽數據 (替代 loadData) ---
     function initRealtimeSync() {
       const dot = document.getElementById('status-dot'), txt = document.getElementById('status-text');
       DATA_DOC.onSnapshot((doc) => {
-        isDataLoaded = true; // 標記已連線
-        if (dot) dot.classList.add('online');
-        if (txt) txt.textContent = "Cloud Syncing (v1.3)";
-
+        if (dot) dot.className = 'status-dot online';
+        if (txt) txt.textContent = "Cloud Active v1.4";
         if (doc.exists()) {
           const d = doc.data();
           memberConfirmed = d.memberConfirmed || {};
@@ -991,15 +984,10 @@
             initCoachPicker();
           }
           updateLockUI();
-        } else {
-          // 只有當雲端完全沒資料時才進行第一次存檔
-          saveData();
         }
       }, (err) => {
-        console.error("Firestore Error:", err);
         if (dot) dot.className = 'status-dot offline';
-        if (txt) txt.textContent = "Offline (Permission Denied)";
-        showToast("資料庫權限錯誤，請檢查 Firebase Rules", 5, true);
+        if (txt) txt.textContent = "Sync Offline (檢查權限)";
       });
     }
 
