@@ -1299,7 +1299,8 @@
     function runWriteTest() {
       const res = document.getElementById('test-result');
       res.textContent = "傳輸中...";
-      DATA_DOC.update({ lastTest: new Date().toISOString() }).then(() => {
+      // 使用 set + merge，確保即便文件不存在也能強制建立
+      DATA_DOC.set({ lastTest: new Date().toISOString() }, { merge: true }).then(() => {
         res.textContent = "寫入成功！✅";
         res.style.color = "#0f0";
       }).catch(err => {
