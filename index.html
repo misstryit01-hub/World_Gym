@@ -802,10 +802,16 @@
       text-align: center;
       max-width: 80%;
     }
+    .cloud-status { position: fixed; top: 10px; left: 10px; z-index: 3000; display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800; color: #666; background: rgba(255,255,255,0.8); padding: 4px 8px; border-radius: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
+    .status-dot.online { background: #4CAF50; box-shadow: 0 0 5px #4CAF50; }
+    .status-dot.offline { background: #D32F2F; box-shadow: 0 0 5px #D32F2F; }
   </style>
 </head>
 
 <body>
+
+  <div class="cloud-status"><div id="status-dot" class="status-dot"></div><span id="status-text">Cloud Syncing...</span></div>
 
   <div class="app-container">
     <div id="screen-login" class="screen active">
@@ -933,10 +939,9 @@
       appId: "1:799084581459:web:201a0883cb5c02038a6ca6"
     };
 
-    // 初始化 Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const DATA_DOC = db.collection('gym').doc('booking_data');
+    const DATA_DOC = db.collection('gym').doc('booking_v3');
 
     var today = new Date();
     var mY = today.getFullYear(), mM = today.getMonth(), tY = today.getFullYear(), tM = today.getMonth();
@@ -945,37 +950,41 @@
     var memberConfirmed = {}, trainerConfirmed = {}, memberSession = {}, trainerSession = {}, pendingCoachRemovals = {};
     var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, consecutiveLocking = false, isCancelCoachMode = false;
 
-    // --- 改良版：雲端存檔 ---
+    var isDataLoaded = false;
+    // --- 加強版：雲端存檔 ---
     function saveData() {
-      // 確保不是空的才存檔，避免初始化錯誤覆蓋
-      if (typeof consecutiveLocking === 'undefined') return;
+      if (!isDataLoaded) { console.warn("數據尚未載入完成，攔截非法存檔行為"); return; }
       
-      console.log("正在同步至雲端... 目前卡控狀態:", consecutiveLocking);
+      const dot = document.getElementById('status-dot');
       DATA_DOC.set({
         memberConfirmed,
         trainerConfirmed,
-        consecutiveLocking
+        consecutiveLocking,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
       }).then(() => {
-        console.log("雲端同步成功 v1.2");
+        if (dot) dot.classList.add('online');
+        console.log("雲端同步成功 v1.3");
       }).catch(err => {
+        if (dot) dot.className = 'status-dot offline';
         console.error("同步失敗:", err);
-        showToast("雲端同步失敗", 3, true);
+        showToast("雲端同步失敗，請檢查權限", 3, true);
       });
     }
 
     // --- 改良版：即時監聽數據 (替代 loadData) ---
     function initRealtimeSync() {
+      const dot = document.getElementById('status-dot'), txt = document.getElementById('status-text');
       DATA_DOC.onSnapshot((doc) => {
+        isDataLoaded = true; // 標記已連線
+        if (dot) dot.classList.add('online');
+        if (txt) txt.textContent = "Cloud Syncing (v1.3)";
+
         if (doc.exists()) {
           const d = doc.data();
           memberConfirmed = d.memberConfirmed || {};
           trainerConfirmed = d.trainerConfirmed || {};
-          // 只有當雲端有資料時才更新
-          if (d.consecutiveLocking !== undefined) {
-            consecutiveLocking = d.consecutiveLocking;
-          }
-
-          // 數據變動後，自動刷新目前的視圖
+          if (d.consecutiveLocking !== undefined) consecutiveLocking = d.consecutiveLocking;
+          
           if (document.getElementById('screen-member').classList.contains('active')) renderMemberCal();
           if (document.getElementById('screen-trainer').classList.contains('active')) {
             renderTrainerCal();
@@ -983,9 +992,14 @@
           }
           updateLockUI();
         } else {
-          // 資料庫完全空白時才初始化
+          // 只有當雲端完全沒資料時才進行第一次存檔
           saveData();
         }
+      }, (err) => {
+        console.error("Firestore Error:", err);
+        if (dot) dot.className = 'status-dot offline';
+        if (txt) txt.textContent = "Offline (Permission Denied)";
+        showToast("資料庫權限錯誤，請檢查 Firebase Rules", 5, true);
       });
     }
 
