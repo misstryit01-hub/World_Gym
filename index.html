@@ -942,7 +942,7 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const DATA_DOC = db.collection('gym').doc('booking_standard');
+    const DATA_DOC = db.collection('gym').doc('booking_final');
 
     var today = new Date();
     var mY = today.getFullYear(), mM = today.getMonth(), tY = today.getFullYear(), tM = today.getMonth();
@@ -974,12 +974,13 @@
       const dot = document.getElementById('status-dot'), txt = document.getElementById('status-text');
       DATA_DOC.onSnapshot((doc) => {
         if (dot) dot.className = 'status-dot online';
-        if (txt) txt.textContent = "Cloud Active v1.4";
+        if (txt) txt.textContent = "Database Connected v1.6";
+
         if (doc.exists()) {
           const d = doc.data();
           memberConfirmed = d.memberConfirmed || {};
           trainerConfirmed = d.trainerConfirmed || {};
-          if (d.consecutiveLocking !== undefined) consecutiveLocking = d.consecutiveLocking;
+          if (typeof d.consecutiveLocking !== 'undefined') consecutiveLocking = d.consecutiveLocking;
           
           if (document.getElementById('screen-member').classList.contains('active')) renderMemberCal();
           if (document.getElementById('screen-trainer').classList.contains('active')) {
@@ -987,10 +988,14 @@
             initCoachPicker();
           }
           updateLockUI();
+        } else {
+          // 第一次連線：初始化
+          saveData();
         }
       }, (err) => {
         if (dot) dot.className = 'status-dot offline';
-        if (txt) txt.textContent = "Sync Offline (檢查權限)";
+        if (txt) txt.textContent = "Connection Error (Check Rules)";
+        console.error("Firebase Error:", err);
       });
     }
 
