@@ -360,10 +360,11 @@
       background: #C8E6C9 !important;
       border-color: #4CAF50 !important;
       color: #1B5E20 !important;
-      scale: 0.96;
+      scale: 0.95 !important;
       box-shadow: 
-        inset 5px 5px 12px rgba(0, 0, 0, 0.2), 
-        inset -5px -5px 12px rgba(255, 255, 255, 0.6) !important;
+        inset 6px 6px 15px rgba(0, 0, 0, 0.25), 
+        inset -6px -6px 15px rgba(255, 255, 255, 0.7) !important;
+      font-weight: 900 !important;
     }
 
     .trainer-ctrl-row {
@@ -820,7 +821,7 @@
           <button class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
         </div>
       </div>
-      <div class="version-tag">STABLE VERSION 1.0</div>
+      <div class="version-tag">V1.2 (CLOUD SYNC)</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -832,7 +833,7 @@
           <div id="batch-toggle" class="toggle-item green" onclick="toggleBatchMode()"><span>批量模式</span><span
               id="batch-status" style="font-size:10px; color:#aaa;">OFF</span></div>
           <div id="lock-toggle" class="toggle-item" onclick="toggleLockMode()"><span>連續排課卡控</span><span id="lock-status"
-              style="font-size:10px; color:#aaa;">ON</span></div>
+              style="font-size:10px; color:#aaa;">OFF</span></div>
         </div>
         <div class="cal-nav">
           <button class="nav-btn" onclick="changeMonth('m',-1)"><span class="arrow arrow-left"></span></button>
@@ -854,7 +855,7 @@
           <button class="btn-ui btn-ui-green" id="member-confirm-btn" onclick="confirmMember()" disabled
             style="flex:2;">提交全部修改</button>
         </div>
-        <div class="version-tag">V1.0 FINAL</div>
+        <div class="version-tag">V1.2 (CLOUD SYNC)</div>
       </div>
     </div>
 
@@ -888,7 +889,7 @@
           <div class="cal-day-label">S</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">MANAGEMENT V1.0</div>
+        <div class="version-tag">V1.2 (CLOUD SYNC)</div>
       </div>
     </div>
   </div>
