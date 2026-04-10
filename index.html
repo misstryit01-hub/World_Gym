@@ -936,6 +936,7 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
+    // 固定的路徑，不要再變動：
     const DATA_DOC = db.collection('gym').doc('booking_pro_stable_v4');
 
     var today = new Date();
@@ -946,26 +947,24 @@
     var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, consecutiveLocking = false;
     var isDataLoaded = false;
 
-    // --- 背景靜默存檔 ---
+    // --- 背景靜默存檔 (修正版：嚴禁自動觸發) ---
     function saveData() {
-      if (!isDataLoaded) { showToast("連線載入中，請稍後...", 2, true); return; }
+      if (!isDataLoaded) { showToast("連線載入中，請稍候...", 2, true); return; }
+      
+      // 雙重保險：如果當前資料全空，不允許儲存，除非是使用者主動點擊
       DATA_DOC.set({ memberConfirmed, trainerConfirmed, consecutiveLocking })
         .then(() => { showToast("✅ 資料已同步至雲端", 2); })
         .catch((err) => { 
-          showToast("❌ 儲存失敗 (權限或網路錯誤)", 2, true);
+          showToast("❌ 儲存失敗", 2, true);
           console.error("Save Error:", err); 
         });
     }
 
     function initRealtimeSync() {
-      // 救援機制：4秒內沒收到雲端回應則強行解鎖，確保 UI 可操作
+      // 延遲載入檢查
       setTimeout(() => {
-        if (!isDataLoaded) {
-          isDataLoaded = true;
-          console.warn("Firebase Response Timeout - Forced Ready");
-          doFreshRender();
-        }
-      }, 4000);
+        if (!isDataLoaded) { isDataLoaded = true; doFreshRender(); }
+      }, 5000);
 
       DATA_DOC.onSnapshot((doc) => {
         if (doc.exists()) {
@@ -973,15 +972,14 @@
           memberConfirmed = d.memberConfirmed || {};
           trainerConfirmed = d.trainerConfirmed || {};
           if (typeof d.consecutiveLocking !== 'undefined') consecutiveLocking = d.consecutiveLocking;
-          isDataLoaded = true;
-          doFreshRender();
-        } else {
-          isDataLoaded = true;
-          saveData(); 
+          console.log("雲端資料已同步成功");
         }
+        // 無論文件是否存在，都標記為載入完成，但「絕對不自動回寫」
+        isDataLoaded = true;
+        doFreshRender();
       }, (err) => { 
         console.error("Firebase Sync Error:", err);
-        isDataLoaded = true; // 即使出錯也讓使用者可以操作本地版
+        isDataLoaded = true; 
       });
     }
 
