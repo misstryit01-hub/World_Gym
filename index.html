@@ -802,7 +802,6 @@
       text-align: center;
       max-width: 80%;
     }
-
   </style>
 </head>
 
@@ -936,8 +935,8 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    // 固定的路徑，不要再變動：
-    const DATA_DOC = db.collection('gym').doc('booking_pro_stable_v4');
+    // 鎖定路徑：
+    const DATA_DOC = db.collection('gym').doc('booking_standard_v2');
 
     var today = new Date();
     var mY = today.getFullYear(), mM = today.getMonth(), tY = today.getFullYear(), tM = today.getMonth();
@@ -947,12 +946,12 @@
     var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, consecutiveLocking = false;
     var isDataLoaded = false;
 
-    // --- 背景靜默存檔 (修正版：嚴禁自動觸發) ---
+    // --- 背景靜默存檔 (修正版：增量合併模式) ---
     function saveData() {
       if (!isDataLoaded) { showToast("連線載入中，請稍候...", 2, true); return; }
       
-      // 雙重保險：如果當前資料全空，不允許儲存，除非是使用者主動點擊
-      DATA_DOC.set({ memberConfirmed, trainerConfirmed, consecutiveLocking })
+      // 使用 {merge: true} 確保不洗掉其他欄位，且強制將當前 session 轉為數字存入
+      DATA_DOC.set({ memberConfirmed, trainerConfirmed, consecutiveLocking }, { merge: true })
         .then(() => { showToast("✅ 資料已同步至雲端", 2); })
         .catch((err) => { 
           showToast("❌ 儲存失敗", 2, true);
@@ -961,20 +960,31 @@
     }
 
     function initRealtimeSync() {
-      // 延遲載入檢查
-      setTimeout(() => {
-        if (!isDataLoaded) { isDataLoaded = true; doFreshRender(); }
-      }, 5000);
-
       DATA_DOC.onSnapshot((doc) => {
         if (doc.exists()) {
           const d = doc.data();
-          memberConfirmed = d.memberConfirmed || {};
-          trainerConfirmed = d.trainerConfirmed || {};
+          
+          // --- ✅ 資料正規化：強制轉為運算速度最快的數字型態 ---
+          memberConfirmed = {};
+          if (d.memberConfirmed) {
+            Object.keys(d.memberConfirmed).forEach(k => {
+              memberConfirmed[k] = (d.memberConfirmed[k] || []).map(Number);
+            });
+          }
+          
+          trainerConfirmed = {};
+          if (d.trainerConfirmed) {
+            Object.keys(d.trainerConfirmed).forEach(coach => {
+              trainerConfirmed[coach] = {};
+              Object.keys(d.trainerConfirmed[coach] || {}).forEach(k => {
+                trainerConfirmed[coach][k] = (d.trainerConfirmed[coach][k] || []).map(Number);
+              });
+            });
+          }
+          
           if (typeof d.consecutiveLocking !== 'undefined') consecutiveLocking = d.consecutiveLocking;
-          console.log("雲端資料已同步成功");
+          console.log("[FIREBASE] 數據正規化載入成功", memberConfirmed);
         }
-        // 無論文件是否存在，都標記為載入完成，但「絕對不自動回寫」
         isDataLoaded = true;
         doFreshRender();
       }, (err) => { 
@@ -993,7 +1003,7 @@
 
     function doMemberLogin() {
       const u = document.getElementById('login-user').value, p = document.getElementById('login-pass').value;
-      if (u === '1' && p === '1') { showScreen('member'); renderMemberCal(); } 
+      if (u === '1' && p === '1') { showScreen('member'); renderMemberCal(); }
       else showToast('帳號或密碼錯誤 (1/1)', 2, true);
     }
 
