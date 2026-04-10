@@ -1286,8 +1286,27 @@
       if (p.style.display === 'block') p.style.display = 'none';
       else {
         p.style.display = 'block';
-        p.textContent = "MemberData: " + JSON.stringify(memberConfirmed) + "\n\nTrainerData: " + JSON.stringify(trainerConfirmed);
+        p.innerHTML = `
+          <div style="border-bottom:1px solid #555; padding-bottom:5px; margin-bottom:5px;">
+            <button onclick="runWriteTest()" style="background:#0f0; border:none; padding:2px 5px; cursor:pointer;">執行寫入測試</button>
+            <span id="test-result"></span>
+          </div>
+          <div id="debug-content"></div>
+        `;
+        document.getElementById('debug-content').textContent = "MemberData: " + JSON.stringify(memberConfirmed) + "\n\nTrainerData: " + JSON.stringify(trainerConfirmed);
       }
+    }
+    function runWriteTest() {
+      const res = document.getElementById('test-result');
+      res.textContent = "傳輸中...";
+      DATA_DOC.update({ lastTest: new Date().toISOString() }).then(() => {
+        res.textContent = "寫入成功！✅";
+        res.style.color = "#0f0";
+      }).catch(err => {
+        res.textContent = "失敗: " + err.message;
+        res.style.color = "#f00";
+        console.error(err);
+      });
     }
   </script>
 </body>
