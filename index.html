@@ -962,7 +962,7 @@
           const d = doc.data();
           memberConfirmed = d.memberConfirmed || {};
           trainerConfirmed = d.trainerConfirmed || {};
-          isConsecutiveLocked = (d.isConsecutiveLocked !== undefined) ? d.isConsecutiveLocked : true;
+          isConsecutiveLocked = (d.isConsecutiveLocked !== undefined) ? d.isConsecutiveLocked : false;
 
           // 數據變動後，自動刷新目前的視圖
           if (document.getElementById('screen-member').classList.contains('active')) renderMemberCal();
@@ -972,7 +972,8 @@
           }
           updateLockUI();
         } else {
-          // 若資料庫是空的，初始化一份
+          // 若資料庫是空的，初始化一份 (預設為 OFF)
+          isConsecutiveLocked = false;
           saveData();
         }
       });
@@ -1162,19 +1163,25 @@
       // 核心邏輯恢復：會員是超級管理員，控制教練端的限制
       if (panelMode === 'trainer' && isConsecutiveLocked) {
         if (!isPicked) { 
-          // 檢查前一個時段是否「已被預約」
-          const prevBooked = isBookedLocally(h - 1);
-          const prevMem = (memberConfirmed[panelKey] || []).indexOf(h - 1) >= 0;
-          if (prevMem && !prevBooked) { 
-            showToast(`請先預約 ${h - 1}:00`, 3, true); 
+          // 檢查前一個時段：如果「會員有釋出該時段」且「目前沒人約」
+          const memAvail = memberConfirmed[panelKey] || [];
+          const hPrev = h - 1;
+          const isMemAvailPrev = memAvail.includes(hPrev) || memAvail.includes(String(hPrev));
+          const isTkn = isBookedLocally(hPrev);
+
+          if (isMemAvailPrev && !isTkn) { 
+            showToast(`請先預約 ${hPrev}:00`, 3, true); 
             return; 
           } 
         } else { 
-          // 取消時，檢查後一個時段
-          const nextBooked = isBookedLocally(h + 1);
-          const nextMem = (memberConfirmed[panelKey] || []).indexOf(h + 1) >= 0;
-          if (nextMem && nextBooked) { 
-            showToast(`${h + 1}:00 已有預約，請先取消`, 4, true); 
+          // 取消時：如果「後一格已被預約」
+          const memAvail = memberConfirmed[panelKey] || [];
+          const hNext = h + 1;
+          const isMemAvailNext = memAvail.includes(hNext) || memAvail.includes(String(hNext));
+          const isTknNext = isBookedLocally(hNext);
+
+          if (isMemAvailNext && isTknNext) { 
+            showToast(`${hNext}:00 已有預約，請先取消`, 4, true); 
             return; 
           } 
         }
