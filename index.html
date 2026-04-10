@@ -1018,6 +1018,19 @@
       }
     }
 
+    function fetchOnce() {
+      DATA_DOC.get().then(doc => {
+        if (doc.exists()) {
+          const d = doc.data();
+          memberConfirmed = d.memberConfirmed || {};
+          trainerConfirmed = d.trainerConfirmed || {};
+          if (typeof d.consecutiveLocking !== 'undefined') consecutiveLocking = d.consecutiveLocking;
+          doFreshRender();
+          console.log("手動抓取成功");
+        }
+      });
+    }
+
     function initRealtimeSync() {
       const dot = document.getElementById('status-dot'), txt = document.getElementById('status-text');
       const countEl = document.getElementById('data-count');
@@ -1092,7 +1105,18 @@
     }
     function toggleLockMode() { consecutiveLocking = !consecutiveLocking; updateLockUI(); saveData(); }
     function toggleOnlyMy() { if (!selectedTrainer) { showToast('請先選擇您的身份', 2, true); return; } isOnlyMy = !isOnlyMy; document.getElementById('only-my-btn').classList.toggle('active', isOnlyMy); initCoachPicker(); renderTrainerCal(); }
-    function doMemberLogin() { if (document.getElementById('login-user').value === '1') { showScreen('member'); renderMemberCal(); } }
+    function doMemberLogin() {
+      const u = document.getElementById('login-user').value;
+      const p = document.getElementById('login-pass').value;
+      // 嚴格檢查帳號 1 密碼 1
+      if (u === '1' && p === '1') {
+        fetchOnce(); // 登入時強制拉取一次
+        showScreen('member');
+        renderMemberCal();
+      } else {
+        showToast('帳號或密碼錯誤', 2, true);
+      }
+    }
     function doTrainerLogin() { selectedTrainer = ""; isOnlyMy = false; document.getElementById('only-my-btn').classList.remove('active'); showScreen('trainer'); initCoachPicker(); renderTrainerCal(); }
     function logout() {
       const m = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
@@ -1299,7 +1323,11 @@
         p.style.display = 'block';
         p.innerHTML = `
           <div style="border-bottom:1px solid #555; padding-bottom:5px; margin-bottom:5px;">
-            <div style="color:#FFA000; margin-bottom:5px;">ProjectID: ${firebaseConfig.projectId} (V2.0)</div>
+            <div style="color:#FFA000; margin-bottom:5px; font-size:9px; word-break:break-all;">
+              Project: ${firebaseConfig.projectId}<br>
+              Key: ${firebaseConfig.apiKey.substring(0,10)}...<br>
+              Path: gym/booking_standard_v2
+            </div>
             <button onclick="runWriteTest()" style="background:#0f0; border:none; padding:2px 5px; cursor:pointer; font-weight:900;">🔥 強力寫入測試</button>
             <span id="test-result"></span>
           </div>
