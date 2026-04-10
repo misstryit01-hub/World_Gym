@@ -914,21 +914,70 @@
   </div>
   <div id="toast" class="toast"></div>
 
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
   <script>
+    // --- Firebase 配置 ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyBxn9KlSBdcBHa5wMHYsJoWxEVrlCFzsKE",
+      authDomain: "worldgymbooking.firebaseapp.com",
+      projectId: "worldgymbooking",
+      storageBucket: "worldgymbooking.firebasestorage.app",
+      messagingSenderId: "799084581459",
+      appId: "1:799084581459:web:201a0883cb5c02038a6ca6"
+    };
+
+    // 初始化 Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const DATA_DOC = db.collection('gym').doc('booking_data');
+
     var today = new Date();
     var mY = today.getFullYear(), mM = today.getMonth(), tY = today.getFullYear(), tM = today.getMonth();
     var COACH_DATA = { 'Buzz': '#D32F2F', 'Hulk': '#2E7D32', 'Kelly': '#6A1B9A', 'Seven': '#006064', 'Mark': '#1976D2' };
     var selectedTrainer = "";
     var memberConfirmed = {}, trainerConfirmed = {}, memberSession = {}, trainerSession = {}, pendingCoachRemovals = {};
     var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, isConsecutiveLocked = true, isCancelCoachMode = false;
-    const STORAGE_KEY = 'WG_FINAL_STABLE_V1';
 
-    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ memberConfirmed, trainerConfirmed, isConsecutiveLocked })); }
-    function loadData() {
-      const s = localStorage.getItem(STORAGE_KEY);
-      if (s) { const d = JSON.parse(s); memberConfirmed = d.memberConfirmed || {}; trainerConfirmed = d.trainerConfirmed || {}; isConsecutiveLocked = (d.isConsecutiveLocked !== undefined) ? d.isConsecutiveLocked : true; }
-      updateLockUI();
+    // --- 改良版：雲端存檔 ---
+    function saveData() {
+      DATA_DOC.set({
+        memberConfirmed,
+        trainerConfirmed,
+        isConsecutiveLocked
+      }).then(() => {
+        console.log("雲端同步成功");
+      }).catch(err => {
+        console.error("同步失敗:", err);
+        showToast("雲端同步失敗，請檢查網路", 3, true);
+      });
     }
+
+    // --- 改良版：即時監聽數據 (替代 loadData) ---
+    function initRealtimeSync() {
+      DATA_DOC.onSnapshot((doc) => {
+        if (doc.exists()) {
+          const d = doc.data();
+          memberConfirmed = d.memberConfirmed || {};
+          trainerConfirmed = d.trainerConfirmed || {};
+          isConsecutiveLocked = (d.isConsecutiveLocked !== undefined) ? d.isConsecutiveLocked : true;
+
+          // 數據變動後，自動刷新目前的視圖
+          if (document.getElementById('screen-member').classList.contains('active')) renderMemberCal();
+          if (document.getElementById('screen-trainer').classList.contains('active')) {
+            renderTrainerCal();
+            initCoachPicker();
+          }
+          updateLockUI();
+        } else {
+          // 若資料庫是空的，初始化一份
+          saveData();
+        }
+      });
+    }
+
     function showToast(m, sec = 2, isErr = false) { const t = document.getElementById('toast'); t.textContent = m; t.style.background = isErr ? '#D32F2F' : '#2C3E50'; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', sec * 1000); }
     function openCustomConfirm(msg, onOk, title = "確認取消預約？", cancelTxt = "保留預約", okTxt = "確定取消") {
       document.getElementById('cc-title').textContent = title; document.getElementById('confirm-msg').textContent = msg;
@@ -938,7 +987,7 @@
     }
     function closeCustomConfirm() { document.getElementById('custom-confirm').style.display = 'none'; }
 
-    window.onload = () => { loadData(); };
+    window.onload = () => { initRealtimeSync(); };
 
     function initCoachPicker() {
       const rt = document.getElementById('coach-picker'), l = document.getElementById('coach-legend');
