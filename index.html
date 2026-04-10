@@ -948,13 +948,25 @@
 
     // --- 背景靜默存檔 ---
     function saveData() {
-      if (!isDataLoaded) return;
+      if (!isDataLoaded) { showToast("連線載入中，請稍後...", 2, true); return; }
       DATA_DOC.set({ memberConfirmed, trainerConfirmed, consecutiveLocking })
         .then(() => { showToast("✅ 資料已同步至雲端", 2); })
-        .catch((err) => { console.error("Save Error:", err); });
+        .catch((err) => { 
+          showToast("❌ 儲存失敗 (權限或網路錯誤)", 2, true);
+          console.error("Save Error:", err); 
+        });
     }
 
     function initRealtimeSync() {
+      // 救援機制：4秒內沒收到雲端回應則強行解鎖，確保 UI 可操作
+      setTimeout(() => {
+        if (!isDataLoaded) {
+          isDataLoaded = true;
+          console.warn("Firebase Response Timeout - Forced Ready");
+          doFreshRender();
+        }
+      }, 4000);
+
       DATA_DOC.onSnapshot((doc) => {
         if (doc.exists()) {
           const d = doc.data();
@@ -965,9 +977,12 @@
           doFreshRender();
         } else {
           isDataLoaded = true;
-          saveData(); // 初始化新節點
+          saveData(); 
         }
-      }, (err) => { console.error("Firebase Sync Error:", err); });
+      }, (err) => { 
+        console.error("Firebase Sync Error:", err);
+        isDataLoaded = true; // 即使出錯也讓使用者可以操作本地版
+      });
     }
 
     function doFreshRender() {
