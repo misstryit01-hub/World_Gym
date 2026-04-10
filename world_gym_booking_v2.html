@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World Gym 課程預約系統 v1.0 - Stable Edition</title>
+  <style>
+    /* --- 全球設計系統 --- */
+    :root {
+      --wg-red: #D32F2F;
+      --wg-black: #1A1A1A;
+      --wg-gray: #757575;
+      --wg-green: #2E7D32;
+      --bg-primary: #F8F9FA;
+      --bg-card: #FFFFFF;
+      --border-color: #E0E0E0;
+      --radius-lg: 24px;
+      --radius-md: 14px;
+      --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans TC', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--wg-black);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 520px;
+      padding: 1.5rem 0.75rem;
+    }
+
+    .screen {
+      display: none;
+      opacity: 0;
+    }
+
+    .screen.active {
+      display: block;
+      opacity: 1;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 1rem;
+      border: 1px solid rgba(0, 0, 0, 0.02);
+    }
+
+    .btn-logout {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid #eee;
+      background: rgba(0, 0, 0, 0.03);
+      font-size: 12px;
+      font-weight: 800;
+      color: #666;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-logout:hover {
+      background: var(--wg-red);
+      color: #fff;
+      border-color: var(--wg-red);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(211, 47, 47, 0.2);
+    }
+
+    /* --- 登入頁面 --- */
+    .logo-area {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo-icon {
+      width: 60px;
+      height: 60px;
+      background: #000;
+      border: 3px solid var(--wg-red);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 0.75rem;
+    }
+
+    .logo-icon span {
+      color: #fff;
+      font-size: 30px;
+      font-weight: 900;
+    }
+
+    .logo-area h2 {
+      font-weight: 900;
+      color: #000;
+      font-size: 21px;
+    }
+
+    .btn-trainer-gate {
+      width: 100%;
+      background: #FF6B00; /* World Gym 活力橘 */
+      color: #fff;
+      padding: 20px;
+      border-radius: var(--radius-md);
+      font-size: 18px;
+      font-weight: 900;
+      border: none;
+      cursor: pointer;
+      margin-bottom: 2.2rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-trainer-gate:hover {
+      background: #FF8800;
+      box-shadow: inset -3px -3px 6px rgba(0, 0, 0, 0.25), inset 3px 3px 6px rgba(255, 255, 255, 0.35);
+      transform: translateY(-2px);
+    }
+
+    .btn-trainer-gate:active {
+      scale: 0.98;
+      box-shadow: inset 5px 5px 10px rgba(0, 0, 0, 0.3), inset -5px -5px 10px rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .field label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--wg-gray);
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      outline: none;
+    }
+
+    .btn-member-login {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      font-weight: 800;
+      background: var(--wg-red);
+      color: #fff;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-member-login:hover {
+      box-shadow: inset -2px -2px 5px rgba(0, 0, 0, 0.3), inset 2px 2px 5px rgba(255, 255, 255, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .btn-member-login:active {
+      scale: 0.98;
+      box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.4), inset -4px -4px 8px rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* 教練選擇器 */
+    .coach-picker-container {
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .coach-hint {
+      font-size: 12px;
+      font-weight: 800;
+      color: #aaa;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .coach-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap; /* 內容多時自動流動，但在廣屏下會是一排 */
+    }
+
+    .coach-chip {
+      flex: 1;
+      max-width: 105px;
+      padding: 13px 6px;
+      border-radius: 16px;
+      border: 1.5px solid #eee;
+      font-size: 13px;
+      font-weight: 800;
+      color: #555;
+      background: #fff;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .coach-chip:hover {
+      background: var(--coach-color);
+      color: #fff;
+      border: 1.2px solid rgba(0, 0, 0, 0.15);
+      box-shadow: inset -2px -2px 5px rgba(0, 0, 0, 0.25), inset 2px 2px 5px rgba(255, 255, 255, 0.4);
+    }
+
+    .coach-chip.active {
+      background: var(--coach-color) !important;
+      color: #fff !important;
+      scale: 0.98; /* 稍微縮小模擬按壓感 */
+      border: 1.2px solid rgba(0, 0, 0, 0.2) !important;
+      /* 凹版 (Pressed) 深陷陰影 */
+      box-shadow: 
+        inset 4px 4px 8px rgba(0, 0, 0, 0.35), 
+        inset -4px -4px 8px rgba(255, 255, 255, 0.15) !important;
+    }
+
+    .coach-chip.locked {
+      opacity: 0.2;
+      grayscale: 1;
+    }
+
+    .header-area {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .header-area h3 {
+      font-weight: 900;
+      font-size: 19px;
+      border-left: 5px solid var(--wg-red);
+      padding-left: 10px;
+    }
+
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.25rem;
+      background: #fff;
+      padding: 4px 12px;
+      border-radius: 12px;
+      border: 1px solid #f2f2f2;
+    }
+
+    .month-label {
+      font-size: 13px;
+      font-weight: 900;
+      color: #555;
+      flex: 1;
+      text-align: center;
+    }
+
+    .nav-btn {
+      width: 30px;
+      height: 30px;
+      border: 1.2px solid #eee;
+      background: #fff;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .nav-btn:hover {
+      border: 1.2px solid rgba(0, 0, 0, 0.15);
+      box-shadow: inset -2px -2px 5px rgba(0, 0, 0, 0.2), inset 2px 2px 5px rgba(255, 255, 255, 0.5);
+    }
+
+    .nav-btn:active {
+      scale: 0.92;
+      box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.25), inset -3px -3px 6px rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .arrow {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-top: 2px solid #555;
+      border-right: 2px solid #555;
+    }
+
+    .arrow-left {
+      transform: rotate(-135deg);
+      margin-left: 2px;
+    }
+
+    .arrow-right {
+      transform: rotate(45deg);
+      margin-right: 2px;
+    }
+
+    .member-toggles-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .toggle-item {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #fff;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 12.5px;
+      font-weight: 900;
+      cursor: pointer;
+      border: 2.2px solid var(--border-color);
+      color: #555;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .toggle-item:hover {
+      border-color: rgba(0, 0, 0, 0.1);
+      box-shadow: inset -2px -2px 5px rgba(0, 0, 0, 0.2), inset 2px 2px 5px rgba(255, 255, 255, 0.5);
+    }
+
+    .toggle-item.active {
+      background: #E8F5E9;
+      border-color: var(--wg-green);
+      color: var(--wg-green);
+      scale: 0.96;
+      box-shadow: 
+        inset 4px 4px 8px rgba(0, 0, 0, 0.1), 
+        inset -4px -4px 8px rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .trainer-ctrl-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 0.5rem;
+    }
+
+    .cal-nav-compact {
+      flex: 1;
+      max-width: 180px;
+      display: flex;
+      align-items: center;
+      background: #fff;
+      padding: 2px 8px;
+      border-radius: 12px;
+      border: 1px solid #f2f2f2;
+      height: 38px;
+    }
+
+    .cal-nav-compact .month-label {
+      font-size: 12px;
+    }
+
+    .cal-nav-compact .nav-btn {
+      width: 26px;
+      height: 26px;
+    }
+
+    .view-toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-weight: 900;
+      border: 2px solid #ddd;
+      border-radius: 12px;
+      background: #fff;
+      color: #555;
+      cursor: pointer;
+      height: 38px;
+      white-space: nowrap;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .view-toggle-btn:hover {
+      border-color: rgba(0, 0, 0, 0.15);
+      box-shadow: inset -2px -2px 5px rgba(0, 0, 0, 0.2), inset 2px 2px 5px rgba(255, 255, 255, 0.5);
+    }
+
+    .checkbox-box {
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid #bbb;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    .view-toggle-btn.active {
+      border-color: var(--wg-green);
+      color: #000;
+      background: #F5F5F5;
+      scale: 0.96;
+      box-shadow: 
+        inset 4px 4px 8px rgba(0, 0, 0, 0.15), 
+        inset -4px -4px 8px rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .view-toggle-btn.active .checkbox-box {
+      background: var(--wg-green);
+      border-color: var(--wg-green);
+    }
+
+    .check-mark {
+      width: 8px;
+      height: 4.5px;
+      border-left: 1.8px solid #fff;
+      border-bottom: 1.8px solid #fff;
+      transform: rotate(-45deg);
+      display: none;
+      margin-top: -1px;
+    }
+
+    .view-toggle-btn.active .check-mark {
+      display: block;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: #fff;
+      border: 1.5 solid #eee;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .cal-day-label {
+      font-size: 10px;
+      font-weight: 900;
+      color: #bbb;
+      text-align: center;
+      padding: 10px 0;
+      background: #fafafa;
+      border-bottom: 1px solid #eee;
+    }
+
+    .cal-cell {
+      min-height: 100px;
+      border-right: 1.5px solid #eee;
+      border-bottom: 1.5px solid #eee;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px 2px;
+      background: #fff;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+    }
+
+    .cal-cell:not(.empty):not(.past):not(.is-grey-out):hover {
+      z-index: 10;
+      scale: 0.98;
+      background: #fafafa;
+      /* 凹版（凹陷質感） */
+      box-shadow: 
+        inset 6px 6px 15px rgba(0, 0, 0, 0.1), 
+        inset -6px -6px 15px rgba(255, 255, 255, 0.8) !important;
+      cursor: pointer;
+    }
+
+    .cal-cell-num {
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      opacity: 0.4;
+    }
+
+    .cal-cell.is-changed {
+      border: 2px dashed var(--wg-red) !important;
+      background: #fff !important;
+    }
+
+    .mini-slot-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5px;
+      padding: 0 1px;
+    }
+
+    .mini-slot {
+      font-size: 9px;
+      line-height: 1.2;
+      padding: 3.5px 2px;
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 900;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      white-space: nowrap;
+      overflow: hidden;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    /* 凸板效果 */
+    .slot-embossed-focus {
+      box-shadow: inset -2px -2px 5px rgba(0, 0, 0, 0.25), inset 2px 2px 5px rgba(255, 255, 255, 0.4);
+      border: 1.2px solid rgba(0, 0, 0, 0.15);
+      font-size: 9px !important;
+    }
+
+    /* 學員空檔外框 */
+    .slot-avail-member {
+      background: #fff;
+      color: var(--wg-green);
+      border: 1.6px solid #B0BEC5;
+    }
+
+    .slot-avail-locked {
+      background: #f0f0f0;
+      color: #bbb;
+      border: 1px solid #ddd;
+      font-weight: 700;
+    }
+
+    .btn-ui {
+      padding: 16px;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .btn-ui-green {
+      background: var(--wg-green);
+      color: #fff;
+      width: 100%;
+    }
+
+    .btn-ui-secondary {
+      background: #f5f5f5;
+      color: #666;
+    }
+
+    /* 時段面板美化與框框強化 */
+    .time-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 1rem 0;
+    }
+
+    .time-slot {
+      padding: 14px 2px;
+      border: 2px solid #ccc;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      min-height: 56px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .time-slot.selected {
+      background: #FFF5F5;
+      border-color: var(--wg-red);
+      color: var(--wg-red);
+      border-width: 3px;
+      scale: 0.98;
+      box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.15), inset -4px -4px 8px rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .time-slot.confirmed {
+      background: var(--wg-red);
+      color: #fff;
+      border-color: var(--wg-red);
+      scale: 0.98;
+      box-shadow: inset 4px 4px 10px rgba(0, 0, 0, 0.35), inset -4px -4px 10px rgba(255, 255, 255, 0.15) !important;
+    }
+
+    .time-slot.blocked {
+      background: #fafafa;
+      color: #ddd;
+      border: 2px solid #eee;
+      border-style: dashed;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .time-slot.booked-by-other {
+      background: #f5f5f5;
+      color: #aaa;
+      border: 2px solid #ddd;
+      cursor: not-allowed;
+    }
+
+    .time-slot.member-direct-cancel {
+      border-color: #FFA726;
+      border-width: 3.5px;
+      cursor: pointer !important;
+    }
+
+    .time-slot.cancel-pending {
+      background: #f0f0f0 !important;
+      border: 2.5px dashed #666 !important;
+      color: #666 !important;
+      text-decoration: line-through;
+      cursor: default;
+    }
+
+    .time-slot.consecutive-soft-locked {
+      opacity: 0.45;
+      grayscale: 0.9;
+      cursor: pointer;
+      border: 2px dotted #aaa;
+      background: #fdfdfd;
+    }
+
+    /* 下方教練標籤 */
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 1.5rem;
+      border-top: 1.5px solid #eee;
+      padding-top: 15px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #555;
+      font-weight: 800;
+    }
+
+    .legend-count {
+      font-size: 10px;
+      color: var(--wg-red);
+      margin-left: -2px;
+    }
+
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 4px;
+    }
+
+    /* 自定義確認視窗 */
+    .custom-confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(1.5px);
+      z-index: 2100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .custom-confirm-card {
+      background: #fff;
+      width: 100%;
+      max-width: 380px;
+      border-radius: 28px;
+      padding: 2rem;
+      border: 4px solid var(--wg-red);
+      animation: popScale 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+      text-align: center;
+    }
+
+    .confirm-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #000;
+      margin-bottom: 12px;
+    }
+
+    .confirm-desc {
+      font-size: 15px;
+      font-weight: 700;
+      color: #666;
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+
+    .confirm-btns {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-custom {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-custom-cancel {
+      background: #f5f5f5;
+      color: #555;
+    }
+
+    .btn-custom-ok {
+      background: var(--wg-red);
+      color: #fff;
+    }
+
+    .time-panel {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .time-panel-inner {
+      background: #fff;
+      width: 100%;
+      max-width: 520px;
+      border-radius: 32px 32px 0 0;
+      padding: 2rem 1.5rem;
+      animation: slideUp 0.3s forwards;
+    }
+
+    .version-tag {
+      text-align: center;
+      font-size: 10px;
+      color: #ccc;
+      margin-top: 10px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .toast {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #fff;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-size: 13px;
+      z-index: 2000;
+      display: none;
+      font-weight: 900;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      max-width: 80%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="app-container">
+    <div id="screen-login" class="screen active">
+      <div class="logo-area">
+        <div class="logo-icon"><span>W</span></div>
+        <h2>WORLD GYM</h2>
+      </div>
+      <div class="card">
+        <button class="btn-trainer-gate" onclick="doTrainerLogin()">教練專區入口</button>
+        <div style="border-top: 2.5px dashed #eee; padding-top: 1.5rem;">
+          <div class="field"><label>Account 帳號</label><input type="text" id="login-user" placeholder="帳號"></div>
+          <div class="field"><label>Password 密碼</label><input type="password" id="login-pass" placeholder="密碼"></div>
+          <button class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
+        </div>
+      </div>
+      <div class="version-tag">STABLE VERSION 1.0</div>
+    </div>
+
+    <div id="screen-member" class="screen">
+      <div class="card">
+        <div class="header-area">
+          <h3>Paul 的個人專屬課表</h3><button class="btn-logout" onclick="logout()">登出</button>
+        </div>
+        <div class="member-toggles-row">
+          <div id="batch-toggle" class="toggle-item green" onclick="toggleBatchMode()"><span>批量模式</span><span
+              id="batch-status" style="font-size:10px; color:#aaa;">OFF</span></div>
+          <div id="lock-toggle" class="toggle-item" onclick="toggleLockMode()"><span>連續排課卡控</span><span id="lock-status"
+              style="font-size:10px; color:#aaa;">ON</span></div>
+        </div>
+        <div class="cal-nav">
+          <button class="nav-btn" onclick="changeMonth('m',-1)"><span class="arrow arrow-left"></span></button>
+          <span class="month-label" id="member-month-label"></span>
+          <button class="nav-btn" onclick="changeMonth('m',1)"><span class="arrow arrow-right"></span></button>
+        </div>
+        <div class="cal-grid" id="member-cal">
+          <div class="cal-day-label">S</div>
+          <div class="cal-day-label">M</div>
+          <div class="cal-day-label">T</div>
+          <div class="cal-day-label">W</div>
+          <div class="cal-day-label">T</div>
+          <div class="cal-day-label">F</div>
+          <div class="cal-day-label">S</div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:1.5rem;">
+          <button class="btn-ui btn-ui-secondary" id="member-reset-btn" onclick="resetMemberSession()"
+            style="flex:1; display:none;">取消選取</button>
+          <button class="btn-ui btn-ui-green" id="member-confirm-btn" onclick="confirmMember()" disabled
+            style="flex:2;">提交全部修改</button>
+        </div>
+        <div class="version-tag">V1.0 FINAL</div>
+      </div>
+    </div>
+
+    <div id="screen-trainer" class="screen">
+      <div class="card">
+        <div class="header-area">
+          <h3>教練排班管理後台</h3><button class="btn-logout" onclick="logout()">登出</button>
+        </div>
+        <div class="coach-picker-container">
+          <div class="coach-hint">請點選您的教練身分以開始預約</div>
+          <div class="coach-row" id="coach-picker"></div>
+        </div>
+        <div class="trainer-ctrl-row">
+          <div class="cal-nav-compact"><button class="nav-btn" onclick="changeMonth('t',-1)"><span
+                class="arrow arrow-left"></span></button><span class="month-label"
+              id="trainer-month-label"></span><button class="nav-btn" onclick="changeMonth('t',1)"><span
+                class="arrow arrow-right"></span></button></div>
+          <button class="view-toggle-btn" id="only-my-btn" onclick="toggleOnlyMy()">
+            <div class="checkbox-box">
+              <div class="check-mark"></div>
+            </div><span id="filter-text">只顯示您的課程</span>
+          </button>
+        </div>
+        <div class="cal-grid" id="trainer-cal">
+          <div class="cal-day-label">S</div>
+          <div class="cal-day-label">M</div>
+          <div class="cal-day-label">T</div>
+          <div class="cal-day-label">W</div>
+          <div class="cal-day-label">T</div>
+          <div class="cal-day-label">F</div>
+          <div class="cal-day-label">S</div>
+        </div>
+        <div class="legend" id="coach-legend"></div>
+        <div class="version-tag">MANAGEMENT V1.0</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="custom-confirm" class="custom-confirm-overlay">
+    <div class="custom-confirm-card">
+      <div class="confirm-title" id="cc-title">確認取消預約？</div>
+      <div id="confirm-msg" class="confirm-desc">內容</div>
+      <div class="confirm-btns"><button class="btn-custom btn-custom-cancel" id="confirm-cancel-btn"
+          onclick="closeCustomConfirm()">保留預約</button><button class="btn-custom btn-custom-ok"
+          id="confirm-ok-btn">確定取消</button></div>
+    </div>
+  </div>
+  <div id="time-panel" class="time-panel" onclick="closePanelIfBg(event)">
+    <div class="time-panel-inner">
+      <h4 id="panel-title"
+        style="font-weight:900; text-align:center; padding-bottom:12px; border-bottom:1.5px solid #f5f5f5;">設定時段排程</h4>
+      <div id="member-direct-hint"
+        style="display:none; text-align:center; font-size:11px; font-weight:800; color:#FFA726; margin:8px 0;">
+        (若要取消教練預約，請直接點選該時段)</div>
+      <div class="time-grid" id="panel-slots"></div>
+      <div style="display:flex; gap:12px;"><button class="btn-ui btn-ui-secondary" style="flex:1"
+          onclick="closePanel()">放棄返回</button><button class="btn-ui btn-ui-primary" style="flex:1" id="panel-ok-btn"
+          onclick="applyPanel()">套用變更</button></div>
+    </div>
+  </div>
+  <div id="toast" class="toast"></div>
+
+  <script>
+    var today = new Date();
+    var mY = today.getFullYear(), mM = today.getMonth(), tY = today.getFullYear(), tM = today.getMonth();
+    var COACH_DATA = { 'Buzz': '#D32F2F', 'Hulk': '#2E7D32', 'Kelly': '#6A1B9A', 'Seven': '#006064', 'Mark': '#1976D2' };
+    var selectedTrainer = "";
+    var memberConfirmed = {}, trainerConfirmed = {}, memberSession = {}, trainerSession = {}, pendingCoachRemovals = {};
+    var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, isConsecutiveLocked = true, isCancelCoachMode = false;
+    const STORAGE_KEY = 'WG_FINAL_STABLE_V1';
+
+    function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ memberConfirmed, trainerConfirmed, isConsecutiveLocked })); }
+    function loadData() {
+      const s = localStorage.getItem(STORAGE_KEY);
+      if (s) { const d = JSON.parse(s); memberConfirmed = d.memberConfirmed || {}; trainerConfirmed = d.trainerConfirmed || {}; isConsecutiveLocked = (d.isConsecutiveLocked !== undefined) ? d.isConsecutiveLocked : true; }
+      updateLockUI();
+    }
+    function showToast(m, sec = 2, isErr = false) { const t = document.getElementById('toast'); t.textContent = m; t.style.background = isErr ? '#D32F2F' : '#2C3E50'; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', sec * 1000); }
+    function openCustomConfirm(msg, onOk, title = "確認取消預約？", cancelTxt = "保留預約", okTxt = "確定取消") {
+      document.getElementById('cc-title').textContent = title; document.getElementById('confirm-msg').textContent = msg;
+      const okBtn = document.getElementById('confirm-ok-btn'), canv = document.getElementById('confirm-cancel-btn');
+      okBtn.textContent = okTxt; canv.textContent = cancelTxt; okBtn.onclick = () => { onOk(); closeCustomConfirm(); };
+      document.getElementById('custom-confirm').style.display = 'flex';
+    }
+    function closeCustomConfirm() { document.getElementById('custom-confirm').style.display = 'none'; }
+
+    window.onload = () => { loadData(); };
+
+    function initCoachPicker() {
+      const rt = document.getElementById('coach-picker'), l = document.getElementById('coach-legend');
+      if (!rt || !l) return; rt.innerHTML = ''; l.innerHTML = '';
+      const names = Object.keys(COACH_DATA), hasU = Object.keys(trainerSession).length > 0;
+      names.forEach((n, i) => {
+        const chip = document.createElement('div');
+        chip.className = 'coach-chip' + (hasU && selectedTrainer !== n ? ' locked' : '') + (selectedTrainer === n ? ' active' : '');
+        chip.innerHTML = n; chip.style.setProperty('--coach-color', COACH_DATA[n]);
+        chip.onclick = () => {
+          if (isOnlyMy && selectedTrainer === n) { isOnlyMy = false; document.getElementById('only-my-btn').classList.remove('active'); }
+          if (hasU && selectedTrainer !== n) { showToast('請先確認修改', 2, true); return; }
+
+          // --- 核心修改：再次點擊則取消選取 ---
+          if (selectedTrainer === n) selectedTrainer = "";
+          else selectedTrainer = n;
+
+          updateFilterText(); initCoachPicker(); renderTrainerCal();
+        };
+        rt.appendChild(chip);
+        let count = 0; const prefix = tY + '-' + String(tM + 1).padStart(2, '0');
+        if (trainerConfirmed[n]) { Object.keys(trainerConfirmed[n]).forEach(k => { if (k.startsWith(prefix)) count += trainerConfirmed[n][k].length; }); }
+        const item = document.createElement('div'); item.className = 'legend-item';
+        item.innerHTML = `<div class="legend-dot" style="background:${COACH_DATA[n]}"></div>${n} <span class="legend-count">(${count}堂)</span>`;
+        l.appendChild(item);
+      });
+      updateFilterText();
+    }
+    function updateFilterText() { const txt = document.getElementById('filter-text'); if (txt) txt.textContent = selectedTrainer ? `只顯示 ${selectedTrainer} 的課程` : '只顯示您的課程'; }
+    function updateLockUI() { const el = document.getElementById('lock-toggle'); if (!el) return; el.classList.toggle('active', isConsecutiveLocked); document.getElementById('lock-status').textContent = isConsecutiveLocked ? 'ON' : 'OFF'; }
+    function toggleLockMode() { isConsecutiveLocked = !isConsecutiveLocked; updateLockUI(); saveData(); }
+    function toggleOnlyMy() { if (!selectedTrainer) { showToast('請先選擇您的身份', 2, true); return; } isOnlyMy = !isOnlyMy; document.getElementById('only-my-btn').classList.toggle('active', isOnlyMy); initCoachPicker(); renderTrainerCal(); }
+    function doMemberLogin() { if (document.getElementById('login-user').value === '1') { showScreen('member'); renderMemberCal(); } }
+    function doTrainerLogin() { selectedTrainer = ""; isOnlyMy = false; document.getElementById('only-my-btn').classList.remove('active'); showScreen('trainer'); initCoachPicker(); renderTrainerCal(); }
+    function logout() {
+      const m = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
+      if (m) openCustomConfirm("尚未確認提交，登出將遺失資料。確定嗎？", () => { executeLogout(); }, "尚未存檔", "繼續", "確定登出"); else executeLogout();
+    }
+    function executeLogout() { showScreen('login'); memberSession = {}; trainerSession = {}; pendingCoachRemovals = {}; selectedTrainer = ""; batchTemplate = null; isOnlyMy = false; }
+    function showScreen(s) { document.querySelectorAll('.screen').forEach(el => el.classList.remove('active')); document.getElementById('screen-' + s).classList.add('active'); }
+    function dateKey(y, m, d) { return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0'); }
+    function changeMonth(who, f) {
+      if (who === 'm') { mM += f; if (mM > 11) { mM = 0; mY++; } else if (mM < 0) { mM = 11; mY--; } renderMemberCal(); }
+      else { tM += f; if (tM > 11) { tM = 0; tY++; } else if (tM < 0) { tM = 11; tY--; } renderTrainerCal(); initCoachPicker(); }
+    }
+    function toggleBatchMode() { isBatchMode = !isBatchMode; document.getElementById('batch-toggle').classList.toggle('active', isBatchMode); document.getElementById('batch-status').textContent = isBatchMode ? 'ON' : 'OFF'; }
+    function isBooked(k, h) { if (pendingCoachRemovals[k] && pendingCoachRemovals[k].indexOf(h) >= 0) return false; return Object.keys(COACH_DATA).some(tr => trainerConfirmed[tr] && trainerConfirmed[tr][k] && trainerConfirmed[tr][k].indexOf(h) >= 0); }
+    function isBookedLocally(h) { if (panelTempSlots.indexOf(h) >= 0) return true; return isBooked(panelKey, h); }
+
+    function renderMemberCal() {
+      document.getElementById('member-month-label').textContent = mY + '年 ' + String(mM + 1).padStart(2, '0') + '月';
+      const grid = document.getElementById('member-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+      const first = new Date(mY, mM, 1).getDay(), days = new Date(mY, mM + 1, 0).getDate();
+      for (let i = 0; i < first; i++) grid.appendChild(Object.assign(document.createElement('div'), { className: 'cal-cell empty' }));
+      for (let d = 1; d <= days; d++) {
+        let k = dateKey(mY, mM, d), isPast = new Date(mY, mM, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const el = document.createElement('div'); const list = document.createElement('div'); list.className = 'mini-slot-list';
+        let allS = [];
+        Object.keys(COACH_DATA).forEach(tr => { if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) trainerConfirmed[tr][k].forEach(h => { if ((memberSession[k] && memberSession[k].indexOf(h) < 0) || (pendingCoachRemovals[k] && pendingCoachRemovals[k].indexOf(h) >= 0)) return; allS.push({ h, tr, type: 'conf' }); }); });
+        if (memberSession[k]) memberSession[k].forEach(h => { if (!isBooked(k, h)) allS.push({ h, tr: 'M', type: 'sess' }) });
+        else if (memberConfirmed[k]) memberConfirmed[k].forEach(h => { if (!isBooked(k, h)) allS.push({ h, tr: 'M', type: 'conf' }) });
+        allS.sort((a, b) => a.h - b.h).forEach(s => {
+          if (s.tr === 'M') list.appendChild(Object.assign(document.createElement('div'), { className: 'mini-slot slot-avail-member', textContent: `${s.h}:00可預約` }));
+          else list.appendChild(Object.assign(document.createElement('div'), { className: 'mini-slot', style: `background:${COACH_DATA[s.tr]}`, textContent: s.h + ':00 ' + s.tr }));
+        });
+        el.className = 'cal-cell' + (isPast ? ' past' : ' clickable') + ((memberSession[k] || pendingCoachRemovals[k]) ? ' is-changed' : '');
+        el.innerHTML = `<span class="cal-cell-num">${d}</span>`; el.appendChild(list);
+        if (!isPast) el.onclick = () => { if (isBatchMode && batchTemplate) { if (JSON.stringify(memberSession[k]) === JSON.stringify(batchTemplate)) delete memberSession[k]; else memberSession[k] = [...batchTemplate]; renderMemberCal(); } else openPanel('member', k); };
+        grid.appendChild(el);
+      }
+      const hasC = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
+      document.getElementById('member-confirm-btn').disabled = !hasC;
+      document.getElementById('member-reset-btn').style.display = hasC ? 'block' : 'none';
+    }
+
+    function renderTrainerCal() {
+      document.getElementById('trainer-month-label').textContent = tY + '年 ' + String(tM + 1).padStart(2, '0') + '月';
+      const grid = document.getElementById('trainer-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+      const first = new Date(tY, tM, 1).getDay(), days = new Date(tY, tM + 1, 0).getDate();
+      for (let i = 0; i < first; i++) grid.appendChild(Object.assign(document.createElement('div'), { className: 'cal-cell empty' }));
+      for (let d = 1; d <= days; d++) {
+        let k = dateKey(tY, tM, d), isPast = new Date(tY, tM, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        const el = document.createElement('div'); const t = selectedTrainer;
+        let memAvail = memberConfirmed[k] || [], sess = trainerSession[k], isChg = sess !== undefined;
+        el.className = 'cal-cell' + (isPast ? ' past' : '') + (memAvail.length > 0 ? ' clickable has-avail-day' : ' is-grey-out') + (isChg ? ' is-changed' : '');
+        el.innerHTML = `<span class="cal-cell-num">${d}</span>`;
+        const list = document.createElement('div'); list.className = 'mini-slot-list';
+        let allS = [];
+        memAvail.forEach(h => {
+          let cn = Object.keys(COACH_DATA).find(tr => trainerConfirmed[tr] && trainerConfirmed[tr][k] && trainerConfirmed[tr][k].indexOf(h) >= 0);
+          if (isOnlyMy && cn && cn !== t && (!isChg || sess.indexOf(h) < 0)) return;
+          if (cn === t) { if (isChg && sess.indexOf(h) < 0) allS.push({ h, type: 'rem' }); else allS.push({ h, type: 'act', tr: t }); }
+          else if (cn) allS.push({ h, type: 'oth', tr: cn });
+          else { if (isChg && sess.indexOf(h) >= 0) allS.push({ h, type: 'add', tr: t }); else { const loc = isConsecutiveLocked && memAvail.indexOf(h - 1) >= 0 && !isBooked(k, h - 1); allS.push({ h, type: 'avl', loc }); } }
+        });
+        allS.sort((a, b) => a.h - b.h).forEach(s => {
+          let clsName = 'mini-slot';
+          if ((!selectedTrainer || s.tr === selectedTrainer) && (s.type === 'act' || s.type === 'add' || s.type === 'oth')) clsName += ' slot-embossed-focus';
+          if (s.type === 'act') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, style: `background:${COACH_DATA[s.tr]}`, textContent: s.h + ':00 ' + s.tr }));
+          else if (s.type === 'add') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, style: `background:${COACH_DATA[s.tr]}`, textContent: s.h + ':00 ' + s.tr + '(+)' }));
+          else if (s.type === 'rem') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, textContent: s.h + ':00 ' + selectedTrainer }));
+          else if (s.type === 'oth') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, style: `background:${COACH_DATA[s.tr]}; opacity:${selectedTrainer ? 0.3 : 1.0}`, textContent: s.h + ':00 ' + s.tr }));
+          else if (s.type === 'avl') { if (s.loc) list.appendChild(Object.assign(document.createElement('div'), { className: clsName + ' slot-avail-locked', textContent: s.h + ':00鎖定' })); else list.appendChild(Object.assign(document.createElement('div'), { className: clsName + ' slot-avail-member', textContent: `${s.h}:00可預約` })); }
+        });
+        el.appendChild(list);
+        if (!isPast) el.onclick = () => { if (!selectedTrainer) { showToast('請先選身份', 2, true); return; } if (memAvail.length > 0) openPanel('trainer', k); initCoachPicker(); };
+        grid.appendChild(el);
+      }
+    }
+
+    function openPanel(mode, k) {
+      panelMode = mode; panelKey = k; isCancelCoachMode = false;
+      if (mode === 'member') { panelTempSlots = (memberSession[k] !== undefined) ? [...memberSession[k]] : [...(memberConfirmed[k] || [])]; document.getElementById('member-direct-hint').style.display = 'block'; }
+      else { panelTempSlots = (trainerConfirmed[selectedTrainer] && trainerConfirmed[selectedTrainer][k]) ? [...trainerConfirmed[selectedTrainer][k]] : []; document.getElementById('member-direct-hint').style.display = 'none'; }
+      renderPanelSlots(); document.getElementById('time-panel').style.display = 'flex';
+    }
+
+    function renderPanelSlots() {
+      const c = document.getElementById('panel-slots'); c.innerHTML = '';
+      for (let h = 6; h <= 22; h++) {
+        const slot = document.createElement('div'); const isMemberIn = panelTempSlots.indexOf(h) >= 0;
+        if (panelMode === 'member') {
+          let coach = Object.keys(COACH_DATA).find(tr => trainerConfirmed[tr] && trainerConfirmed[tr][panelKey] && trainerConfirmed[tr][panelKey].indexOf(h) >= 0);
+          let isRefCancelled = pendingCoachRemovals[panelKey] && pendingCoachRemovals[panelKey].indexOf(h) >= 0;
+          if (coach) {
+            slot.className = 'time-slot' + (isRefCancelled ? ' cancel-pending' : ' member-direct-cancel booked-by-other');
+            slot.innerHTML = `${h}:00<br><span style="font-size:9px">${coach}${isRefCancelled ? '(已標記取消)' : '已約'}</span>`;
+            slot.onclick = () => {
+              if (isRefCancelled) return; openCustomConfirm(`確認要無條件取消 ${coach} 在此時段的課程預約？`, () => {
+                if (!pendingCoachRemovals[panelKey]) pendingCoachRemovals[panelKey] = [];
+                if (pendingCoachRemovals[panelKey].indexOf(h) < 0) pendingCoachRemovals[panelKey].push(h);
+                renderPanelSlots(); showToast('已標記取消', 2); renderMemberCal();
+              });
+            };
+          } else {
+            slot.className = 'time-slot' + (isMemberIn ? ' selected' : '');
+            slot.textContent = h + ':00' + (isMemberIn ? '可預約' : '');
+            slot.onclick = () => toggleSlot(h);
+          }
+        } else {
+          const isMemAvail = (memberConfirmed[panelKey] || []).indexOf(h) >= 0;
+          let other = Object.keys(COACH_DATA).find(ot => ot !== selectedTrainer && trainerConfirmed[ot] && trainerConfirmed[ot][panelKey] && trainerConfirmed[ot][panelKey].indexOf(h) >= 0);
+          const isPicked = panelTempSlots.indexOf(h) >= 0;
+          if (!isMemAvail) { slot.className = 'time-slot blocked'; slot.textContent = h + ':00'; }
+          else if (other) { slot.className = 'time-slot booked-by-other'; slot.innerHTML = `${h}:00<br><span style="font-size:9px">${other}已約</span>`; }
+          else {
+            let isSoftLocked = false;
+            if (isConsecutiveLocked && !isPicked) { if (isMemAvail && (memberConfirmed[panelKey] || []).indexOf(h - 1) >= 0 && !isBookedLocally(h - 1)) isSoftLocked = true; }
+            slot.className = 'time-slot' + (isPicked ? ' confirmed' : '') + (isSoftLocked ? ' consecutive-soft-locked' : '');
+            if (isSoftLocked) {
+              slot.style.position = 'relative';
+              slot.innerHTML = `
+                <div style="font-size:13px; font-weight:700; color:#333;">${h}:00</div>
+                <div style="font-size:9.5px; font-weight:800; color:#999; position:absolute; bottom:6px; width:100%; text-align:center;">請先預約 ${h - 1}:00</div>
+              `;
+            } else {
+              slot.style.position = '';
+              slot.textContent = h + ':00';
+            }
+            slot.onclick = () => toggleSlot(h);
+          }
+        }
+        c.appendChild(slot);
+      }
+    }
+    function toggleSlot(h) {
+      let i = panelTempSlots.indexOf(h); const isPicked = i >= 0;
+      if (panelMode === 'trainer' && isConsecutiveLocked) {
+        if (!isPicked) { if ((memberConfirmed[panelKey] || []).indexOf(h - 1) >= 0 && !isBookedLocally(h - 1)) { showToast(`請先預約 ${h - 1}:00`, 3, true); return; } }
+        else { if ((memberConfirmed[panelKey] || []).indexOf(h + 1) >= 0 && isBookedLocally(h + 1)) { showToast(`${h + 1}:00 已有預約，請先取消`, 4, true); return; } }
+      }
+      if (isPicked) panelTempSlots.splice(i, 1); else panelTempSlots.push(h);
+      renderPanelSlots();
+    }
+    function applyPanel() {
+      if (panelMode === 'member') {
+        memberSession[panelKey] = [...panelTempSlots];
+        batchTemplate = [...panelTempSlots];
+        renderMemberCal();
+      } else {
+        if (!trainerConfirmed[selectedTrainer]) trainerConfirmed[selectedTrainer] = {};
+        trainerConfirmed[selectedTrainer][panelKey] = [...panelTempSlots];
+        if (trainerConfirmed[selectedTrainer][panelKey].length === 0) delete trainerConfirmed[selectedTrainer][panelKey];
+        saveData();
+        renderTrainerCal();
+        initCoachPicker();
+        showToast('更新成功！', 2);
+      }
+      closePanel();
+    }
+    function confirmMember() {
+      Object.keys(memberSession).forEach(k => { memberConfirmed[k] = [...memberSession[k]]; if (memberConfirmed[k].length === 0) delete memberConfirmed[k]; });
+      Object.keys(pendingCoachRemovals).forEach(k => { Object.keys(COACH_DATA).forEach(tr => { if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) { trainerConfirmed[tr][k] = trainerConfirmed[tr][k].filter(h => pendingCoachRemovals[k].indexOf(h) < 0 && (memberConfirmed[k] || []).indexOf(h) >= 0); if (trainerConfirmed[tr][k].length === 0) delete trainerConfirmed[tr][k]; } }); });
+      memberSession = {}; pendingCoachRemovals = {}; isBatchMode = false; updateLockUI(); document.getElementById('batch-toggle').classList.remove('active'); document.getElementById('batch-status').textContent = 'OFF'; saveData(); renderMemberCal(); showToast('修改成功提交！', 3);
+    }
+    function resetTrainerSession() { }
+    function closePanel() { document.getElementById('time-panel').style.display = 'none'; }
+    function closePanelIfBg(e) { if (e.target.id === 'time-panel') closePanel(); }
+    function resetMemberSession() { memberSession = {}; pendingCoachRemovals = {}; renderMemberCal(); }
+  </script>
+</body>
+
+</html>
