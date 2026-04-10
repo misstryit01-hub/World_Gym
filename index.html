@@ -982,7 +982,8 @@
     const db = firebase.firestore();
     // 強制不使用離線快取，確保數據即時性
     db.clearPersistence().catch(() => {}); 
-    const DATA_DOC = db.collection('gym').doc('booking_standard_v2');
+    const DATA_DOC = db.collection('gym').doc('booking_final_standard');
+    let isDataLoaded = false;
 
     var today = new Date();
     var mY = today.getFullYear(), mM = today.getMonth(), tY = today.getFullYear(), tM = today.getMonth();
@@ -997,6 +998,7 @@
       const dot = document.getElementById('status-dot');
       if (dot) dot.className = 'status-dot syncing';
 
+      if (!isDataLoaded) { console.warn("資料尚未載入，取消寫入"); return; }
       DATA_DOC.set({
         memberConfirmed,
         trainerConfirmed,
@@ -1048,10 +1050,12 @@
           Object.values(memberConfirmed).forEach(arr => { if(Array.isArray(arr)) total += arr.length; });
           if (countEl) countEl.textContent = "Data: " + total + " slots";
 
+          isDataLoaded = true;
           doFreshRender();
           updateLockUI();
         } else {
-          saveData();
+          // 真正的第一次：僅標記載入完成，不主動存檔
+          isDataLoaded = true;
         }
       }, (err) => {
         if (dot) dot.className = 'status-dot offline';
