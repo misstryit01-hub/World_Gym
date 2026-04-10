@@ -941,7 +941,7 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const DATA_DOC = db.collection('gym').doc('booking_v3');
+    const DATA_DOC = db.collection('gym').doc('booking_standard');
 
     var today = new Date();
     var mY = today.getFullYear(), mM = today.getMonth(), tY = today.getFullYear(), tM = today.getMonth();
@@ -1080,38 +1080,45 @@
     }
 
     function renderTrainerCal() {
-      document.getElementById('trainer-month-label').textContent = tY + '年 ' + String(tM + 1).padStart(2, '0') + '月';
-      const grid = document.getElementById('trainer-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
-      const first = new Date(tY, tM, 1).getDay(), days = new Date(tY, tM + 1, 0).getDate();
-      for (let i = 0; i < first; i++) grid.appendChild(Object.assign(document.createElement('div'), { className: 'cal-cell empty' }));
-      for (let d = 1; d <= days; d++) {
-        let k = dateKey(tY, tM, d), isPast = new Date(tY, tM, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        const el = document.createElement('div'); const t = selectedTrainer;
-        let memAvail = memberConfirmed[k] || [], sess = trainerSession[k], isChg = sess !== undefined;
-        el.className = 'cal-cell' + (isPast ? ' past' : '') + (memAvail.length > 0 ? ' clickable has-avail-day' : ' is-grey-out') + (isChg ? ' is-changed' : '');
-        el.innerHTML = `<span class="cal-cell-num">${d}</span>`;
-        const list = document.createElement('div'); list.className = 'mini-slot-list';
-        let allS = [];
-        memAvail.forEach(h => {
-          let cn = Object.keys(COACH_DATA).find(tr => trainerConfirmed[tr] && trainerConfirmed[tr][k] && trainerConfirmed[tr][k].indexOf(h) >= 0);
-          if (isOnlyMy && cn && cn !== t && (!isChg || sess.indexOf(h) < 0)) return;
-          if (cn === t) { if (isChg && sess.indexOf(h) < 0) allS.push({ h, type: 'rem' }); else allS.push({ h, type: 'act', tr: t }); }
-          else if (cn) allS.push({ h, type: 'oth', tr: cn });
-          else { if (isChg && sess.indexOf(h) >= 0) allS.push({ h, type: 'add', tr: t }); else { const loc = isConsecutiveLocked && memAvail.indexOf(h - 1) >= 0 && !isBooked(k, h - 1); allS.push({ h, type: 'avl', loc }); } }
-        });
-        allS.sort((a, b) => a.h - b.h).forEach(s => {
-          let clsName = 'mini-slot';
-          if ((!selectedTrainer || s.tr === selectedTrainer) && (s.type === 'act' || s.type === 'add' || s.type === 'oth')) clsName += ' slot-embossed-focus';
-          if (s.type === 'act') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, style: `background:${COACH_DATA[s.tr]}`, textContent: s.h + ':00 ' + s.tr }));
-          else if (s.type === 'add') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, style: `background:${COACH_DATA[s.tr]}`, textContent: s.h + ':00 ' + s.tr + '(+)' }));
-          else if (s.type === 'rem') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, textContent: s.h + ':00 ' + selectedTrainer }));
-          else if (s.type === 'oth') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, style: `background:${COACH_DATA[s.tr]}; opacity:${selectedTrainer ? 0.3 : 1.0}`, textContent: s.h + ':00 ' + s.tr }));
-          else if (s.type === 'avl') { if (s.loc) list.appendChild(Object.assign(document.createElement('div'), { className: clsName + ' slot-avail-locked', textContent: s.h + ':00鎖定' })); else list.appendChild(Object.assign(document.createElement('div'), { className: clsName + ' slot-avail-member', textContent: `${s.h}:00可預約` })); }
-        });
-        el.appendChild(list);
-        if (!isPast) el.onclick = () => { if (!selectedTrainer) { showToast('請先選身份', 2, true); return; } if (memAvail.length > 0) openPanel('trainer', k); initCoachPicker(); };
-        grid.appendChild(el);
-      }
+      try {
+        document.getElementById('trainer-month-label').textContent = tY + '年 ' + String(tM + 1).padStart(2, '0') + '月';
+        const grid = document.getElementById('trainer-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
+        const first = new Date(tY, tM, 1).getDay(), days = new Date(tY, tM + 1, 0).getDate();
+        for (let i = 0; i < first; i++) grid.appendChild(Object.assign(document.createElement('div'), { className: 'cal-cell empty' }));
+        for (let d = 1; d <= days; d++) {
+          let k = dateKey(tY, tM, d), isPast = new Date(tY, tM, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+          const el = document.createElement('div'); const t = selectedTrainer;
+          let memAvail = memberConfirmed[k] || [], sess = trainerSession[k], isChg = sess !== undefined;
+          el.className = 'cal-cell' + (isPast ? ' past' : '') + (memAvail.length > 0 ? ' clickable has-avail-day' : ' is-grey-out') + (isChg ? ' is-changed' : '');
+          el.innerHTML = `<span class="cal-cell-num">${d}</span>`;
+          const list = document.createElement('div'); list.className = 'mini-slot-list';
+          let allS = [];
+          
+          // 加強容錯：確保 memAvail 是數組
+          if (Array.isArray(memAvail)) {
+            memAvail.forEach(h => {
+              let cn = Object.keys(COACH_DATA).find(tr => trainerConfirmed[tr] && trainerConfirmed[tr][k] && Array.isArray(trainerConfirmed[tr][k]) && trainerConfirmed[tr][k].indexOf(h) >= 0);
+              if (isOnlyMy && cn && cn !== t && (!isChg || sess.indexOf(h) < 0)) return;
+              if (cn === t) { if (isChg && sess.indexOf(h) < 0) allS.push({ h, type: 'rem' }); else allS.push({ h, type: 'act', tr: t }); }
+              else if (cn) allS.push({ h, type: 'oth', tr: cn });
+              else { if (isChg && sess.indexOf(h) >= 0) allS.push({ h, type: 'add', tr: t }); else { const loc = consecutiveLocking === true && memAvail.indexOf(h - 1) >= 0 && !isBooked(k, h - 1); allS.push({ h, type: 'avl', loc }); } }
+            });
+          }
+          
+          allS.sort((a, b) => a.h - b.h).forEach(s => {
+            let clsName = 'mini-slot';
+            if ((!selectedTrainer || s.tr === selectedTrainer) && (s.type === 'act' || s.type === 'add' || s.type === 'oth')) clsName += ' slot-embossed-focus';
+            if (s.type === 'act') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, style: `background:${COACH_DATA[s.tr]}`, textContent: s.h + ':00 ' + s.tr }));
+            else if (s.type === 'add') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, style: `background:${COACH_DATA[s.tr]}`, textContent: s.h + ':00 ' + s.tr + '(+)' }));
+            else if (s.type === 'rem') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, textContent: s.h + ':00 ' + selectedTrainer }));
+            else if (s.type === 'oth') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, style: `background:${COACH_DATA[s.tr]}; opacity:${selectedTrainer ? 0.3 : 1.0}`, textContent: s.h + ':00 ' + s.tr }));
+            else if (s.type === 'avl') { if (s.loc) list.appendChild(Object.assign(document.createElement('div'), { className: clsName + ' slot-avail-locked', textContent: s.h + ':00鎖定' })); else list.appendChild(Object.assign(document.createElement('div'), { className: clsName + ' slot-avail-member', textContent: `${s.h}:00可預約` })); }
+          });
+          el.appendChild(list);
+          if (!isPast) el.onclick = () => { if (!selectedTrainer) { showToast('請先選身份', 2, true); return; } if (memAvail.length > 0) openPanel('trainer', k); initCoachPicker(); };
+          grid.appendChild(el);
+        }
+      } catch (e) { console.error("日曆渲染出錯:", e); }
     }
 
     function openPanel(mode, k) {
