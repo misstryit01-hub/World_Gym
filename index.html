@@ -1020,25 +1020,24 @@
 
     function initRealtimeSync() {
       const dot = document.getElementById('status-dot'), txt = document.getElementById('status-text');
-      const countEl = document.getElementById('debug-panel');
+      const countEl = document.getElementById('data-count');
       DATA_DOC.onSnapshot((doc) => {
         if (dot) dot.className = 'status-dot online';
-        if (txt) txt.textContent = "DATABASE V1.9 READY";
+        if (txt) txt.textContent = "DATABASE V2.2 READY";
 
         if (doc.exists()) {
           const d = doc.data();
           memberConfirmed = d.memberConfirmed || {};
           trainerConfirmed = d.trainerConfirmed || {};
           if (typeof d.consecutiveLocking !== 'undefined') consecutiveLocking = d.consecutiveLocking;
+          
+          let total = 0;
+          Object.values(memberConfirmed).forEach(arr => { if(Array.isArray(arr)) total += arr.length; });
+          if (countEl) countEl.textContent = "Data: " + total + " slots";
 
-          if (document.getElementById('screen-member').classList.contains('active')) renderMemberCal();
-          if (document.getElementById('screen-trainer').classList.contains('active')) {
-            renderTrainerCal();
-            initCoachPicker();
-          }
+          doFreshRender();
           updateLockUI();
         } else {
-          // 第一次連線：初始化
           saveData();
         }
       }, (err) => {
@@ -1292,10 +1291,7 @@
     function closePanel() { document.getElementById('time-panel').style.display = 'none'; }
     function closePanelIfBg(e) { if (e.target.id === 'time-panel') closePanel(); }
     function resetMemberSession() { memberSession = {}; pendingCoachRemovals = {}; renderMemberCal(); }
-    function doFreshRender() {
-      if (document.getElementById('screen-member').classList.contains('active')) renderMemberCal();
-      if (document.getElementById('screen-trainer').classList.contains('active')) { renderTrainerCal(); initCoachPicker(); }
-    }
+    function resetMemberSession() { memberSession = {}; pendingCoachRemovals = {}; renderMemberCal(); }
     function toggleDebug() {
       const p = document.getElementById('debug-panel');
       if (p.style.display === 'block') p.style.display = 'none';
