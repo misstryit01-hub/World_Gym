@@ -127,7 +127,8 @@
 
     .btn-trainer-gate {
       width: 100%;
-      background: #FF6B00; /* World Gym 活力橘 */
+      background: #FF6B00;
+      /* World Gym 活力橘 */
       color: #fff;
       padding: 20px;
       border-radius: var(--radius-md);
@@ -211,7 +212,8 @@
       justify-content: center;
       gap: 6px;
       margin-bottom: 12px;
-      flex-wrap: wrap; /* 內容多時自動流動，但在廣屏下會是一排 */
+      flex-wrap: wrap;
+      /* 內容多時自動流動，但在廣屏下會是一排 */
     }
 
     .coach-chip {
@@ -239,11 +241,12 @@
     .coach-chip.active {
       background: var(--coach-color) !important;
       color: #fff !important;
-      scale: 0.98; /* 稍微縮小模擬按壓感 */
+      scale: 0.98;
+      /* 稍微縮小模擬按壓感 */
       border: 1.2px solid rgba(0, 0, 0, 0.2) !important;
       /* 凹版 (Pressed) 深陷陰影 */
-      box-shadow: 
-        inset 4px 4px 8px rgba(0, 0, 0, 0.35), 
+      box-shadow:
+        inset 4px 4px 8px rgba(0, 0, 0, 0.35),
         inset -4px -4px 8px rgba(255, 255, 255, 0.15) !important;
     }
 
@@ -354,12 +357,13 @@
     }
 
     .toggle-item.active {
-      background: #C8E6C9; /* 較明顯的淺綠色 */
+      background: #C8E6C9;
+      /* 較明顯的淺綠色 */
       border-color: #4CAF50;
       color: #2E7D32;
       scale: 0.96;
-      box-shadow: 
-        inset 5px 5px 10px rgba(0, 0, 0, 0.15), 
+      box-shadow:
+        inset 5px 5px 10px rgba(0, 0, 0, 0.15),
         inset -5px -5px 10px rgba(255, 255, 255, 0.5) !important;
     }
 
@@ -431,8 +435,8 @@
       color: #000;
       background: #F5F5F5;
       scale: 0.96;
-      box-shadow: 
-        inset 4px 4px 8px rgba(0, 0, 0, 0.15), 
+      box-shadow:
+        inset 4px 4px 8px rgba(0, 0, 0, 0.15),
         inset -4px -4px 8px rgba(255, 255, 255, 0.2) !important;
     }
 
@@ -492,8 +496,8 @@
       scale: 0.98;
       background: #fafafa;
       /* 凹版（凹陷質感） */
-      box-shadow: 
-        inset 6px 6px 15px rgba(0, 0, 0, 0.1), 
+      box-shadow:
+        inset 6px 6px 15px rgba(0, 0, 0, 0.1),
         inset -6px -6px 15px rgba(255, 255, 255, 0.8) !important;
       cursor: pointer;
     }
@@ -1159,34 +1163,34 @@
     }
     function toggleSlot(h) {
       let i = panelTempSlots.indexOf(h); const isPicked = i >= 0;
-      
+
       // 核心邏輯恢復：會員是超級管理員，控制教練端的限制
       if (panelMode === 'trainer' && isConsecutiveLocked) {
-        if (!isPicked) { 
+        if (!isPicked) {
           // 檢查前一個時段：如果「會員有釋出該時段」且「目前沒人約」
           const memAvail = memberConfirmed[panelKey] || [];
           const hPrev = h - 1;
           const isMemAvailPrev = memAvail.includes(hPrev) || memAvail.includes(String(hPrev));
           const isTkn = isBookedLocally(hPrev);
 
-          if (isMemAvailPrev && !isTkn) { 
-            showToast(`請先預約 ${hPrev}:00`, 3, true); 
-            return; 
-          } 
-        } else { 
+          if (isMemAvailPrev && !isTkn) {
+            showToast(`請先預約 ${hPrev}:00`, 3, true);
+            return;
+          }
+        } else {
           // 取消時：如果「後一格已被預約」
           const memAvail = memberConfirmed[panelKey] || [];
           const hNext = h + 1;
           const isMemAvailNext = memAvail.includes(hNext) || memAvail.includes(String(hNext));
           const isTknNext = isBookedLocally(hNext);
 
-          if (isMemAvailNext && isTknNext) { 
-            showToast(`${hNext}:00 已有預約，請先取消`, 4, true); 
-            return; 
-          } 
+          if (isMemAvailNext && isTknNext) {
+            showToast(`${hNext}:00 已有預約，請先取消`, 4, true);
+            return;
+          }
         }
       }
-      
+
       if (isPicked) panelTempSlots.splice(i, 1); else panelTempSlots.push(h);
       renderPanelSlots();
     }
