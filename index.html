@@ -846,13 +846,13 @@
 
 <body>
 
-  <div class="cloud-status">
+  <div class="cloud-status" onclick="toggleDebug()">
     <div id="status-dot" class="status-dot"></div>
     <span id="status-text">Connecting...</span>
-    <span id="data-count" style="margin-left:5px; opacity:0.5;"></span>
   </div>
+  <div id="debug-panel" class="debug-panel" style="position:fixed; top:50px; left:10px; z-index:3000; background:#000; color:#0f0; padding:10px; border-radius:8px; font-family:monospace; font-size:10px; max-width:280px; max-height:200px; overflow:auto; display:none;"></div>
 
-  <div class="app-container">
+  <div id="loading-banner" style="position:fixed; top:0; width:100%; background:red; color:white; text-align:center; font-weight:900; z-index:4000; padding:5px; font-size:12px;">系統版本：V1.9 (診斷模式) - 若看到此橫幅請重新點擊狀態燈測試</div>
     <div id="screen-login" class="screen active">
       <div class="logo-area">
         <div class="logo-icon"><span>W</span></div>
@@ -866,7 +866,7 @@
           <button class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
         </div>
       </div>
-      <div class="version-tag">WORLDGYM CLOUD V3.0 FINAL</div>
+      <div class="version-tag">V1.2 (CLOUD SYNC)</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -980,86 +980,46 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const DATA_DOC = db.collection('gym').doc('booking_final_standard');
-    let isDataLoaded = false;
+    const DATA_DOC = db.collection('gym').doc('booking_standard_v2');
 
     var today = new Date();
     var mY = today.getFullYear(), mM = today.getMonth(), tY = today.getFullYear(), tM = today.getMonth();
     var COACH_DATA = { 'Buzz': '#D32F2F', 'Hulk': '#2E7D32', 'Kelly': '#6A1B9A', 'Seven': '#006064', 'Mark': '#1976D2' };
     var selectedTrainer = "";
     var memberConfirmed = {}, trainerConfirmed = {}, memberSession = {}, trainerSession = {}, pendingCoachRemovals = {};
-    var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, consecutiveLocking = false, isCancelCoachMode = false;
-
+    var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, consecutiveLocking = false;
     var isDataLoaded = false;
-    // --- 穩定版：雲端存檔 ---
+
+    // --- 穩定存檔 ---
     function saveData() {
+      if (!isDataLoaded) return;
       const dot = document.getElementById('status-dot');
       if (dot) dot.className = 'status-dot syncing';
-
-      if (!isDataLoaded) { console.warn("資料尚未載入，取消寫入"); return; }
-      DATA_DOC.set({
-        memberConfirmed,
-        trainerConfirmed,
-        consecutiveLocking
-      }).then(() => {
+      DATA_DOC.set({ memberConfirmed, trainerConfirmed, consecutiveLocking }).then(() => {
         if (dot) dot.className = 'status-dot online';
-        console.log("雲端同步成功 v1.4");
-      }).catch(err => {
-        if (dot) dot.className = 'status-dot offline';
-        console.error("同步失敗:", err);
-      });
-    }
-
-    function doFreshRender() {
-      if (document.getElementById('screen-member').classList.contains('active')) renderMemberCal();
-      if (document.getElementById('screen-trainer').classList.contains('active')) {
-        renderTrainerCal();
-        initCoachPicker();
-      }
-    }
-
-    function fetchOnce() {
-      DATA_DOC.get().then(doc => {
-        if (doc.exists()) {
-          const d = doc.data();
-          memberConfirmed = d.memberConfirmed || {};
-          trainerConfirmed = d.trainerConfirmed || {};
-          if (typeof d.consecutiveLocking !== 'undefined') consecutiveLocking = d.consecutiveLocking;
-          doFreshRender();
-          console.log("手動抓取成功");
-        }
-      });
+      }).catch(() => { if (dot) dot.className = 'status-dot offline'; });
     }
 
     function initRealtimeSync() {
       const dot = document.getElementById('status-dot'), txt = document.getElementById('status-text');
-      const countEl = document.getElementById('data-count');
       DATA_DOC.onSnapshot((doc) => {
         if (dot) dot.className = 'status-dot online';
-        if (txt) txt.textContent = "DATABASE V2.2 READY";
-
+        if (txt) txt.textContent = "DATABASE V2.0 READY";
         if (doc.exists()) {
           const d = doc.data();
           memberConfirmed = d.memberConfirmed || {};
           trainerConfirmed = d.trainerConfirmed || {};
           if (typeof d.consecutiveLocking !== 'undefined') consecutiveLocking = d.consecutiveLocking;
-          
-          let total = 0;
-          Object.values(memberConfirmed).forEach(arr => { if(Array.isArray(arr)) total += arr.length; });
-          if (countEl) countEl.textContent = "Data: " + total + " slots";
-
           isDataLoaded = true;
           doFreshRender();
-          updateLockUI();
-        } else {
-          // 真正的第一次：僅標記載入完成，不主動存檔
-          isDataLoaded = true;
-        }
-      }, (err) => {
-        if (dot) dot.className = 'status-dot offline';
-        if (txt) txt.textContent = "Connection Error (Check Rules)";
-        console.error("Firebase Error:", err);
-      });
+        } else { isDataLoaded = true; }
+      }, (err) => { if (txt) txt.textContent = "Offline (Connect Err)"; });
+    }
+
+    function doMemberLogin() {
+      const u = document.getElementById('login-user').value, p = document.getElementById('login-pass').value;
+      if (u === '1' && p === '1') { showScreen('member'); renderMemberCal(); } 
+      else showToast('帳號或密碼錯誤 (1/1)', 2, true);
     }
 
     function showToast(m, sec = 2, isErr = false) { const t = document.getElementById('toast'); t.textContent = m; t.style.background = isErr ? '#D32F2F' : '#2C3E50'; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', sec * 1000); }
@@ -1107,18 +1067,7 @@
     }
     function toggleLockMode() { consecutiveLocking = !consecutiveLocking; updateLockUI(); saveData(); }
     function toggleOnlyMy() { if (!selectedTrainer) { showToast('請先選擇您的身份', 2, true); return; } isOnlyMy = !isOnlyMy; document.getElementById('only-my-btn').classList.toggle('active', isOnlyMy); initCoachPicker(); renderTrainerCal(); }
-    function doMemberLogin() {
-      const u = document.getElementById('login-user').value;
-      const p = document.getElementById('login-pass').value;
-      // 嚴格檢查帳號 1 密碼 1
-      if (u === '1' && p === '1') {
-        fetchOnce(); // 登入時強制拉取一次
-        showScreen('member');
-        renderMemberCal();
-      } else {
-        showToast('帳號或密碼錯誤', 2, true);
-      }
-    }
+    function doMemberLogin() { if (document.getElementById('login-user').value === '1') { showScreen('member'); renderMemberCal(); } }
     function doTrainerLogin() { selectedTrainer = ""; isOnlyMy = false; document.getElementById('only-my-btn').classList.remove('active'); showScreen('trainer'); initCoachPicker(); renderTrainerCal(); }
     function logout() {
       const m = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
@@ -1324,11 +1273,7 @@
         p.style.display = 'block';
         p.innerHTML = `
           <div style="border-bottom:1px solid #555; padding-bottom:5px; margin-bottom:5px;">
-            <div style="color:#FFA000; margin-bottom:5px; font-size:9px; word-break:break-all;">
-              Project: ${firebaseConfig.projectId}<br>
-              Key: ${firebaseConfig.apiKey.substring(0,10)}...<br>
-              Path: gym/booking_standard_v2
-            </div>
+            <div style="color:#FFA000; margin-bottom:5px;">ProjectID: ${firebaseConfig.projectId} (V2.0)</div>
             <button onclick="runWriteTest()" style="background:#0f0; border:none; padding:2px 5px; cursor:pointer; font-weight:900;">🔥 強力寫入測試</button>
             <span id="test-result"></span>
           </div>
