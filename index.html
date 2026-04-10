@@ -980,7 +980,9 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    const DATA_DOC = db.collection('gym').doc('booking_final');
+    // 強制不使用離線快取，確保數據即時性
+    db.clearPersistence().catch(() => {}); 
+    const DATA_DOC = db.collection('gym').doc('booking_standard_v2');
 
     var today = new Date();
     var mY = today.getFullYear(), mM = today.getMonth(), tY = today.getFullYear(), tM = today.getMonth();
@@ -1288,7 +1290,8 @@
         p.style.display = 'block';
         p.innerHTML = `
           <div style="border-bottom:1px solid #555; padding-bottom:5px; margin-bottom:5px;">
-            <button onclick="runWriteTest()" style="background:#0f0; border:none; padding:2px 5px; cursor:pointer;">執行寫入測試</button>
+            <div style="color:#FFA000; margin-bottom:5px;">ProjectID: ${firebaseConfig.projectId} (V2.0)</div>
+            <button onclick="runWriteTest()" style="background:#0f0; border:none; padding:2px 5px; cursor:pointer; font-weight:900;">🔥 強力寫入測試</button>
             <span id="test-result"></span>
           </div>
           <div id="debug-content"></div>
