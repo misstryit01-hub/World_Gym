@@ -964,7 +964,7 @@
         if (doc.exists()) {
           const d = doc.data();
           
-          // --- ✅ 資料正規化：強制轉為運算速度最快的數字型態 ---
+          // ✅ 資料正規化：強制所有時段轉為數字
           memberConfirmed = {};
           if (d.memberConfirmed) {
             Object.keys(d.memberConfirmed).forEach(k => {
@@ -983,10 +983,18 @@
           }
           
           if (typeof d.consecutiveLocking !== 'undefined') consecutiveLocking = d.consecutiveLocking;
-          console.log("[FIREBASE] 數據正規化載入成功", memberConfirmed);
+          console.log("[FIREBASE] 數據已載入:", memberConfirmed);
         }
         isDataLoaded = true;
-        doFreshRender();
+        
+        // 🔥 解法2：資料回來後，若當前在 member/trainer 頁則立即刷新
+        if (document.getElementById('screen-member').classList.contains('active')) {
+          renderMemberCal();
+        }
+        if (document.getElementById('screen-trainer').classList.contains('active')) {
+          renderTrainerCal();
+          initCoachPicker();
+        }
       }, (err) => { 
         console.error("Firebase Sync Error:", err);
         isDataLoaded = true; 
@@ -1003,8 +1011,17 @@
 
     function doMemberLogin() {
       const u = document.getElementById('login-user').value, p = document.getElementById('login-pass').value;
-      if (u === '1' && p === '1') { showScreen('member'); renderMemberCal(); }
-      else showToast('帳號或密碼錯誤 (1/1)', 2, true);
+      if (u === '1' && p === '1') {
+        // 🔥 解法1：資料未就緒前阻擋登入，避免用空資料 render
+        if (!isDataLoaded) {
+          showToast('資料載入中，請稍候...', 2, true);
+          return;
+        }
+        showScreen('member');
+        renderMemberCal();
+      } else {
+        showToast('帳號或密碼錯誤 (1/1)', 2, true);
+      }
     }
 
     function showToast(m, sec = 2, isErr = false) { const t = document.getElementById('toast'); t.textContent = m; t.style.background = isErr ? '#D32F2F' : '#2C3E50'; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', sec * 1000); }
