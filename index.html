@@ -947,15 +947,19 @@
 
     // --- 改良版：雲端存檔 ---
     function saveData() {
+      // 確保不是空的才存檔，避免初始化錯誤覆蓋
+      if (typeof consecutiveLocking === 'undefined') return;
+      
+      console.log("正在同步至雲端... 目前卡控狀態:", consecutiveLocking);
       DATA_DOC.set({
         memberConfirmed,
         trainerConfirmed,
         consecutiveLocking
       }).then(() => {
-        console.log("雲端同步成功");
+        console.log("雲端同步成功 v1.2");
       }).catch(err => {
         console.error("同步失敗:", err);
-        showToast("雲端同步失敗，請檢查網路", 3, true);
+        showToast("雲端同步失敗", 3, true);
       });
     }
 
@@ -966,7 +970,10 @@
           const d = doc.data();
           memberConfirmed = d.memberConfirmed || {};
           trainerConfirmed = d.trainerConfirmed || {};
-          consecutiveLocking = (d.consecutiveLocking !== undefined) ? d.consecutiveLocking : false;
+          // 只有當雲端有資料時才更新
+          if (d.consecutiveLocking !== undefined) {
+            consecutiveLocking = d.consecutiveLocking;
+          }
 
           // 數據變動後，自動刷新目前的視圖
           if (document.getElementById('screen-member').classList.contains('active')) renderMemberCal();
@@ -976,8 +983,7 @@
           }
           updateLockUI();
         } else {
-          // 若資料庫是空的，初始化一份 (預設為 OFF)
-          consecutiveLocking = false;
+          // 資料庫完全空白時才初始化
           saveData();
         }
       });
