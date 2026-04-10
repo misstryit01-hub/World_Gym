@@ -803,56 +803,12 @@
       max-width: 80%;
     }
 
-    .cloud-status {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 3000;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 10px;
-      font-weight: 800;
-      color: #fff;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 6px 12px;
-      border-radius: 20px;
-      backdrop-filter: blur(4px);
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #ccc;
-    }
-
-    .status-dot.online {
-      background: #4CAF50;
-      box-shadow: 0 0 8px #4CAF50;
-    }
-
-    .status-dot.syncing {
-      background: #FFC107;
-      box-shadow: 0 0 8px #FFC107;
-    }
-
-    .status-dot.offline {
-      background: #F44336;
-      box-shadow: 0 0 8px #F44336;
-    }
   </style>
 </head>
 
 <body>
 
-  <div class="cloud-status" onclick="toggleDebug()">
-    <div id="status-dot" class="status-dot"></div>
-    <span id="status-text">Connecting...</span>
-  </div>
-  <div id="debug-panel" class="debug-panel" style="position:fixed; top:50px; left:10px; z-index:3000; background:#000; color:#0f0; padding:10px; border-radius:8px; font-family:monospace; font-size:10px; max-width:280px; max-height:200px; overflow:auto; display:none;"></div>
-
-  <div id="loading-banner" style="position:fixed; top:0; width:100%; background:red; color:white; text-align:center; font-weight:900; z-index:4000; padding:5px; font-size:12px;">系統版本：V1.9 (診斷模式) - 若看到此橫幅請重新點擊狀態燈測試</div>
+  <div class="app-container">
     <div id="screen-login" class="screen active">
       <div class="logo-area">
         <div class="logo-icon"><span>W</span></div>
@@ -993,18 +949,11 @@
     // --- 穩定存檔 ---
     function saveData() {
       if (!isDataLoaded) return;
-      const dot = document.getElementById('status-dot');
-      if (dot) dot.className = 'status-dot syncing';
-      DATA_DOC.set({ memberConfirmed, trainerConfirmed, consecutiveLocking }).then(() => {
-        if (dot) dot.className = 'status-dot online';
-      }).catch(() => { if (dot) dot.className = 'status-dot offline'; });
+      DATA_DOC.set({ memberConfirmed, trainerConfirmed, consecutiveLocking }).catch((err) => console.error("Save Error:", err));
     }
 
     function initRealtimeSync() {
-      const dot = document.getElementById('status-dot'), txt = document.getElementById('status-text');
       DATA_DOC.onSnapshot((doc) => {
-        if (dot) dot.className = 'status-dot online';
-        if (txt) txt.textContent = "DATABASE V2.0 READY";
         if (doc.exists()) {
           const d = doc.data();
           memberConfirmed = d.memberConfirmed || {};
@@ -1013,7 +962,7 @@
           isDataLoaded = true;
           doFreshRender();
         } else { isDataLoaded = true; }
-      }, (err) => { if (txt) txt.textContent = "Offline (Connect Err)"; });
+      }, (err) => { console.error("Sync Error:", err); });
     }
 
     function doMemberLogin() {
@@ -1266,35 +1215,6 @@
     function closePanel() { document.getElementById('time-panel').style.display = 'none'; }
     function closePanelIfBg(e) { if (e.target.id === 'time-panel') closePanel(); }
     function resetMemberSession() { memberSession = {}; pendingCoachRemovals = {}; renderMemberCal(); }
-    function toggleDebug() {
-      const p = document.getElementById('debug-panel');
-      if (p.style.display === 'block') p.style.display = 'none';
-      else {
-        p.style.display = 'block';
-        p.innerHTML = `
-          <div style="border-bottom:1px solid #555; padding-bottom:5px; margin-bottom:5px;">
-            <div style="color:#FFA000; margin-bottom:5px;">ProjectID: ${firebaseConfig.projectId} (V2.0)</div>
-            <button onclick="runWriteTest()" style="background:#0f0; border:none; padding:2px 5px; cursor:pointer; font-weight:900;">🔥 強力寫入測試</button>
-            <span id="test-result"></span>
-          </div>
-          <div id="debug-content"></div>
-        `;
-        document.getElementById('debug-content').textContent = "MemberData: " + JSON.stringify(memberConfirmed) + "\n\nTrainerData: " + JSON.stringify(trainerConfirmed);
-      }
-    }
-    function runWriteTest() {
-      const res = document.getElementById('test-result');
-      res.textContent = "傳輸中...";
-      // 使用 set + merge，確保即便文件不存在也能強制建立
-      DATA_DOC.set({ lastTest: new Date().toISOString() }, { merge: true }).then(() => {
-        res.textContent = "寫入成功！✅";
-        res.style.color = "#0f0";
-      }).catch(err => {
-        res.textContent = "失敗: " + err.message;
-        res.style.color = "#f00";
-        console.error(err);
-      });
-    }
   </script>
 </body>
 
