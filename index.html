@@ -846,9 +846,11 @@
 
 <body>
 
-  <div class="cloud-status">
-    <div id="status-dot" class="status-dot"></div><span id="status-text">Cloud Syncing...</span>
+  <div class="cloud-status" onclick="toggleDebug()">
+    <div id="status-dot" class="status-dot"></div>
+    <span id="status-text">Connecting...</span>
   </div>
+  <div id="debug-panel" class="debug-panel" style="position:fixed; top:50px; left:10px; z-index:3000; background:#000; color:#0f0; padding:10px; border-radius:8px; font-family:monospace; font-size:10px; max-width:280px; max-height:200px; overflow:auto; display:none;"></div>
 
   <div class="app-container">
     <div id="screen-login" class="screen active">
@@ -1279,6 +1281,14 @@
     function closePanel() { document.getElementById('time-panel').style.display = 'none'; }
     function closePanelIfBg(e) { if (e.target.id === 'time-panel') closePanel(); }
     function resetMemberSession() { memberSession = {}; pendingCoachRemovals = {}; renderMemberCal(); }
+    function toggleDebug() {
+      const p = document.getElementById('debug-panel');
+      if (p.style.display === 'block') p.style.display = 'none';
+      else {
+        p.style.display = 'block';
+        p.textContent = "MemberData: " + JSON.stringify(memberConfirmed) + "\n\nTrainerData: " + JSON.stringify(trainerConfirmed);
+      }
+    }
   </script>
 </body>
 
