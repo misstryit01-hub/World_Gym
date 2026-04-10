@@ -935,8 +935,8 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-    // 鎖定路徑：
-    const DATA_DOC = db.collection('gym').doc('booking_standard_v2');
+    // 全新乾淨路徑（統一版本）
+    const DATA_DOC = db.collection('gym').doc('booking_main');
 
     var today = new Date();
     var mY = today.getFullYear(), mM = today.getMonth(), tY = today.getFullYear(), tM = today.getMonth();
@@ -1012,13 +1012,10 @@
     function doMemberLogin() {
       const u = document.getElementById('login-user').value, p = document.getElementById('login-pass').value;
       if (u === '1' && p === '1') {
-        // 🔥 解法1：資料未就緒前阻擋登入，避免用空資料 render
-        if (!isDataLoaded) {
-          showToast('資料載入中，請稍候...', 2, true);
-          return;
-        }
         showScreen('member');
         renderMemberCal();
+        // 若資料尚未載入，顯示提示（不阻擋登入，Firebase 到了會自動刷新）
+        if (!isDataLoaded) showToast('資料同步中，日曆將自動更新...', 3);
       } else {
         showToast('帳號或密碼錯誤 (1/1)', 2, true);
       }
