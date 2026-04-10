@@ -1017,7 +1017,10 @@
       updateFilterText();
     }
     function updateFilterText() { const txt = document.getElementById('filter-text'); if (txt) txt.textContent = selectedTrainer ? `只顯示 ${selectedTrainer} 的課程` : '只顯示您的課程'; }
-    function updateLockUI() { const el = document.getElementById('lock-toggle'); if (!el) return; el.classList.toggle('active', isConsecutiveLocked); document.getElementById('lock-status').textContent = isConsecutiveLocked ? 'ON' : 'OFF'; }
+    function updateLockUI() {
+      const elM = document.getElementById('lock-toggle');
+      if (elM) { elM.classList.toggle('active', isConsecutiveLocked); document.getElementById('lock-status').textContent = isConsecutiveLocked ? 'ON' : 'OFF'; }
+    }
     function toggleLockMode() { isConsecutiveLocked = !isConsecutiveLocked; updateLockUI(); saveData(); }
     function toggleOnlyMy() { if (!selectedTrainer) { showToast('請先選擇您的身份', 2, true); return; } isOnlyMy = !isOnlyMy; document.getElementById('only-my-btn').classList.toggle('active', isOnlyMy); initCoachPicker(); renderTrainerCal(); }
     function doMemberLogin() { if (document.getElementById('login-user').value === '1') { showScreen('member'); renderMemberCal(); } }
@@ -1155,10 +1158,28 @@
     }
     function toggleSlot(h) {
       let i = panelTempSlots.indexOf(h); const isPicked = i >= 0;
+      
+      // 核心邏輯恢復：會員是超級管理員，控制教練端的限制
       if (panelMode === 'trainer' && isConsecutiveLocked) {
-        if (!isPicked) { if ((memberConfirmed[panelKey] || []).indexOf(h - 1) >= 0 && !isBookedLocally(h - 1)) { showToast(`請先預約 ${h - 1}:00`, 3, true); return; } }
-        else { if ((memberConfirmed[panelKey] || []).indexOf(h + 1) >= 0 && isBookedLocally(h + 1)) { showToast(`${h + 1}:00 已有預約，請先取消`, 4, true); return; } }
+        if (!isPicked) { 
+          // 檢查前一個時段是否「已被預約」
+          const prevBooked = isBookedLocally(h - 1);
+          const prevMem = (memberConfirmed[panelKey] || []).indexOf(h - 1) >= 0;
+          if (prevMem && !prevBooked) { 
+            showToast(`請先預約 ${h - 1}:00`, 3, true); 
+            return; 
+          } 
+        } else { 
+          // 取消時，檢查後一個時段
+          const nextBooked = isBookedLocally(h + 1);
+          const nextMem = (memberConfirmed[panelKey] || []).indexOf(h + 1) >= 0;
+          if (nextMem && nextBooked) { 
+            showToast(`${h + 1}:00 已有預約，請先取消`, 4, true); 
+            return; 
+          } 
+        }
       }
+      
       if (isPicked) panelTempSlots.splice(i, 1); else panelTempSlots.push(h);
       renderPanelSlots();
     }
