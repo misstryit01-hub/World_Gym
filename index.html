@@ -252,7 +252,7 @@
 
     .coach-chip.locked {
       opacity: 0.2;
-      grayscale: 1;
+      filter: grayscale(1);
     }
 
     .header-area {
@@ -655,7 +655,7 @@
 
     .time-slot.consecutive-soft-locked {
       opacity: 0.45;
-      grayscale: 0.9;
+      filter: grayscale(0.9);
       cursor: pointer;
       border: 2px dotted #aaa;
       background: #fdfdfd;
@@ -1042,7 +1042,6 @@
     }
     function toggleLockMode() { consecutiveLocking = !consecutiveLocking; updateLockUI(); saveData(); }
     function toggleOnlyMy() { if (!selectedTrainer) { showToast('請先選擇您的身份', 2, true); return; } isOnlyMy = !isOnlyMy; document.getElementById('only-my-btn').classList.toggle('active', isOnlyMy); initCoachPicker(); renderTrainerCal(); }
-    function doMemberLogin() { if (document.getElementById('login-user').value === '1') { showScreen('member'); renderMemberCal(); } }
     function doTrainerLogin() { selectedTrainer = ""; isOnlyMy = false; document.getElementById('only-my-btn').classList.remove('active'); showScreen('trainer'); initCoachPicker(); renderTrainerCal(); }
     function logout() {
       const m = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
@@ -1183,36 +1182,22 @@
       }
     }
     function toggleSlot(h) {
+      h = Number(h);
       let i = panelTempSlots.indexOf(h); const isPicked = i >= 0;
-
-      // 核心邏輯恢復：會員是超級管理員，控制教練端的限制
-      // 核心邏輯恢復：會員是超級管理員，控制教練端的限制
       if (panelMode === 'trainer' && consecutiveLocking === true) {
+        const memAvail = (memberConfirmed[panelKey] || []).map(Number);
         if (!isPicked) {
-          // 檢查前一個時段：如果「會員有釋出該時段」且「目前沒人約」
-          const memAvail = memberConfirmed[panelKey] || [];
           const hPrev = h - 1;
-          const isMemAvailPrev = memAvail.includes(hPrev) || memAvail.includes(String(hPrev));
-          const isTkn = isBookedLocally(hPrev);
-
-          if (isMemAvailPrev && !isTkn) {
-            showToast(`請先預約 ${hPrev}:00`, 3, true);
-            return;
+          if (memAvail.includes(hPrev) && !isBookedLocally(hPrev)) {
+            showToast(`請先預約 ${hPrev}:00`, 3, true); return;
           }
         } else {
-          // 取消時：如果「後一格已被預約」
-          const memAvail = memberConfirmed[panelKey] || [];
           const hNext = h + 1;
-          const isMemAvailNext = memAvail.includes(hNext) || memAvail.includes(String(hNext));
-          const isTknNext = isBookedLocally(hNext);
-
-          if (isMemAvailNext && isTknNext) {
-            showToast(`${hNext}:00 已有預約，請先取消`, 4, true);
-            return;
+          if (memAvail.includes(hNext) && isBookedLocally(hNext)) {
+            showToast(`${hNext}:00 已有預約，請先取消`, 4, true); return;
           }
         }
       }
-
       if (isPicked) panelTempSlots.splice(i, 1); else panelTempSlots.push(h);
       renderPanelSlots();
     }
