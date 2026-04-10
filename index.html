@@ -852,7 +852,7 @@
   </div>
   <div id="debug-panel" class="debug-panel" style="position:fixed; top:50px; left:10px; z-index:3000; background:#000; color:#0f0; padding:10px; border-radius:8px; font-family:monospace; font-size:10px; max-width:280px; max-height:200px; overflow:auto; display:none;"></div>
 
-  <div class="app-container">
+  <div id="loading-banner" style="position:fixed; top:0; width:100%; background:red; color:white; text-align:center; font-weight:900; z-index:4000; padding:5px; font-size:12px;">系統版本：V1.9 (診斷模式) - 若看到此橫幅請重新點擊狀態燈測試</div>
     <div id="screen-login" class="screen active">
       <div class="logo-area">
         <div class="logo-icon"><span>W</span></div>
@@ -1012,7 +1012,7 @@
       const dot = document.getElementById('status-dot'), txt = document.getElementById('status-text');
       DATA_DOC.onSnapshot((doc) => {
         if (dot) dot.className = 'status-dot online';
-        if (txt) txt.textContent = "Database Connected v1.6";
+        if (txt) txt.textContent = "DATABASE V1.9 READY";
 
         if (doc.exists()) {
           const d = doc.data();
