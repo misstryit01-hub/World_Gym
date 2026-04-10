@@ -354,13 +354,13 @@
     }
 
     .toggle-item.active {
-      background: #E8F5E9;
-      border-color: var(--wg-green);
-      color: var(--wg-green);
+      background: #C8E6C9; /* 較明顯的淺綠色 */
+      border-color: #4CAF50;
+      color: #2E7D32;
       scale: 0.96;
       box-shadow: 
-        inset 4px 4px 8px rgba(0, 0, 0, 0.1), 
-        inset -4px -4px 8px rgba(255, 255, 255, 0.2) !important;
+        inset 5px 5px 10px rgba(0, 0, 0, 0.15), 
+        inset -5px -5px 10px rgba(255, 255, 255, 0.5) !important;
     }
 
     .trainer-ctrl-row {
@@ -939,7 +939,7 @@
     var COACH_DATA = { 'Buzz': '#D32F2F', 'Hulk': '#2E7D32', 'Kelly': '#6A1B9A', 'Seven': '#006064', 'Mark': '#1976D2' };
     var selectedTrainer = "";
     var memberConfirmed = {}, trainerConfirmed = {}, memberSession = {}, trainerSession = {}, pendingCoachRemovals = {};
-    var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, isConsecutiveLocked = true, isCancelCoachMode = false;
+    var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, isConsecutiveLocked = false, isCancelCoachMode = false;
 
     // --- 改良版：雲端存檔 ---
     function saveData() {
