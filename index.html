@@ -34,6 +34,7 @@
       display: flex;
       justify-content: center;
       min-height: 100vh;
+      padding-bottom: 50px; /* 避免手機瀏覽器底部工具列遮擋最後一排 */
     }
 
     .app-container {
@@ -461,7 +462,7 @@
 
     .cal-grid {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(7, minmax(0, 1fr));
       background: #fff;
       border: 1.5 solid #eee;
       border-radius: 16px;
@@ -525,15 +526,16 @@
     .mini-slot {
       font-size: 9px;
       line-height: 1.2;
-      padding: 3.5px 2px;
+      padding: 3.5px 1px;
       border-radius: 4px;
       color: #fff;
       font-weight: 900;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      display: block;
+      text-align: center;
       white-space: nowrap;
       overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
     }
@@ -581,12 +583,39 @@
       color: #666;
     }
 
+    .btn-clear-month {
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: 800;
+      border-radius: 6px;
+      background: #FFF0F0;
+      color: var(--wg-red);
+      border: 1px solid #FFCDD2;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-clear-month:hover {
+      border-color: rgba(211, 47, 47, 0.3);
+      box-shadow: inset -2px -2px 5px rgba(0, 0, 0, 0.2), inset 2px 2px 5px rgba(255, 255, 255, 0.5) !important;
+    }
+
+    .btn-clear-month:active {
+      scale: 0.95;
+      background: #FFEBEE;
+      box-shadow:
+        inset 6px 6px 15px rgba(211, 47, 47, 0.25),
+        inset -6px -6px 15px rgba(255, 255, 255, 0.7) !important;
+    }
+
     /* 時段面板美化與框框強化 */
     .time-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
       margin: 1rem 0;
+      overflow-y: auto;
+      padding-bottom: 10px; /* 增加底部呼吸空間，避免文字被壓住 */
     }
 
     .time-slot {
@@ -775,6 +804,9 @@
       border-radius: 32px 32px 0 0;
       padding: 2rem 1.5rem;
       animation: slideUp 0.3s forwards;
+      display: flex;
+      flex-direction: column;
+      max-height: 85vh; /* 限制最高高度，強迫時間時段內部出現捲軸 */
     }
 
     .version-tag {
@@ -822,13 +854,17 @@
           <button class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
         </div>
       </div>
-      <div class="version-tag">V5.7 (CLOUD SYNC)</div>
+      <div class="version-tag">V5.8 (CLEAR ALL)</div>
     </div>
 
     <div id="screen-member" class="screen">
       <div class="card">
         <div class="header-area">
-          <h3>Paul 的個人專屬課表</h3><button class="btn-logout" onclick="logout()">登出</button>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <h3>Paul 的個人專屬課表</h3>
+            <button class="btn-clear-month" onclick="promptClearMonth()">清空整月預約</button>
+          </div>
+          <button class="btn-logout" onclick="logout()">登出</button>
         </div>
         <div class="member-toggles-row">
           <div id="batch-toggle" class="toggle-item green" onclick="toggleBatchMode()"><span>批量模式</span><span
@@ -856,7 +892,7 @@
           <button class="btn-ui btn-ui-green" id="member-confirm-btn" onclick="confirmMember()" disabled
             style="flex:2;">提交全部修改</button>
         </div>
-        <div class="version-tag">V5.7 (CLOUD SYNC)</div>
+        <div class="version-tag">V5.8 (CLEAR ALL)</div>
       </div>
     </div>
 
@@ -890,7 +926,7 @@
           <div class="cal-day-label">S</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V5.7 (CLOUD SYNC)</div>
+        <div class="version-tag">V5.8 (CLEAR ALL)</div>
       </div>
     </div>
   </div>
@@ -1084,6 +1120,58 @@
     function isBooked(k, h) { if (pendingCoachRemovals[k] && pendingCoachRemovals[k].indexOf(h) >= 0) return false; return Object.keys(COACH_DATA).some(tr => trainerConfirmed[tr] && trainerConfirmed[tr][k] && trainerConfirmed[tr][k].indexOf(h) >= 0); }
     function isBookedLocally(h) { if (panelTempSlots.indexOf(h) >= 0) return true; return isBooked(panelKey, h); }
 
+    function clearMonthData() {
+      const prefix = mY + '-' + String(mM + 1).padStart(2, '0');
+      let hasCleared = false;
+
+      Object.keys(memberConfirmed).forEach(k => {
+        if (k.startsWith(prefix)) { delete memberConfirmed[k]; hasCleared = true; }
+      });
+      Object.keys(memberSession).forEach(k => {
+        if (k.startsWith(prefix)) { delete memberSession[k]; }
+      });
+      Object.keys(pendingCoachRemovals).forEach(k => {
+        if (k.startsWith(prefix)) { delete pendingCoachRemovals[k]; }
+      });
+      Object.keys(trainerConfirmed).forEach(coach => {
+        Object.keys(trainerConfirmed[coach]).forEach(k => {
+          if (k.startsWith(prefix)) { delete trainerConfirmed[coach][k]; hasCleared = true; }
+        });
+      });
+
+      if (hasCleared) {
+        saveData();
+        renderMemberCal();
+        showToast("本月份所有排課與教練紀錄已全數淨空！", 4);
+      } else {
+        showToast("本月份暫無任何排課可供清除", 2, true);
+      }
+    }
+
+    function promptClearMonth() {
+      const prefix = mY + '-' + String(mM + 1).padStart(2, '0');
+      let hasRecords = Object.keys(memberConfirmed).some(k => k.startsWith(prefix));
+      if (!hasRecords) { showToast("本月份目前無排課資料", 2, true); return; }
+
+      openCustomConfirm(
+        "警告：這將徹底清空本月的所有排課！若有教練已排定您的課程，也會一併被強制刪除！確定執行？",
+        () => {
+          setTimeout(() => {
+            openCustomConfirm(
+              "【二重確認】 此動作不可逆！\n確定要永久清空整個月的資料嗎？",
+              () => { clearMonthData(); },
+              "⚠️ 危險操作",
+              "取消保留",
+              "強硬清空"
+            );
+          }, 150);
+        },
+        "⚠️ 清空整月排課",
+        "取消",
+        "下一步確認"
+      );
+    }
+
     function renderMemberCal() {
       document.getElementById('member-month-label').textContent = mY + '年 ' + String(mM + 1).padStart(2, '0') + '月';
       const grid = document.getElementById('member-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
@@ -1098,7 +1186,7 @@
         else if (memberConfirmed[k]) memberConfirmed[k].forEach(h => { if (!isBooked(k, h)) allS.push({ h, tr: 'M', type: 'conf' }) });
         allS.sort((a, b) => a.h - b.h).forEach(s => {
           if (s.tr === 'M') list.appendChild(Object.assign(document.createElement('div'), { className: 'mini-slot slot-avail-member', textContent: `${s.h}:00可預約` }));
-          else list.appendChild(Object.assign(document.createElement('div'), { className: 'mini-slot', style: `background:${COACH_DATA[s.tr]}`, textContent: s.h + ':00 ' + s.tr }));
+          else list.appendChild(Object.assign(document.createElement('div'), { className: 'mini-slot slot-embossed-focus', style: `background:${COACH_DATA[s.tr]}`, textContent: s.h + ':00 ' + s.tr }));
         });
         el.className = 'cal-cell' + (isPast ? ' past' : ' clickable') + ((memberSession[k] || pendingCoachRemovals[k]) ? ' is-changed' : '');
         el.innerHTML = `<span class="cal-cell-num">${d}</span>`; el.appendChild(list);
