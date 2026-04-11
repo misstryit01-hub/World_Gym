@@ -462,11 +462,11 @@
 
     .cal-grid {
       display: grid;
-      grid-template-columns: repeat(7, minmax(0, 1fr));
+      grid-template-columns: repeat(7, minmax(58px, 1fr));
       background: #fff;
-      border: 1.5 solid #eee;
+      border: 1.5px solid #eee;
       border-radius: 16px;
-      overflow: hidden;
+      overflow-x: auto;
     }
 
     .cal-day-label {
@@ -526,16 +526,14 @@
     .mini-slot {
       font-size: 9px;
       line-height: 1.2;
-      padding: 3.5px 1px;
+      padding: 3.5px 2px;
       border-radius: 4px;
       color: #fff;
       font-weight: 900;
-      display: block;
-      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 100%;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
     }
@@ -738,7 +736,7 @@
     .custom-confirm-card {
       background: #fff;
       width: 100%;
-      max-width: 380px;
+      max-width: 400px;
       border-radius: 28px;
       padding: 2rem;
       border: 4px solid var(--wg-red);
@@ -759,6 +757,7 @@
       color: #666;
       margin-bottom: 2rem;
       line-height: 1.5;
+      white-space: pre-wrap;
     }
 
     .confirm-btns {
@@ -854,7 +853,7 @@
           <button class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
         </div>
       </div>
-      <div class="version-tag">V5.8 (CLEAR ALL)</div>
+      <div class="version-tag">V5.9 (FULL TEXT & UX)</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -867,9 +866,9 @@
           <button class="btn-logout" onclick="logout()">登出</button>
         </div>
         <div class="member-toggles-row">
-          <div id="batch-toggle" class="toggle-item green" onclick="toggleBatchMode()"><span>批量模式</span><span
+          <div id="batch-toggle" class="toggle-item green" onclick="toggleBatchMode()"><span>複製套用模式</span><span
               id="batch-status" style="font-size:10px; color:#aaa;">OFF</span></div>
-          <div id="lock-toggle" class="toggle-item" onclick="toggleLockMode()"><span>連續排課卡控</span><span id="lock-status"
+          <div id="lock-toggle" class="toggle-item" onclick="toggleLockMode()"><span>強制連續排課</span><span id="lock-status"
               style="font-size:10px; color:#aaa;">OFF</span></div>
         </div>
         <div class="cal-nav">
@@ -892,7 +891,7 @@
           <button class="btn-ui btn-ui-green" id="member-confirm-btn" onclick="confirmMember()" disabled
             style="flex:2;">提交全部修改</button>
         </div>
-        <div class="version-tag">V5.8 (CLEAR ALL)</div>
+        <div class="version-tag">V5.9 (FULL TEXT & UX)</div>
       </div>
     </div>
 
@@ -926,7 +925,7 @@
           <div class="cal-day-label">S</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V5.8 (CLEAR ALL)</div>
+        <div class="version-tag">V5.9 (FULL TEXT & UX)</div>
       </div>
     </div>
   </div>
@@ -1024,6 +1023,7 @@
           console.log("[FIREBASE] 數據已載入:", memberConfirmed);
         }
         isDataLoaded = true;
+        updateLockUI(); // 修復重點：讓剛剛取得的連續排課設定確實反映在畫面上
         
         // 🔥 解法2：資料回來後，若當前在 member/trainer 頁則立即刷新
         if (document.getElementById('screen-member').classList.contains('active')) {
@@ -1102,14 +1102,48 @@
       const elM = document.getElementById('lock-toggle');
       if (elM) { elM.classList.toggle('active', consecutiveLocking); document.getElementById('lock-status').textContent = consecutiveLocking ? 'ON' : 'OFF'; }
     }
-    function toggleLockMode() { consecutiveLocking = !consecutiveLocking; updateLockUI(); saveData(); }
+    function toggleLockMode() { 
+      if (!consecutiveLocking) {
+        openCustomConfirm(
+          "教練在您的「連續空堂」內\n必須依照順序排課，不可跳空！\n\n( 註：分開的獨立時段不受影響 )\n\n確定要啟用嗎？",
+          () => {
+            consecutiveLocking = true; 
+            updateLockUI(); 
+            saveData();
+            showToast('防呆鎖定已啟用', 3);
+          },
+          "💡 強制連續排課：功能說明",
+          "暫不啟用",
+          "了解並啟用"
+        );
+      } else {
+        consecutiveLocking = false; 
+        updateLockUI(); 
+        saveData(); 
+        showToast('已關閉強制連續排課', 2, true);
+      }
+    }
     function toggleOnlyMy() { if (!selectedTrainer) { showToast('請先選擇您的身份', 2, true); return; } isOnlyMy = !isOnlyMy; document.getElementById('only-my-btn').classList.toggle('active', isOnlyMy); initCoachPicker(); renderTrainerCal(); }
     function doTrainerLogin() { selectedTrainer = ""; isOnlyMy = false; document.getElementById('only-my-btn').classList.remove('active'); showScreen('trainer'); initCoachPicker(); renderTrainerCal(); }
     function logout() {
       const m = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
       if (m) openCustomConfirm("尚未確認提交，登出將遺失資料。確定嗎？", () => { executeLogout(); }, "尚未存檔", "繼續", "確定登出"); else executeLogout();
     }
-    function executeLogout() { showScreen('login'); memberSession = {}; trainerSession = {}; pendingCoachRemovals = {}; selectedTrainer = ""; batchTemplate = null; isOnlyMy = false; }
+    function executeLogout() { 
+      showScreen('login'); 
+      memberSession = {}; 
+      trainerSession = {}; 
+      pendingCoachRemovals = {}; 
+      selectedTrainer = ""; 
+      batchTemplate = null; 
+      isOnlyMy = false; 
+      isBatchMode = false;
+      const tgl = document.getElementById('batch-toggle');
+      if (tgl) {
+        tgl.classList.remove('active');
+        document.getElementById('batch-status').textContent = 'OFF';
+      }
+    }
     function showScreen(s) { document.querySelectorAll('.screen').forEach(el => el.classList.remove('active')); document.getElementById('screen-' + s).classList.add('active'); }
     function dateKey(y, m, d) { return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0'); }
     function changeMonth(who, f) {
