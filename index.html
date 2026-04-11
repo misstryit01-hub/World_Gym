@@ -1040,8 +1040,8 @@
     function saveData() {
       if (!isDataLoaded) { showToast("連線載入中，請稍候...", 2, true); return; }
       
-      // 使用 {merge: true} 確保不洗掉其他欄位，且強制將當前 session 轉為數字存入
-      DATA_DOC.set({ memberConfirmed, trainerConfirmed, consecutiveLocking }, { merge: true })
+      // 核心修正：改用 update 而非 set(merge:true)，確保被刪除的 Key 能在雲端真正消失
+      DATA_DOC.update({ memberConfirmed, trainerConfirmed, consecutiveLocking })
         .then(() => { showToast("✅ 資料已同步至雲端", 2); })
         .catch((err) => { 
           showToast("❌ 儲存失敗", 2, true);
