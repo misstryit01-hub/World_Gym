@@ -709,7 +709,7 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 8px;
+      gap: 5px; /* 縮小間距以容納五人 */
       margin: 1.5rem -1rem -1.5rem -1rem; /* 延伸到邊界 */
       border-top: 1.5px solid #f2f2f2;
       padding: 18px 12px;
@@ -719,17 +719,19 @@
 
     .legend-item {
       display: flex;
+      flex-direction: column; /* 改為垂直排列 */
       align-items: center;
-      gap: 5px;
-      font-size: 10.5px;
+      gap: 2px;
+      font-size: 10px;
       color: #666;
       font-weight: 800;
-      padding: 6px 10px;
+      padding: 4px 5px;
       background: #fff;
-      border-radius: 10px;
+      border-radius: 8px;
       border: 1px solid #eee;
       box-shadow: 0 2px 4px rgba(0,0,0,0.02);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      min-width: 58px; /* 確保寬度一致 */
     }
 
     .legend-item.dimmed {
@@ -746,10 +748,10 @@
     }
 
     .legend-count {
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
       color: #999;
-      margin-left: 1px;
+      margin-top: -1px;
     }
 
     /* 自定義確認視窗 */
@@ -887,7 +889,7 @@
           </div>
         </div>
       </div>
-      <div class="version-tag">V6.4 (STACKED & AUTO-REFRESH)</div>
+      <div class="version-tag">V6.5 (STACKED LEGEND & COMPACT)</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -927,7 +929,7 @@
               style="flex:2;">提交全部修改</button>
           </div>
         </div>
-        <div class="version-tag">V6.4 (STACKED & AUTO-REFRESH)</div>
+        <div class="version-tag">V6.5 (STACKED LEGEND & COMPACT)</div>
       </div>
     </div>
 
@@ -961,7 +963,7 @@
           <div class="cal-day-label">六</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V6.4 (STACKED & AUTO-REFRESH)</div>
+        <div class="version-tag">V6.5 (STACKED LEGEND & COMPACT)</div>
       </div>
     </div>
   </div>
@@ -1146,7 +1148,13 @@
         const isDimmed = selectedTrainer && selectedTrainer !== n;
         const item = document.createElement('div'); 
         item.className = 'legend-item' + (isDimmed ? ' dimmed' : '');
-        item.innerHTML = `<div class="legend-dot" style="background:${COACH_DATA[n]}"></div>${n} <span class="legend-count">(${count}堂)</span>`;
+        item.innerHTML = `
+          <div style="display:flex; align-items:center; gap:3px;">
+            <div class="legend-dot" style="background:${COACH_DATA[n]}"></div>
+            <span>${n}</span>
+          </div>
+          <span class="legend-count">${count}堂</span>
+        `;
         l.appendChild(item);
       });
       updateFilterText();
