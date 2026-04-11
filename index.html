@@ -849,11 +849,11 @@
         <h2>專屬課程預約系統</h2>
       </div>
       <div class="card">
-        <button class="btn-trainer-gate" onclick="doTrainerLogin()">教練專區入口</button>
+        <button type="button" class="btn-trainer-gate" onclick="doTrainerLogin()">教練專區入口</button>
         <div style="border-top: 2.5px dashed #eee; padding-top: 1.5rem;">
-          <div class="field"><label>Account 帳號</label><input type="text" id="login-user" placeholder="帳號"></div>
-          <div class="field"><label>Password 密碼</label><input type="password" id="login-pass" placeholder="密碼"></div>
-          <button class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
+          <div class="field"><label>Account 帳號</label><input type="text" id="login-user" placeholder="帳號" autocomplete="off"></div>
+          <div class="field"><label>Password 密碼</label><input type="password" id="login-pass" placeholder="密碼" autocomplete="off"></div>
+          <button type="button" class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
         </div>
       </div>
       <div class="version-tag">V6.0 (BRAND RESET & NO CACHE)</div>
@@ -864,9 +864,9 @@
         <div class="header-area">
           <div style="display:flex; align-items:center; gap:8px;">
             <h3>Paul 的個人專屬課表</h3>
-            <button class="btn-clear-month" onclick="promptClearMonth()">清空整月預約</button>
+            <button type="button" class="btn-clear-month" onclick="promptClearMonth()">清空整月預約</button>
           </div>
-          <button class="btn-logout" onclick="logout()">登出</button>
+          <button type="button" class="btn-logout" onclick="logout()">登出</button>
         </div>
         <div class="member-toggles-row">
           <div id="batch-toggle" class="toggle-item green" onclick="toggleBatchMode()"><span>複製套用模式</span><span
@@ -875,9 +875,9 @@
               style="font-size:10px; color:#aaa;">OFF</span></div>
         </div>
         <div class="cal-nav">
-          <button class="nav-btn" onclick="changeMonth('m',-1)"><span class="arrow arrow-left"></span></button>
+          <button type="button" class="nav-btn" onclick="changeMonth('m',-1)"><span class="arrow arrow-left"></span></button>
           <span class="month-label" id="member-month-label"></span>
-          <button class="nav-btn" onclick="changeMonth('m',1)"><span class="arrow arrow-right"></span></button>
+          <button type="button" class="nav-btn" onclick="changeMonth('m',1)"><span class="arrow arrow-right"></span></button>
         </div>
         <div class="cal-grid" id="member-cal">
           <div class="cal-day-label">S</div>
@@ -889,9 +889,9 @@
           <div class="cal-day-label">S</div>
         </div>
         <div style="display:flex; gap:10px; margin-top:1.5rem;">
-          <button class="btn-ui btn-ui-secondary" id="member-reset-btn" onclick="resetMemberSession()"
+          <button type="button" class="btn-ui btn-ui-secondary" id="member-reset-btn" onclick="resetMemberSession()"
             style="flex:1; display:none;">取消選取</button>
-          <button class="btn-ui btn-ui-green" id="member-confirm-btn" onclick="confirmMember()" disabled
+          <button type="button" class="btn-ui btn-ui-green" id="member-confirm-btn" onclick="confirmMember()" disabled
             style="flex:2;">提交全部修改</button>
         </div>
         <div class="version-tag">V6.0 (BRAND RESET & NO CACHE)</div>
@@ -1113,9 +1113,9 @@
             consecutiveLocking = true; 
             updateLockUI(); 
             saveData();
-            showToast('防呆鎖定已啟用', 3);
+            showToast('防爆鎖定已啟用', 3);
           },
-          "💡 強制連續排課：功能說明",
+          "🔒 強制連續排課：功能說明",
           "暫不啟用",
           "了解並啟用"
         );
