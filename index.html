@@ -802,6 +802,81 @@
       text-align: center;
       max-width: 80%;
     }
+
+    .btn-db-diag {
+      width: 100%;
+      margin-top: 10px;
+      padding: 11px;
+      border: 2px dashed #90CAF9;
+      border-radius: 12px;
+      background: #E3F2FD;
+      color: #1565C0;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: all 0.2s;
+    }
+    .btn-db-diag:hover {
+      background: #BBDEFB;
+      transform: scale(0.98);
+    }
+
+    .diag-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(2px);
+      z-index: 3000;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding: 0;
+    }
+    .diag-card {
+      background: #1a1a2e;
+      color: #A5D6A7;
+      width: 100%;
+      max-width: 520px;
+      max-height: 75vh;
+      border-radius: 28px 28px 0 0;
+      padding: 1.5rem;
+      font-family: monospace;
+      font-size: 12px;
+      overflow-y: auto;
+      animation: slideUp 0.3s forwards;
+    }
+    .diag-title {
+      font-size: 15px;
+      font-weight: 900;
+      color: #fff;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: sans-serif;
+    }
+    .diag-close {
+      padding: 6px 16px;
+      background: #333;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .diag-field {
+      background: #0d0d1a;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 10px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+    }
+    .diag-ok { color: #69F0AE; }
+    .diag-err { color: #FF5252; }
   </style>
 </head>
 
@@ -821,7 +896,7 @@
           <button class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
         </div>
       </div>
-      <div class="version-tag">V1.2 (CLOUD SYNC)</div>
+      <div class="version-tag">V5.4 (CLOUD SYNC)</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -855,7 +930,8 @@
           <button class="btn-ui btn-ui-green" id="member-confirm-btn" onclick="confirmMember()" disabled
             style="flex:2;">提交全部修改</button>
         </div>
-        <div class="version-tag">V1.2 (CLOUD SYNC)</div>
+        <button class="btn-db-diag" id="member-db-btn" onclick="diagReadDB('member')">🔄 從雲端重新載入資料</button>
+        <div class="version-tag">V5.4 (CLOUD SYNC)</div>
       </div>
     </div>
 
@@ -889,7 +965,8 @@
           <div class="cal-day-label">S</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V1.2 (CLOUD SYNC)</div>
+        <button class="btn-db-diag" id="trainer-db-btn" onclick="diagReadDB('trainer')">🔄 從雲端重新載入資料</button>
+        <div class="version-tag">V5.4 (CLOUD SYNC)</div>
       </div>
     </div>
   </div>
@@ -917,6 +994,20 @@
     </div>
   </div>
   <div id="toast" class="toast"></div>
+
+  <!-- DB 診斷彈窗 -->
+  <div id="diag-overlay" class="diag-overlay" onclick="closeDiag(event)">
+    <div class="diag-card">
+      <div class="diag-title">
+        <span>🔍 DB 資料診斷</span>
+        <button class="diag-close" onclick="closeDiag(null)">關閉</button>
+      </div>
+      <div id="diag-status" class="diag-field">讀取中...</div>
+      <div id="diag-member" class="diag-field" style="display:none"></div>
+      <div id="diag-trainer" class="diag-field" style="display:none"></div>
+      <div id="diag-lock" class="diag-field" style="display:none"></div>
+    </div>
+  </div>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -1250,6 +1341,93 @@
     function closePanel() { document.getElementById('time-panel').style.display = 'none'; }
     function closePanelIfBg(e) { if (e.target.id === 'time-panel') closePanel(); }
     function resetMemberSession() { memberSession = {}; pendingCoachRemovals = {}; renderMemberCal(); }
+
+    // --- DB 診斷讀取 ---
+    function diagReadDB(fromWho) {
+      const overlay = document.getElementById('diag-overlay');
+      const statusEl = document.getElementById('diag-status');
+      const memberEl = document.getElementById('diag-member');
+      const trainerEl = document.getElementById('diag-trainer');
+      const lockEl = document.getElementById('diag-lock');
+
+      // 重置
+      statusEl.className = 'diag-field';
+      statusEl.textContent = '⏳ 正在向 Firebase 發送 .get() 請求...';
+      memberEl.style.display = 'none';
+      trainerEl.style.display = 'none';
+      lockEl.style.display = 'none';
+      overlay.style.display = 'flex';
+
+      DATA_DOC.get().then((doc) => {
+        if (!doc.exists()) {
+          statusEl.className = 'diag-field diag-err';
+          statusEl.textContent = '❌ 文件不存在！DB 有連線但找不到 booking_main 文件。';
+          return;
+        }
+        const d = doc.data();
+        statusEl.className = 'diag-field diag-ok';
+        statusEl.textContent = '✅ 成功讀取！文件存在，資料如下：';
+
+        // 會員資料
+        memberEl.style.display = 'block';
+        const mKeys = d.memberConfirmed ? Object.keys(d.memberConfirmed) : [];
+        const mTotal = mKeys.reduce((sum, k) => sum + (d.memberConfirmed[k]?.length || 0), 0);
+        memberEl.innerHTML = `<span class="diag-ok">📋 memberConfirmed</span>\n日期數：${mKeys.length} 天，共 ${mTotal} 個時段\n\n` +
+          (mKeys.length ? mKeys.map(k => `  ${k}: [${(d.memberConfirmed[k]||[]).join(', ')}]`).join('\n') : '  (無資料)');
+
+        // 教練資料
+        trainerEl.style.display = 'block';
+        const coaches = d.trainerConfirmed ? Object.keys(d.trainerConfirmed) : [];
+        let trainerSummary = `<span class="diag-ok">🏋️ trainerConfirmed</span>\n教練數：${coaches.length}\n\n`;
+        if (coaches.length) {
+          coaches.forEach(coach => {
+            const slots = d.trainerConfirmed[coach];
+            const keys = Object.keys(slots || {});
+            const total = keys.reduce((s, k) => s + (slots[k]?.length || 0), 0);
+            trainerSummary += `  ${coach}: ${keys.length} 天，${total} 堂\n`;
+            keys.forEach(k => { trainerSummary += `    ${k}: [${(slots[k]||[]).join(', ')}]\n`; });
+          });
+        } else {
+          trainerSummary += '  (無資料)';
+        }
+        trainerEl.innerHTML = trainerSummary;
+
+        // 連續排課鎖
+        lockEl.style.display = 'block';
+        lockEl.innerHTML = `<span class="diag-ok">🔒 consecutiveLocking</span>\n${d.consecutiveLocking === true ? 'ON (true)' : 'OFF (false)'}`;
+
+        // 同步更新到記憶體並重新渲染
+        if (d.memberConfirmed) {
+          memberConfirmed = {};
+          Object.keys(d.memberConfirmed).forEach(k => { memberConfirmed[k] = (d.memberConfirmed[k]||[]).map(Number); });
+        }
+        if (d.trainerConfirmed) {
+          trainerConfirmed = {};
+          Object.keys(d.trainerConfirmed).forEach(coach => {
+            trainerConfirmed[coach] = {};
+            Object.keys(d.trainerConfirmed[coach]||{}).forEach(k => {
+              trainerConfirmed[coach][k] = (d.trainerConfirmed[coach][k]||[]).map(Number);
+            });
+          });
+        }
+        if (typeof d.consecutiveLocking !== 'undefined') consecutiveLocking = d.consecutiveLocking;
+        isDataLoaded = true;
+
+        // 重新渲染當前畫面
+        if (fromWho === 'member') renderMemberCal();
+        if (fromWho === 'trainer') { renderTrainerCal(); initCoachPicker(); }
+
+      }).catch((err) => {
+        statusEl.className = 'diag-field diag-err';
+        statusEl.textContent = '❌ 讀取失敗！\n\n錯誤：' + err.message;
+      });
+    }
+
+    function closeDiag(e) {
+      if (e === null || e.target.id === 'diag-overlay') {
+        document.getElementById('diag-overlay').style.display = 'none';
+      }
+    }
   </script>
 </body>
 
