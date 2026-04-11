@@ -465,11 +465,11 @@
 
     .cal-grid {
       display: grid;
-      grid-template-columns: repeat(7, minmax(58px, 1fr));
+      grid-template-columns: repeat(7, 1fr);
       background: #fff;
       border: 1.5px solid #eee;
       border-radius: 16px;
-      overflow-x: auto;
+      overflow: hidden;
     }
 
     .cal-day-label {
@@ -483,13 +483,13 @@
     }
 
     .cal-cell {
-      min-height: 45px;
+      min-height: 68px;
       border-right: 1.5px solid #eee;
       border-bottom: 1.5px solid #eee;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 2px 1px;
+      padding: 4px 1px;
       background: #fff;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
@@ -527,16 +527,17 @@
     }
 
     .mini-slot {
-      font-size: 9px;
-      line-height: 1.2;
-      padding: 3.5px 2px;
-      border-radius: 4px;
+      font-size: 8.5px;
+      line-height: 1.1;
+      padding: 3px 1px;
+      border-radius: 3px;
       color: #fff;
       font-weight: 900;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      display: block;
+      text-align: center;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
     }
@@ -691,36 +692,52 @@
       background: #fdfdfd;
     }
 
-    /* 下方教練標籤 */
+    /* 下方教練標籤優化 */
     .legend {
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 12px;
-      margin-top: 1.5rem;
-      border-top: 1.5px solid #eee;
-      padding-top: 15px;
+      gap: 8px;
+      margin: 1.5rem -1rem -1.5rem -1rem; /* 延伸到邊界 */
+      border-top: 1.5px solid #f2f2f2;
+      padding: 18px 12px;
+      background: #fafafa;
+      border-radius: 0 0 24px 24px;
     }
 
     .legend-item {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      color: #555;
+      gap: 5px;
+      font-size: 10.5px;
+      color: #666;
       font-weight: 800;
+      padding: 6px 10px;
+      background: #fff;
+      border-radius: 10px;
+      border: 1px solid #eee;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .legend-item.dimmed {
+      opacity: 0.25;
+      filter: grayscale(1);
+      transform: scale(0.92);
+      box-shadow: none;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
     }
 
     .legend-count {
       font-size: 10px;
-      color: var(--wg-red);
-      margin-left: -2px;
-    }
-
-    .legend-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 4px;
+      font-weight: 700;
+      color: #999;
+      margin-left: 1px;
     }
 
     /* 自定義確認視窗 */
@@ -856,7 +873,7 @@
           <button type="button" class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
         </div>
       </div>
-      <div class="version-tag">V6.1 (ULTRA COMPACT)</div>
+      <div class="version-tag">V6.2 (ELITE VIEW & LEGEND)</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -894,7 +911,7 @@
           <button type="button" class="btn-ui btn-ui-green" id="member-confirm-btn" onclick="confirmMember()" disabled
             style="flex:2;">提交全部修改</button>
         </div>
-        <div class="version-tag">V6.1 (ULTRA COMPACT)</div>
+        <div class="version-tag">V6.2 (ELITE VIEW & LEGEND)</div>
       </div>
     </div>
 
@@ -928,7 +945,7 @@
           <div class="cal-day-label">六</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V6.1 (ULTRA COMPACT)</div>
+        <div class="version-tag">V6.2 (ELITE VIEW & LEGEND)</div>
       </div>
     </div>
   </div>
@@ -1094,7 +1111,10 @@
         rt.appendChild(chip);
         let count = 0; const prefix = tY + '-' + String(tM + 1).padStart(2, '0');
         if (trainerConfirmed[n]) { Object.keys(trainerConfirmed[n]).forEach(k => { if (k.startsWith(prefix)) count += trainerConfirmed[n][k].length; }); }
-        const item = document.createElement('div'); item.className = 'legend-item';
+        
+        const isDimmed = selectedTrainer && selectedTrainer !== n;
+        const item = document.createElement('div'); 
+        item.className = 'legend-item' + (isDimmed ? ' dimmed' : '');
         item.innerHTML = `<div class="legend-dot" style="background:${COACH_DATA[n]}"></div>${n} <span class="legend-count">(${count}堂)</span>`;
         l.appendChild(item);
       });
