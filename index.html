@@ -42,8 +42,8 @@
 
     .app-container {
       width: 100%;
-      max-width: 600px;
-      padding: 1.5rem 0.5rem; /* 再次縮減外部間距，讓寬度最大化 */
+      max-width: 650px;
+      padding: 1.5rem 0; /* 徹底移除外層側邊間距，讓內容能貼邊 */
     }
 
     .screen {
@@ -70,10 +70,16 @@
     .card {
       background: var(--bg-card);
       border-radius: var(--radius-lg);
-      padding: 1.5rem 1rem;
+      padding: 1.5rem 0; /* 內部側邊改為 0，讓日曆能貼齊邊框 */
       box-shadow: var(--shadow-sm);
       margin-bottom: 1rem;
       border: 1px solid rgba(0, 0, 0, 0.02);
+      overflow: hidden; /* 防止內部日曆圓角溢出 */
+    }
+
+    .px-main {
+      padding-left: 1.25rem;
+      padding-right: 1.25rem;
     }
 
     .btn-logout {
@@ -465,11 +471,11 @@
 
     .cal-grid {
       display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      background: #fff;
-      border: 1.5px solid #eee;
-      border-radius: 16px;
-      overflow: hidden;
+      grid-template-columns: repeat(7, minmax(65px, 1fr));
+      background: #fafafa;
+      border-top: 1.5px solid #eee;
+      border-bottom: 1.5px solid #eee;
+      overflow-x: auto;
     }
 
     .cal-day-label {
@@ -484,8 +490,8 @@
 
     .cal-cell {
       min-height: 68px;
-      border-right: 1.5px solid #eee;
-      border-bottom: 1.5px solid #eee;
+      border-right: 1px solid #eee;
+      border-bottom: 1px solid #eee;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -493,6 +499,10 @@
       background: #fff;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
+    }
+
+    .cal-cell:nth-child(7n) {
+      border-right: none;
     }
 
     .cal-cell:not(.empty):not(.past):not(.is-grey-out):hover {
@@ -529,15 +539,14 @@
     .mini-slot {
       font-size: 8.5px;
       line-height: 1.1;
-      padding: 3px 1px;
+      padding: 3px 2px;
       border-radius: 3px;
       color: #fff;
       font-weight: 900;
-      display: block;
-      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
     }
@@ -861,37 +870,39 @@
 
   <div class="app-container">
     <div id="screen-login" class="screen active">
-      <div class="logo-area">
+      <div class="logo-area px-main">
         <div class="logo-icon"><span>📅</span></div>
         <h2>專屬課程預約系統</h2>
       </div>
       <div class="card">
-        <button type="button" class="btn-trainer-gate" onclick="doTrainerLogin()">教練專區入口</button>
-        <div style="border-top: 2.5px dashed #eee; padding-top: 1.5rem;">
-          <div class="field"><label>Account 帳號</label><input type="text" id="login-user" placeholder="帳號" autocomplete="off"></div>
-          <div class="field"><label>Password 密碼</label><input type="password" id="login-pass" placeholder="密碼" autocomplete="off"></div>
-          <button type="button" class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
+        <div class="px-main">
+          <button type="button" class="btn-trainer-gate" onclick="doTrainerLogin()">教練專區入口</button>
+          <div style="border-top: 2.5px dashed #eee; padding-top: 1.5rem;">
+            <div class="field"><label>Account 帳號</label><input type="text" id="login-user" placeholder="帳號" autocomplete="off"></div>
+            <div class="field"><label>Password 密碼</label><input type="password" id="login-pass" placeholder="密碼" autocomplete="off"></div>
+            <button type="button" class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
+          </div>
         </div>
       </div>
-      <div class="version-tag">V6.2 (ELITE VIEW & LEGEND)</div>
+      <div class="version-tag">V6.3 (EDGE-TO-EDGE VIEW)</div>
     </div>
 
     <div id="screen-member" class="screen">
       <div class="card">
-        <div class="header-area">
+        <div class="header-area px-main">
           <div style="display:flex; align-items:center; gap:8px;">
             <h3>Paul 的個人專屬課表</h3>
             <button type="button" class="btn-clear-month" onclick="promptClearMonth()">清空整月預約</button>
           </div>
           <button type="button" class="btn-logout" onclick="logout()">登出</button>
         </div>
-        <div class="member-toggles-row">
+        <div class="member-toggles-row px-main">
           <div id="batch-toggle" class="toggle-item green" onclick="toggleBatchMode()"><span>複製套用模式</span><span
               id="batch-status" style="font-size:10px; color:#aaa;">OFF</span></div>
           <div id="lock-toggle" class="toggle-item" onclick="toggleLockMode()"><span>強制連續排課</span><span id="lock-status"
               style="font-size:10px; color:#aaa;">OFF</span></div>
         </div>
-        <div class="cal-nav">
+        <div class="cal-nav px-main">
           <button type="button" class="nav-btn" onclick="changeMonth('m',-1)"><span class="arrow arrow-left"></span></button>
           <span class="month-label" id="member-month-label"></span>
           <button type="button" class="nav-btn" onclick="changeMonth('m',1)"><span class="arrow arrow-right"></span></button>
@@ -905,31 +916,33 @@
           <div class="cal-day-label">五</div>
           <div class="cal-day-label">六</div>
         </div>
-        <div style="display:flex; gap:10px; margin-top:1.5rem;">
-          <button type="button" class="btn-ui btn-ui-secondary" id="member-reset-btn" onclick="resetMemberSession()"
-            style="flex:1; display:none;">取消選取</button>
-          <button type="button" class="btn-ui btn-ui-green" id="member-confirm-btn" onclick="confirmMember()" disabled
-            style="flex:2;">提交全部修改</button>
+        <div class="px-main">
+          <div style="display:flex; gap:10px; margin-top:1.5rem;">
+            <button type="button" class="btn-ui btn-ui-secondary" id="member-reset-btn" onclick="resetMemberSession()"
+              style="flex:1; display:none;">取消選取</button>
+            <button type="button" class="btn-ui btn-ui-green" id="member-confirm-btn" onclick="confirmMember()" disabled
+              style="flex:2;">提交全部修改</button>
+          </div>
         </div>
-        <div class="version-tag">V6.2 (ELITE VIEW & LEGEND)</div>
+        <div class="version-tag">V6.3 (EDGE-TO-EDGE VIEW)</div>
       </div>
     </div>
 
     <div id="screen-trainer" class="screen">
       <div class="card">
-        <div class="header-area">
-          <h3>教練排班管理後台</h3><button class="btn-logout" onclick="logout()">登出</button>
+        <div class="header-area px-main">
+          <h3>教練排班管理後台</h3><button type="button" class="btn-logout" onclick="logout()">登出</button>
         </div>
-        <div class="coach-picker-container">
+        <div class="coach-picker-container px-main">
           <div class="coach-hint">請點選您的教練身分以開始預約</div>
           <div class="coach-row" id="coach-picker"></div>
         </div>
-        <div class="trainer-ctrl-row">
-          <div class="cal-nav-compact"><button class="nav-btn" onclick="changeMonth('t',-1)"><span
+        <div class="trainer-ctrl-row px-main">
+          <div class="cal-nav-compact"><button type="button" class="nav-btn" onclick="changeMonth('t',-1)"><span
                 class="arrow arrow-left"></span></button><span class="month-label"
-              id="trainer-month-label"></span><button class="nav-btn" onclick="changeMonth('t',1)"><span
+              id="trainer-month-label"></span><button type="button" class="nav-btn" onclick="changeMonth('t',1)"><span
                 class="arrow arrow-right"></span></button></div>
-          <button class="view-toggle-btn" id="only-my-btn" onclick="toggleOnlyMy()">
+          <button type="button" class="view-toggle-btn" id="only-my-btn" onclick="toggleOnlyMy()">
             <div class="checkbox-box">
               <div class="check-mark"></div>
             </div><span id="filter-text">只顯示您的課程</span>
@@ -945,7 +958,7 @@
           <div class="cal-day-label">六</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V6.2 (ELITE VIEW & LEGEND)</div>
+        <div class="version-tag">V6.3 (EDGE-TO-EDGE VIEW)</div>
       </div>
     </div>
   </div>
