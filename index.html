@@ -5,6 +5,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>World Gym 課程預約系統 v1.0 - Stable Edition</title>
+  <!-- 
+    =========================================
+    版本更新紀錄 (Version History)
+    =========================================
+    [V5.7]
+     - 🔧 修正: 修復連續排課卡控功能的 String/Boolean 型別錯判問題。
+     - 🔧 修正: 教練在未選身分或當日客滿時，日曆格子不再產生凹版誤導，並實裝正確點擊防呆提示。
+     - 🔒 資安: 移除登入失敗時 Toast 提示的明文測試密碼 (1/1)。
+     - 🧹 清理: 完全移除過往遺留之診斷功能專用按鈕、JS 控制與臃腫之對應 CSS。
+  -->
   <style>
     /* --- 全球設計系統 --- */
     :root {
