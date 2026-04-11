@@ -471,7 +471,7 @@
 
     .cal-grid {
       display: grid;
-      grid-template-columns: repeat(7, minmax(65px, 1fr));
+      grid-template-columns: repeat(7, minmax(48px, 1fr));
       background: #fafafa;
       border-top: 1.5px solid #eee;
       border-bottom: 1.5px solid #eee;
@@ -544,9 +544,12 @@
       color: #fff;
       font-weight: 900;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      white-space: nowrap;
+      white-space: normal;
+      word-break: break-all;
+      text-align: center;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
     }
@@ -884,7 +887,7 @@
           </div>
         </div>
       </div>
-      <div class="version-tag">V6.3 (EDGE-TO-EDGE VIEW)</div>
+      <div class="version-tag">V6.4 (STACKED & AUTO-REFRESH)</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -924,7 +927,7 @@
               style="flex:2;">提交全部修改</button>
           </div>
         </div>
-        <div class="version-tag">V6.3 (EDGE-TO-EDGE VIEW)</div>
+        <div class="version-tag">V6.4 (STACKED & AUTO-REFRESH)</div>
       </div>
     </div>
 
@@ -958,7 +961,7 @@
           <div class="cal-day-label">六</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V6.3 (EDGE-TO-EDGE VIEW)</div>
+        <div class="version-tag">V6.4 (STACKED & AUTO-REFRESH)</div>
       </div>
     </div>
   </div>
@@ -993,6 +996,21 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
   <script>
+    /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
+    const APP_VERSION = '6.4';
+    (function() {
+      const stored = localStorage.getItem('wg_app_version');
+      if (stored !== APP_VERSION) {
+        localStorage.setItem('wg_app_version', APP_VERSION);
+        // 若不是第一次載入且沒有帶刷新參數，則執行重載
+        const url = new URL(window.location.href);
+        if (!url.searchParams.get('r')) {
+          url.searchParams.set('r', Date.now());
+          window.location.replace(url.toString());
+        }
+      }
+    })();
+
     // --- Firebase 配置 (V4.0 Final Stable) ---
     const firebaseConfig = {
       apiKey: "AIzaSyBxn9KlSBdcBHa5wMHYsJoWxEVrlCFzsKE",
@@ -1255,8 +1273,16 @@
         if (memberSession[k]) memberSession[k].forEach(h => { if (!isBooked(k, h)) allS.push({ h, tr: 'M', type: 'sess' }) });
         else if (memberConfirmed[k]) memberConfirmed[k].forEach(h => { if (!isBooked(k, h)) allS.push({ h, tr: 'M', type: 'conf' }) });
         allS.sort((a, b) => a.h - b.h).forEach(s => {
-          if (s.tr === 'M') list.appendChild(Object.assign(document.createElement('div'), { className: 'mini-slot slot-avail-member', textContent: `${s.h}:00可預約` }));
-          else list.appendChild(Object.assign(document.createElement('div'), { className: 'mini-slot slot-embossed-focus', style: `background:${COACH_DATA[s.tr]}`, textContent: s.h + ':00 ' + s.tr }));
+          const slot = document.createElement('div');
+          if (s.tr === 'M') {
+            slot.className = 'mini-slot slot-avail-member';
+            slot.innerHTML = `<span>${s.h}:00</span><span>可預約</span>`;
+          } else {
+            slot.className = 'mini-slot slot-embossed-focus';
+            slot.style.background = COACH_DATA[s.tr];
+            slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`;
+          }
+          list.appendChild(slot);
         });
         el.className = 'cal-cell' + (isPast ? ' past' : ' clickable') + ((memberSession[k] || pendingCoachRemovals[k]) ? ' is-changed' : '');
         el.innerHTML = `<span class="cal-cell-num">${d}</span>`; el.appendChild(list);
@@ -1298,13 +1324,20 @@
           el.className = 'cal-cell' + (isPast ? ' past' : '') + (hasInteractable ? ' clickable has-avail-day' : ' is-grey-out') + (isChg ? ' is-changed' : '');
 
           allS.sort((a, b) => a.h - b.h).forEach(s => {
+            const slot = document.createElement('div');
             let clsName = 'mini-slot';
             if ((!selectedTrainer || s.tr === selectedTrainer) && (s.type === 'act' || s.type === 'add' || s.type === 'oth')) clsName += ' slot-embossed-focus';
-            if (s.type === 'act') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, style: `background:${COACH_DATA[s.tr]}`, textContent: s.h + ':00 ' + s.tr }));
-            else if (s.type === 'add') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, style: `background:${COACH_DATA[s.tr]}`, textContent: s.h + ':00 ' + s.tr + '(+)' }));
-            else if (s.type === 'rem') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, textContent: s.h + ':00 ' + selectedTrainer }));
-            else if (s.type === 'oth') list.appendChild(Object.assign(document.createElement('div'), { className: clsName, style: `background:${COACH_DATA[s.tr]}; opacity:${selectedTrainer ? 0.3 : 1.0}`, textContent: s.h + ':00 ' + s.tr }));
-            else if (s.type === 'avl') { if (s.loc) list.appendChild(Object.assign(document.createElement('div'), { className: clsName + ' slot-avail-locked', textContent: s.h + ':00鎖定' })); else list.appendChild(Object.assign(document.createElement('div'), { className: clsName + ' slot-avail-member', textContent: `${s.h}:00可預約` })); }
+            slot.className = clsName;
+            
+            if (s.type === 'act') { slot.style.background = COACH_DATA[s.tr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
+            else if (s.type === 'add') { slot.style.background = COACH_DATA[s.tr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}(+)</span>`; }
+            else if (s.type === 'rem') { slot.innerHTML = `<span>${s.h}:00</span><span>${selectedTrainer}</span>`; }
+            else if (s.type === 'oth') { slot.style.background = COACH_DATA[s.tr]; slot.style.opacity = selectedTrainer ? 0.3 : 1.0; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
+            else if (s.type === 'avl') { 
+              if (s.loc) { slot.className += ' slot-avail-locked'; slot.innerHTML = `<span>${s.h}:00</span><span>鎖定</span>`; }
+              else { slot.className += ' slot-avail-member'; slot.innerHTML = `<span>${s.h}:00</span><span>可預約</span>`; }
+            }
+            list.appendChild(slot);
           });
           el.appendChild(list);
           if (!isPast) el.onclick = () => { if (!t) { showToast('請先選教練身分', 2, true); return; } if (hasInteractable) { openPanel('trainer', k); initCoachPicker(); } else { showToast('該日已無可操作時段', 2, true); } };
