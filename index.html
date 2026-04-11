@@ -889,7 +889,7 @@
           </div>
         </div>
       </div>
-      <div class="version-tag">V6.9</div>
+      <div class="version-tag">V6.10</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -929,7 +929,7 @@
               style="flex:2;">提交全部修改</button>
           </div>
         </div>
-        <div class="version-tag">V6.9</div>
+        <div class="version-tag">V6.10</div>
       </div>
     </div>
 
@@ -963,7 +963,7 @@
           <div class="cal-day-label">六</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V6.9</div>
+        <div class="version-tag">V6.10</div>
       </div>
     </div>
   </div>
@@ -1165,6 +1165,12 @@
       if (elM) { elM.classList.toggle('active', consecutiveLocking); document.getElementById('lock-status').textContent = consecutiveLocking ? 'ON' : 'OFF'; }
     }
     function toggleLockMode() { 
+      // 防呆：若會員已有選取中的項目 (尚未提交)，禁止切換模式以免產生邏輯混亂
+      const hasUnsaved = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
+      if (hasUnsaved) {
+        showToast('請先「提交全部修改」或「取消選取」後，再切換此模式', 4, true);
+        return;
+      }
       if (!consecutiveLocking) {
         openCustomConfirm(
           "教練在您的「連續空堂」內\n必須依照順序排課，不可跳空！\n\n( 註：分開的獨立時段不受影響 )\n\n確定要啟用嗎？",
