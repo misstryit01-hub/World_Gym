@@ -1166,8 +1166,8 @@
       const added = newArr.filter(x => !oldArr.includes(x)).sort((a,b)=>a-b);
       const removed = oldArr.filter(x => !newArr.includes(x)).sort((a,b)=>a-b);
       let msg = "";
-      if (added.length > 0) msg += `\n✅ 新增預約：\n${added.map(h => "- " + formatTimeRange(h)).join('\n')}`;
-      if (removed.length > 0) msg += `\n❌ 取消預約：\n${removed.map(h => "- " + formatTimeRange(h)).join('\n')}`;
+      if (added.length > 0) msg += `\n✅ 新增預約：${added.map(h => formatTimeRange(h)).join(', ')}`;
+      if (removed.length > 0) msg += `\n❌ 取消預約：${removed.map(h => formatTimeRange(h)).join(', ')}`;
       return msg;
     }
 
@@ -1558,12 +1558,20 @@
       });
 
       // 處理被標記取消的教練預約
+      let removedInfo = [];
       Object.keys(pendingCoachRemovals).forEach(k => {
         Object.keys(COACH_DATA).forEach(tr => {
           if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
-            const newSlots = trainerConfirmed[tr][k].filter(h => 
+            const oldSlots = [...trainerConfirmed[tr][k]];
+            const newSlots = oldSlots.filter(h => 
               pendingCoachRemovals[k].indexOf(h) < 0 && (memberConfirmed[k] || memberSession[k] || []).indexOf(h) >= 0
             );
+            
+            if (oldSlots.length !== newSlots.length) {
+              const removed = oldSlots.filter(h => !newSlots.includes(h)).sort((a,b)=>a-b);
+              removedInfo.push({ trainer: tr, date: k, times: removed });
+            }
+
             const updateKey = `trainerConfirmed.${tr}.${k}`;
             if (newSlots.length === 0) {
               batch[updateKey] = firebase.firestore.FieldValue.delete();
@@ -1586,7 +1594,16 @@
       saveData(batch); 
       renderMemberCal(); 
       showToast('修改成功提交！', 3);
-      sendLineNotify(`🔔 會員預約異動通知\n您好，您本月份的預約異動已提交成功！\n(請至行事曆查看最新詳情)`);
+
+      // 發送學員異動通知
+      let msg = `🔔 會員預約異動通知\n您好，您本月份的預約異動已提交成功！`;
+      if (removedInfo.length > 0) {
+        msg += `\n\n⚠️ 已主動取消教練課程：`;
+        removedInfo.forEach(item => {
+          msg += `\n日期：${item.date} (${item.trainer})\n時段：${item.times.map(h => formatTimeRange(h)).join(', ')}`;
+        });
+      }
+      sendLineNotify(msg);
     }
     function resetTrainerSession() { }
     function closePanel() { document.getElementById('time-panel').style.display = 'none'; }
