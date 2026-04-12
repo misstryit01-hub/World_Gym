@@ -1564,9 +1564,8 @@
       closePanel();
     }
     function confirmMember() {
-      let batch = {};
-
-      // 處理會員選取的時段
+      // 收集異動
+      const batch = { memberConfirmed };
       Object.keys(memberSession).forEach(k => {
         const slots = [...memberSession[k]];
         if (slots.length === 0) {
@@ -1578,21 +1577,44 @@
         }
       });
 
-      // 處理被標記取消的教練預約
       let removedInfo = [];
       Object.keys(pendingCoachRemovals).forEach(k => {
         Object.keys(COACH_DATA).forEach(tr => {
           if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
             const oldSlots = [...trainerConfirmed[tr][k]];
-            const newSlots = oldSlots.filter(h =>
+            const newSlots = oldSlots.filter(h => 
               pendingCoachRemovals[k].indexOf(h) < 0 && (memberConfirmed[k] || memberSession[k] || []).indexOf(h) >= 0
             );
-
             if (oldSlots.length !== newSlots.length) {
-              const removed = oldSlots.filter(h => !newSlots.includes(h)).sort((a, b) => a - b);
+              const removed = oldSlots.filter(h => !newSlots.includes(h)).sort((a,b)=>a-b);
               removedInfo.push({ trainer: tr, date: k, times: removed });
             }
+          }
+        });
+      });
 
+      // 檢查環境
+      const isApp = (typeof liff !== 'undefined' && liff.isInClient());
+      const envNote = isApp ? "並發送異動通知至 LINE 群組。" : "<br><span style='color:#E57373; font-size:11px;'>⚠️ 注意：目前偵測到您未使用 LINE App，<br>提交後將「不會」發送通知。</span>";
+      
+      const cc = document.getElementById('custom-confirm');
+      document.getElementById('cc-title').textContent = "確認提交異動？";
+      document.getElementById('confirm-msg').innerHTML = `您即將提交本月份的預約修改，<br>${envNote}`;
+      document.getElementById('confirm-ok-btn').onclick = () => {
+        doActualConfirmMember(batch, removedInfo);
+        closeCustomConfirm();
+      };
+      cc.style.display = 'flex';
+    }
+
+    function doActualConfirmMember(batch, removedInfo) {
+      // 處理被標記取消的教練預約
+      Object.keys(pendingCoachRemovals).forEach(k => {
+        Object.keys(COACH_DATA).forEach(tr => {
+          if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
+            const newSlots = trainerConfirmed[tr][k].filter(h => 
+              pendingCoachRemovals[k].indexOf(h) < 0 && (memberConfirmed[k] || memberSession[k] || []).indexOf(h) >= 0
+            );
             const updateKey = `trainerConfirmed.${tr}.${k}`;
             if (newSlots.length === 0) {
               batch[updateKey] = firebase.firestore.FieldValue.delete();
