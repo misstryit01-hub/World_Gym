@@ -288,6 +288,10 @@
       filter: grayscale(1);
     }
 
+    .cal-cell.is-grey-out {
+      opacity: 0.6;
+    }
+
     .header-area {
       display: flex;
       justify-content: space-between;
@@ -890,7 +894,7 @@
       padding: 14px 24px;
       border-radius: 12px;
       font-size: 13px;
-      z-index: 2000;
+      z-index: 3000;
       display: none;
       font-weight: 900;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
@@ -917,6 +921,11 @@
             <div class="field"><label>Password 密碼</label><input type="password" id="login-pass" placeholder="密碼"
                 autocomplete="off"></div>
             <button type="button" class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
+            <div style="text-align:center; margin-top: 1.2rem;">
+              <span style="font-size:12px; color:#999; font-weight:800;">尚未擁有帳號？</span>
+              <a href="javascript:void(0)" onclick="openRegisterPanel()"
+                style="font-size:12px; color:var(--wg-red); font-weight:900; text-decoration:none; margin-left:4px; border-bottom:1.5px solid var(--wg-red);">立即申請</a>
+            </div>
           </div>
         </div>
       </div>
@@ -929,15 +938,19 @@
           <div style="display:flex; align-items:center; gap:8px;">
             <h3 id="member-title">會員個人專屬課表</h3>
             <button type="button" class="btn-clear-month" onclick="promptClearMonth()">清空整月預約</button>
-            <button type="button" id="btn-admin-panel" class="btn-clear-month" onclick="openAdminPanel()" style="display:none;">👤 成員管理</button>
+            <button type="button" id="btn-admin-panel" class="btn-clear-month" onclick="openAdminPanel()"
+              style="display:none;">👤 成員管理</button>
           </div>
           <button type="button" class="btn-logout" onclick="logout()">登出</button>
         </div>
         <div id="admin-selector-row" class="px-main" style="display:none; margin-bottom:10px;">
-          <div style="display:flex; align-items:center; gap:8px; background:#f0f7ff; padding:8px 12px; border-radius:8px; border:1px solid #d0e3ff;">
+          <div
+            style="display:flex; align-items:center; gap:8px; background:#f0f7ff; padding:8px 12px; border-radius:8px; border:1px solid #d0e3ff;">
             <span style="font-size:12px; font-weight:800; color:#1976D2; white-space:nowrap;">切換學員帳號:</span>
-            <select id="admin-member-selector" style="flex:1; padding:4px 8px; border-radius:6px; border:1.5px solid #BBDEFB; font-weight:700;" onchange="onAdminSelectMember(this.value)">
-               <!-- 動態置入 -->
+            <select id="admin-member-selector"
+              style="flex:1; padding:4px 8px; border-radius:6px; border:1.5px solid #BBDEFB; font-weight:700;"
+              onchange="onAdminSelectMember(this.value)">
+              <!-- 動態置入 -->
             </select>
           </div>
         </div>
@@ -986,9 +999,11 @@
         </div>
         <div class="trainer-ctrl-row px-main">
           <div class="cal-nav-compact">
-            <button type="button" class="nav-btn" onclick="changeMonth('t',-1)"><span class="arrow arrow-left"></span></button>
+            <button type="button" class="nav-btn" onclick="changeMonth('t',-1)"><span
+                class="arrow arrow-left"></span></button>
             <span class="month-label" id="trainer-month-label"></span>
-            <button type="button" class="nav-btn" onclick="changeMonth('t',1)"><span class="arrow arrow-right"></span></button>
+            <button type="button" class="nav-btn" onclick="changeMonth('t',1)"><span
+                class="arrow arrow-right"></span></button>
           </div>
           <button type="button" class="view-toggle-btn" id="only-my-btn" onclick="toggleOnlyMy()">
             <div class="checkbox-box">
@@ -998,23 +1013,38 @@
         </div>
         <!-- V8.0 新增學員篩選選單 -->
         <div class="px-main" style="margin-bottom:10px;">
-          <div style="display:flex; align-items:center; gap:8px; background:#f9f9f9; padding:8px 12px; border-radius:8px; border:1px solid #eee;">
-            <span style="font-size:12px; font-weight:800; color:#666; white-space:nowrap;">目前查看學員：</span>
-            <select id="trainer-member-selector" style="flex:1; padding:4px 8px; border-radius:6px; border:1.5px solid #ddd; font-weight:700;" onchange="onTrainerSelectMember(this.value)">
+          <div
+            style="display:flex; align-items:center; gap:8px; background:#f9f9f9; padding:8px 12px; border-radius:8px; border:1px solid #eee;">
+            <span style="font-size:12px; font-weight:800; color:#666; white-space:nowrap;">目前查看會員：</span>
+            <select id="trainer-member-selector"
+              style="flex:1; padding:4px 8px; border-radius:6px; border:1.5px solid #ddd; font-weight:700;"
+              onchange="onTrainerSelectMember(this.value)">
               <option value="Paul">Paul</option>
             </select>
           </div>
         </div>
-        <div class="cal-grid" id="trainer-cal">
-          <div class="cal-day-label">日</div>
-          <div class="cal-day-label">一</div>
-          <div class="cal-day-label">二</div>
-          <div class="cal-day-label">三</div>
-          <div class="cal-day-label">四</div>
-          <div class="cal-day-label">五</div>
-          <div class="cal-day-label">六</div>
+        <!-- 教練模式主內容區 (選取會員後顯示) -->
+        <div id="trainer-main-view" style="display:none;">
+          <div class="cal-grid" id="trainer-cal">
+            <div class="cal-day-label">日</div>
+            <div class="cal-day-label">一</div>
+            <div class="cal-day-label">二</div>
+            <div class="cal-day-label">三</div>
+            <div class="cal-day-label">四</div>
+            <div class="cal-day-label">五</div>
+            <div class="cal-day-label">六</div>
+          </div>
+          <div class="legend" id="coach-legend"></div>
         </div>
-        <div class="legend" id="coach-legend"></div>
+
+        <!-- 空狀態提示 (未選取會員時顯示) -->
+        <div id="trainer-empty-state"
+          style="padding: 60px 20px; text-align: center; background: #fafafa; margin: 15px; border-radius: 20px; border: 2.5px dashed #eee;">
+          <div style="font-size: 48px; margin-bottom: 15px; opacity: 0.6;">🔍</div>
+          <h3 style="color: #333; font-weight: 900; font-size: 18px;">請選取欲排班會員</h3>
+          <p style="font-size: 13px; color: #999; margin-top: 8px; font-weight: 800;">選取上方會員後，即可調整其專屬課表</p>
+        </div>
+
         <div class="version-tag"></div>
       </div>
     </div>
@@ -1028,6 +1058,30 @@
         <!-- 動態置入清單 -->
       </div>
       <button class="btn-ui btn-ui-secondary" onclick="closeAdminPanel()" style="width:100%;">關閉管理視窗</button>
+    </div>
+  </div>
+
+  <!-- 會員註冊彈窗 -->
+  <div id="register-overlay" class="custom-confirm-overlay" style="z-index: 2100;">
+    <div class="custom-confirm-card" style="width: 90%; max-width: 400px; padding-bottom: 2rem;">
+      <h3
+        style="text-align:center; padding-bottom:12px; border-bottom:1.5px solid #eee; margin-bottom: 20px; font-weight:900;">
+        📝 提交會員申請</h3>
+      <div class="px-main">
+        <div class="field" style="text-align:left;"><label>Desired Account 欲申請帳號</label><input type="text" id="reg-user"
+            placeholder="例如:allen" autocomplete="off"></div>
+        <div class="field" style="text-align:left; margin-top:12px;"><label>Secure Password 設定密碼</label><input
+            type="password" id="reg-pass" placeholder="請設定登入密碼" autocomplete="off"></div>
+        <div class="field" style="text-align:left; margin-top:12px;"><label>Confirm Password 再次確認密碼</label><input
+            type="password" id="reg-pass-confirm" placeholder="請再次輸入密碼" autocomplete="off"></div>
+        <div class="field" style="text-align:left; margin-top:12px;"><label>Referral Code 推薦碼</label><input type="text"
+            id="reg-code" placeholder="請輸入推薦碼" autocomplete="off"></div>
+
+        <div style="margin-top: 2rem; display: flex; gap: 10px;">
+          <button class="btn-ui btn-ui-secondary" style="flex:1" onclick="closeRegisterPanel()">先不申請</button>
+          <button class="btn-ui btn-ui-green" style="flex:2" onclick="doRegister()">送出申請</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1063,7 +1117,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = '8.1';
+    const APP_VERSION = "V8.2"; // 核心版本號
+    const VERSION_TAG = "V8.2 - 2026/04/12"; // UI顯示標籤 上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1109,7 +1164,7 @@
     var mY = today.getFullYear(), mM = today.getMonth(), tY = today.getFullYear(), tM = today.getMonth();
     var COACH_DATA = { 'Buzz': '#D32F2F', 'Hulk': '#2E7D32', 'Kelly': '#6A1B9A', 'Seven': '#006064', 'Mark': '#1976D2' };
     var selectedTrainer = "";
-    var memberConfirmed = {}, trainerConfirmed = {}, memberSession = {}, trainerSession = {}, pendingCoachRemovals = {};
+    var trainerConfirmed = {}, memberSession = {}, trainerSession = {}, pendingCoachRemovals = {};
     var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, consecutiveLocking = false;
     var isDataLoaded = false;
 
@@ -1120,13 +1175,13 @@
         const selector = document.getElementById('trainer-member-selector');
         const adminSelector = document.getElementById('admin-member-selector');
         const oldVal = selector.value;
-        if(selector) selector.innerHTML = '<option value="">-- 請選取受訓學員 --</option>';
-        if(adminSelector) adminSelector.innerHTML = "";
-        
+        if (selector) selector.innerHTML = '<option value="">-- 請選取會員 --</option>';
+        if (adminSelector) adminSelector.innerHTML = "";
+
         if (currentLogonRole === 'superuser' && adminSelector) {
-           const opt = document.createElement('option');
-           opt.value = "admin"; opt.textContent = "管理員 (空白視角)";
-           adminSelector.appendChild(opt);
+          const opt = document.createElement('option');
+          opt.value = "admin"; opt.textContent = "管理員";
+          adminSelector.appendChild(opt);
         }
 
         snap.forEach(doc => {
@@ -1134,12 +1189,12 @@
             memberList.push(doc.id);
             const opt = document.createElement('option');
             opt.value = doc.id; opt.textContent = doc.id;
-            if(selector) selector.appendChild(opt);
-            if(adminSelector) adminSelector.appendChild(opt.cloneNode(true));
+            if (selector) selector.appendChild(opt);
+            if (adminSelector) adminSelector.appendChild(opt.cloneNode(true));
           }
         });
-        
-        if(selector) {
+
+        if (selector) {
           if (memberList.includes(oldVal)) {
             selector.value = oldVal;
           } else {
@@ -1147,9 +1202,9 @@
             selectedMemberInTrainerMode = "";
           }
         }
-        
+
         if (adminSelector) {
-           adminSelector.value = adminViewingTarget || 'admin';
+          adminSelector.value = adminViewingTarget || 'admin';
         }
       });
 
@@ -1158,10 +1213,10 @@
         if (doc.exists) {
           const d = doc.data();
           allMembersData = d.members || {};
-          
+
           // ✅ 數據遷移：若存在舊格式 memberConfirmed 且 Paul 尚無資料，則搬移
           if (d.memberConfirmed && (!allMembersData.Paul)) {
-             allMembersData.Paul = d.memberConfirmed;
+            allMembersData.Paul = d.memberConfirmed;
           }
 
           trainerConfirmed = d.trainerConfirmed || {};
@@ -1177,7 +1232,7 @@
       if (!isDataLoaded) { showToast("連線載入中，請稍候...", 2, true); return; }
       const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
       const isMemScreen = document.getElementById('screen-member').classList.contains('active');
-      
+
       // 若是學員模式存檔，需要加上路徑前綴
       if (isMemScreen && targetUser) {
         const memberPayload = {};
@@ -1215,7 +1270,7 @@
         const processLogin = (userData) => {
           currentLogonMember = u;
           currentLogonRole = userData.role || 'member';
-          adminViewingTarget = (currentLogonRole === 'superuser') ? 'admin' : u; 
+          adminViewingTarget = (currentLogonRole === 'superuser') ? 'admin' : u;
           const adminBtn = document.getElementById('btn-admin-panel');
           const adminSelector = document.getElementById('admin-selector-row');
           if (adminBtn) adminBtn.style.display = (currentLogonRole === 'superuser') ? 'block' : 'none';
@@ -1223,7 +1278,13 @@
             adminSelector.style.display = (currentLogonRole === 'superuser') ? 'block' : 'none';
             document.getElementById('admin-member-selector').value = adminViewingTarget;
           }
-          
+
+          // 更新個人化標題
+          const titleEl = document.getElementById('member-title');
+          if (titleEl) {
+            titleEl.textContent = (currentLogonRole === 'superuser') ? "管理員控制台" : `${u} 的專屬課表`;
+          }
+
           showScreen('member');
           renderMemberCal();
         };
@@ -1254,10 +1315,10 @@
     function openAdminPanel() {
       const listDiv = document.getElementById('admin-user-list');
       listDiv.innerHTML = "";
-      
+
       // 過濾掉 admin 本身
       const displayList = memberList.filter(name => name !== 'admin');
-      
+
       if (displayList.length === 0) {
         listDiv.innerHTML = "<div style='text-align:center; color:#999; padding:20px;'>尚無其他學員帳號</div>";
       } else {
@@ -1284,7 +1345,7 @@
       openCustomConfirm(`確定要永久刪除學員 [${name}] 嗎？<br><br><span style="color:red; font-size:11px;">❗注意：該學員的所有紀錄將會同步被清除，且無法還原。</span>`, () => {
         executeDeleteUser(name);
       }, "危險操作：刪除學員", "放棄", "確定刪除");
-      
+
       // 攔截取消按鈕
       const cBtn = document.getElementById('confirm-cancel-btn');
       cBtn.onclick = () => {
@@ -1300,16 +1361,16 @@
         const payload = {};
         payload[`members.${name}`] = firebase.firestore.FieldValue.delete();
         await DATA_DOC.update(payload);
-        
+
         showToast(`學員 ${name} 已成功移除`, 3);
-        
+
         // 防呆：若刪除的是目前正在觀看的學員，跳回空白視角
         if (adminViewingTarget === name) {
-           adminViewingTarget = 'admin';
-           document.getElementById('admin-member-selector').value = 'admin';
-           onAdminSelectMember('admin');
+          adminViewingTarget = 'admin';
+          document.getElementById('admin-member-selector').value = 'admin';
+          onAdminSelectMember('admin');
         }
-        
+
         document.getElementById('admin-overlay').style.zIndex = '2100';
         closeCustomConfirm();
         openAdminPanel(); // 刷新清單
@@ -1322,15 +1383,15 @@
     function onAdminSelectMember(name) {
       adminViewingTarget = name;
       const isSelf = (name === 'admin');
-      
+
       if (isSelf) {
-        document.getElementById('member-title').textContent = `管理員個人主頁 (無排課)`;
-        showToast('已回到管理員空白視角', 2);
+        document.getElementById('member-title').textContent = `管理員控制台`;
+        showToast('已切換至管理員模式', 2);
       } else {
-        document.getElementById('member-title').textContent = `${name} 的個人專屬課表 (管理中)`;
+        document.getElementById('member-title').textContent = `${name} 的個人課表`;
         showToast(`⚠️ 注意：您正在操作 [ ${name} ] 的課表`, 3, true);
       }
-      
+
       renderMemberCal();
     }
 
@@ -1343,13 +1404,57 @@
         Pending取消: ${JSON.stringify(pendingCoachRemovals)}<br>
         本地名單: ${JSON.stringify(tData)}
       `;
-      openCustomConfirm(diagStr, () => {}, "🔧 管理員診斷中心", "關閉", "了解");
+      openCustomConfirm(diagStr, () => { }, "🔧 管理員診斷中心", "關閉", "了解");
     }
 
 
     function onTrainerSelectMember(name) {
       selectedMemberInTrainerMode = name;
+      if (name) {
+        showToast(`⚠️ 注意：您正在管理 [ ${name} ] 的排班`, 3, true);
+      }
       renderTrainerCal();
+    }
+
+    // --- 會員註冊功能 ---
+    function openRegisterPanel() {
+      document.getElementById('reg-user').value = "";
+      document.getElementById('reg-pass').value = "";
+      document.getElementById('reg-code').value = "";
+      document.getElementById('register-overlay').style.display = 'flex';
+    }
+
+    function closeRegisterPanel() {
+      document.getElementById('register-overlay').style.display = 'none';
+    }
+
+    async function doRegister() {
+      const u = document.getElementById('reg-user').value.trim();
+      const p = document.getElementById('reg-pass').value.trim();
+      const p2 = document.getElementById('reg-pass-confirm').value.trim();
+      const code = document.getElementById('reg-code').value.trim();
+
+      if (!u || !p || !p2 || !code) return showToast('請完整填寫所有欄位', 2, true);
+      if (p !== p2) return showToast('兩次密碼輸入不一致', 2, true);
+      if (code !== '1234') return showToast('推薦碼錯誤', 2, true);
+
+      showToast('正在驗證申請...', 1);
+      try {
+        const userRef = db.collection('users').doc(u);
+        const doc = await userRef.get();
+        if (doc.exists) {
+          showToast('此帳號名稱已被使用', 2, true);
+        } else {
+          await userRef.set({ u, p, role: 'member' });
+          showToast('註冊成功！', 4);
+          closeRegisterPanel();
+          document.getElementById('login-user').value = u;
+          document.getElementById('login-pass').value = p;
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('註冊失敗，請檢查網路連線', 2, true);
+      }
     }
 
     function showToast(m, sec = 2, isErr = false) { const t = document.getElementById('toast'); t.textContent = m; t.style.background = isErr ? '#D32F2F' : '#2C3E50'; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', sec * 1000); }
@@ -1482,7 +1587,17 @@
       }
     }
     function toggleOnlyMy() { if (!selectedTrainer) { showToast('請先選擇您的身份', 2, true); return; } isOnlyMy = !isOnlyMy; document.getElementById('only-my-btn').classList.toggle('active', isOnlyMy); initCoachPicker(); renderTrainerCal(); }
-    function doTrainerLogin() { selectedTrainer = ""; isOnlyMy = false; document.getElementById('only-my-btn').classList.remove('active'); showScreen('trainer'); initCoachPicker(); renderTrainerCal(); }
+    function doTrainerLogin() {
+      selectedTrainer = "";
+      selectedMemberInTrainerMode = "";
+      isOnlyMy = false;
+      const sel = document.getElementById('trainer-member-selector');
+      if (sel) sel.value = "";
+      document.getElementById('only-my-btn').classList.remove('active');
+      showScreen('trainer');
+      initCoachPicker();
+      renderTrainerCal();
+    }
     function logout() {
       const m = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
       if (m) openCustomConfirm("尚未確認提交，登出將遺失資料。確定嗎？", () => { executeLogout(); }, "尚未存檔", "繼續", "確定登出"); else executeLogout();
@@ -1509,10 +1624,17 @@
       else { tM += f; if (tM > 11) { tM = 0; tY++; } else if (tM < 0) { tM = 11; tY--; } renderTrainerCal(); initCoachPicker(); }
     }
     function toggleBatchMode() { isBatchMode = !isBatchMode; document.getElementById('batch-toggle').classList.toggle('active', isBatchMode); document.getElementById('batch-status').textContent = isBatchMode ? 'ON' : 'OFF'; }
-    function isBooked(k, h) { 
+    function isBooked(k, h) {
       const hr = Number(h);
-      if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return false; 
-      return Object.keys(COACH_DATA).some(tr => trainerConfirmed[tr] && trainerConfirmed[tr][k] && trainerConfirmed[tr][k].map(Number).indexOf(hr) >= 0); 
+      if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return false;
+      return Object.keys(COACH_DATA).some(tr => {
+        if (!trainerConfirmed[tr] || !trainerConfirmed[tr][k]) return false;
+        // 支援新格式 ["16:Paul"] 或舊格式 [16]
+        return trainerConfirmed[tr][k].some(s => {
+          if (typeof s === 'string' && s.includes(':')) return Number(s.split(':')[0]) === hr;
+          return Number(s) === hr;
+        });
+      });
     }
     function isBookedLocally(h) {
       if (panelTempSlots.indexOf(h) >= 0) return true;
@@ -1594,40 +1716,48 @@
       const grid = document.getElementById('member-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
       const first = new Date(mY, mM, 1).getDay(), days = new Date(mY, mM + 1, 0).getDate();
       for (let i = 0; i < first; i++) grid.appendChild(Object.assign(document.createElement('div'), { className: 'cal-cell empty' }));
-      
+
       const memberData = allMembersData[targetUser] || {};
 
       for (let d = 1; d <= days; d++) {
         let k = dateKey(mY, mM, d), isPast = new Date(mY, mM, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const el = document.createElement('div'); const list = document.createElement('div'); list.className = 'mini-slot-list';
         let allS = [];
-        Object.keys(COACH_DATA).forEach(tr => { 
+        Object.keys(COACH_DATA).forEach(tr => {
           if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
-            trainerConfirmed[tr][k].forEach(h => { 
-               const hr = Number(h);
-               if ((memberSession[k] && memberSession[k].map(Number).indexOf(hr) < 0) || (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0)) return; 
-               // 只有確定屬於該學員的教練預約才畫出來
-               const isMine = (memberData[k] && memberData[k].map(Number).indexOf(hr) >= 0);
-               if (isMine) allS.push({ h: hr, tr, type: 'conf' }); 
-            }); 
+            trainerConfirmed[tr][k].forEach(s => {
+              let hr, isMine = false;
+              if (typeof s === 'string' && s.includes(':')) {
+                const parts = s.split(':');
+                hr = Number(parts[0]);
+                isMine = (parts[1] === targetUser);
+              } else {
+                hr = Number(s);
+                // 舊資料相容邏輯
+                isMine = (memberData[k] && memberData[k].map(Number).indexOf(hr) >= 0);
+              }
+
+              if ((memberSession[k] && memberSession[k].map(Number).indexOf(hr) < 0) || (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0)) return;
+              if (isMine) allS.push({ h: hr, tr, type: 'conf' });
+            });
           }
         });
-        
+
         if (memberSession[k]) {
-          memberSession[k].forEach(h => { 
+          memberSession[k].forEach(h => {
             const hr = Number(h);
             if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return;
-            if (!isBooked(k, hr)) allS.push({ h: hr, tr: 'M', type: 'sess' }) 
+            if (!isBooked(k, hr)) allS.push({ h: hr, tr: 'M', type: 'sess' })
           });
         }
         else if (memberData[k]) {
-          memberData[k].forEach(h => { 
+          memberData[k].forEach(h => {
             const hr = Number(h);
             if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return;
-            if (!isBooked(k, hr)) allS.push({ h: hr, tr: 'M', type: 'conf' }) 
+            if (!isBooked(k, hr)) allS.push({ h: hr, tr: 'M', type: 'conf' })
           });
         }
-        
+
         allS.sort((a, b) => a.h - b.h).forEach(s => {
           const slot = document.createElement('div');
           if (s.tr === 'M') {
@@ -1652,6 +1782,15 @@
 
     function renderTrainerCal() {
       try {
+        const hasMember = !!selectedMemberInTrainerMode;
+        const mainView = document.getElementById('trainer-main-view');
+        const emptyState = document.getElementById('trainer-empty-state');
+
+        if (mainView) mainView.style.display = hasMember ? 'block' : 'none';
+        if (emptyState) emptyState.style.display = hasMember ? 'none' : 'block';
+
+        if (!hasMember) return; // 未選會員則不繼續渲染日曆細節
+
         document.getElementById('trainer-month-label').textContent = tY + '年 ' + String(tM + 1).padStart(2, '0') + '月';
         const grid = document.getElementById('trainer-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
         const first = new Date(tY, tM, 1).getDay(), days = new Date(tY, tM + 1, 0).getDate();
@@ -1666,38 +1805,127 @@
           const list = document.createElement('div'); list.className = 'mini-slot-list';
           let allS = [];
 
-          // 加強容錯：確保 memAvail 是數組
-          if (Array.isArray(memAvail)) {
-            memAvail.forEach(h => {
-              let cn = Object.keys(COACH_DATA).find(tr => trainerConfirmed[tr] && trainerConfirmed[tr][k] && Array.isArray(trainerConfirmed[tr][k]) && trainerConfirmed[tr][k].indexOf(h) >= 0);
-              if (isOnlyMy && cn && cn !== t && (!isChg || sess.indexOf(h) < 0)) return;
-              if (cn === t) { if (isChg && sess.indexOf(h) < 0) allS.push({ h, type: 'rem' }); else allS.push({ h, type: 'act', tr: t }); }
-              else if (cn) allS.push({ h, type: 'oth', tr: cn });
-              else { if (isChg && sess.indexOf(h) >= 0) allS.push({ h, type: 'add', tr: t }); else { const loc = (consecutiveLocking === true || consecutiveLocking === 'true') && memAvail.map(Number).indexOf(Number(h) - 1) >= 0 && !isBooked(k, Number(h) - 1); allS.push({ h, type: 'avl', loc }); } }
+          // ✅ 精量化視角：僅顯示「此學員已約」或「與此學員空檔衝堂」的時段
+          const memberData = allMembersData[selectedMemberInTrainerMode] || {};
+          const memConfirmed = (memberData[k] || []).map(Number);
+          const unionSlots = new Set([...memAvail.map(Number), ...memConfirmed]);
+
+          if (unionSlots.size > 0) {
+            Array.from(unionSlots).forEach(hr => {
+              // 尋找在此時段排班的教練 (不論是誰)
+              let cn = Object.keys(COACH_DATA).find(tr => {
+                if (!trainerConfirmed[tr] || !trainerConfirmed[tr][k]) return false;
+                return trainerConfirmed[tr][k].some(s => {
+                  if (typeof s === 'string' && s.includes(':')) return Number(s.split(':')[0]) === hr;
+                  return Number(s) === hr;
+                });
+              });
+
+              // 判斷該排班是否屬於「目前選取的會員」
+              let isForThisMember = false;
+              if (cn) {
+                isForThisMember = trainerConfirmed[cn][k].some(s => {
+                  if (typeof s === 'string' && s.includes(':')) return Number(s.split(':')[0]) === hr && s.split(':')[1] === selectedMemberInTrainerMode;
+                  return Number(s) === hr && memConfirmed.includes(hr);
+                });
+              }
+
+              if (isOnlyMy && cn && cn !== t && (!isChg || sess.indexOf(hr) < 0)) return;
+
+              // ✅ 修正邏輯：只要是此學員已確定的預約，不論是否選取教練身分，都應該顯示
+              if (cn && isForThisMember) {
+                const isMyConfirmed = (selectedTrainer && cn === selectedTrainer);
+                if (isMyConfirmed && isChg && sess.indexOf(hr) < 0) {
+                  allS.push({ h: hr, type: 'rem', tr: cn });
+                } else {
+                  allS.push({ h: hr, type: 'act', tr: cn });
+                }
+              }
+              else if (cn) {
+                // 此時段已被佔用（但不是跟此學員約）
+                const isMe = (selectedTrainer && cn === selectedTrainer);
+                if (isMe && memAvail.map(Number).includes(hr)) {
+                  // 是目前選定的教練自己衝堂：顯示具名衝突
+                  let memberName = "";
+                  const foundSlot = trainerConfirmed[cn][k].find(st => typeof st === 'string' && Number(st.split(':')[0]) === hr);
+                  if (foundSlot) memberName = "-" + foundSlot.split(':')[1];
+                  allS.push({ h: hr, type: 'oth', tr: cn + memberName });
+                } else if (!selectedTrainer && memAvail.map(Number).includes(hr)) {
+                  // 教練身分未明，且學員想約：顯示為可預約，隱藏衝堂噪音
+                  const loc = (consecutiveLocking === true || consecutiveLocking === 'true') &&
+                    memAvail.map(Number).includes(hr - 1) &&
+                    !isForThisMemberAtHour(k, hr - 1);
+                  allS.push({ h: hr, type: 'avl', loc });
+                } else {
+                  // 其他教練的預約，或非衝堂的一般忙碌：顯示教練名
+                  allS.push({ h: hr, type: 'oth', tr: cn });
+                }
+              }
+              else {
+                // 完全沒人約的地方
+                if (isChg && sess.indexOf(hr) >= 0) allS.push({ h: hr, type: 'add', tr: t });
+                else {
+                  if (memAvail.map(Number).includes(hr)) {
+                    const loc = (consecutiveLocking === true || consecutiveLocking === 'true') &&
+                      memAvail.map(Number).includes(hr - 1) &&
+                      !isForThisMemberAtHour(k, hr - 1);
+                    allS.push({ h: hr, type: 'avl', loc });
+                  }
+                }
+              }
             });
           }
 
           const hasInteractable = !!t && memAvail.length > 0 && allS.some(s => s.type !== 'oth');
-          el.className = 'cal-cell' + (isPast ? ' past' : '') + (hasInteractable ? ' clickable has-avail-day' : ' is-grey-out') + (isChg ? ' is-changed' : '');
+          // ✅ 視覺邏輯大解鎖：只要當天有學員可約時段，就不要 total hide，讓標籤呈現出來
+          const isGridVisible = (memAvail.length > 0);
+          el.className = 'cal-cell' + (isPast ? ' past' : '') + (isGridVisible ? ' clickable-view' : ' is-grey-out') + (isChg ? ' is-changed' : '');
+          if (!isGridVisible) el.style.pointerEvents = 'none'; else el.style.pointerEvents = 'auto';
 
           allS.sort((a, b) => a.h - b.h).forEach(s => {
             const slot = document.createElement('div');
             let clsName = 'mini-slot';
-            if ((!selectedTrainer || s.tr === selectedTrainer) && (s.type === 'act' || s.type === 'add' || s.type === 'oth')) clsName += ' slot-embossed-focus';
+            const baseTr = (s.tr || "").split('-')[0];
+            // ✅ 聚焦邏輯：僅「自己」且「已定案/新增」的時段才顯示凸版質感
+            const isMe = (selectedTrainer && baseTr === selectedTrainer);
+            if (isMe && (s.type === 'act' || s.type === 'add')) clsName += ' slot-embossed-focus';
             slot.className = clsName;
 
-            if (s.type === 'act') { slot.style.background = COACH_DATA[s.tr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
-            else if (s.type === 'add') { slot.style.background = COACH_DATA[s.tr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}(+)</span>`; }
+            // 基本內容填充
+            if (s.type === 'act') { slot.style.background = COACH_DATA[baseTr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
+            else if (s.type === 'add') { slot.style.background = COACH_DATA[baseTr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}(+)</span>`; }
             else if (s.type === 'rem') { slot.innerHTML = `<span>${s.h}:00</span><span>${selectedTrainer}</span>`; }
-            else if (s.type === 'oth') { slot.style.background = COACH_DATA[s.tr]; slot.style.opacity = selectedTrainer ? 0.3 : 1.0; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
+            else if (s.type === 'oth') { slot.style.background = COACH_DATA[baseTr] || '#ccc'; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
             else if (s.type === 'avl') {
               if (s.loc) { slot.className += ' slot-avail-locked'; slot.innerHTML = `<span>${s.h}:00</span><span>鎖定</span>`; }
               else { slot.className += ' slot-avail-member'; slot.innerHTML = `<span>${s.h}:00</span><span>可預約</span>`; }
             }
+
+            // ✅ 全局視覺過濾：選身分後，「非自己」的時段一律反灰透明化
+            if (selectedTrainer && !isMe) {
+              slot.style.opacity = 0.4;
+              slot.style.filter = 'grayscale(0.6)';
+            } else {
+              slot.style.opacity = 1.0;
+              slot.style.filter = 'none';
+            }
             list.appendChild(slot);
           });
           el.appendChild(list);
-          if (!isPast) el.onclick = () => { if (!t) { showToast('請先選教練身分', 2, true); return; } if (hasInteractable) { openPanel('trainer', k); initCoachPicker(); } else { showToast('該日已無可操作時段', 2, true); } };
+          if (!isPast) el.onclick = () => {
+            if (!t) { showToast('請先選取您的教練身分', 2, true); return; }
+            if (!selectedMemberInTrainerMode) { showToast('請先選取會員', 2, true); return; }
+
+            if (hasInteractable) {
+              openPanel('trainer', k);
+              initCoachPicker();
+            } else if (memAvail.length > 0) {
+              // 此情況為衝堂（雖然有時段但全被占走）
+              showToast('該日可選時段已遭其他預約佔用', 2, true);
+            } else {
+              showToast('該會員當日無預約需求', 1, true);
+            }
+          };
           grid.appendChild(el);
         }
       } catch (e) { console.error("日曆渲染出錯:", e); }
@@ -1706,14 +1934,26 @@
     function openPanel(mode, k) {
       panelMode = mode; panelKey = k; isCancelCoachMode = false;
       const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
-      if (mode === 'member') { 
+      if (mode === 'member') {
         const memberData = allMembersData[targetUser] || {};
-        panelTempSlots = (memberSession[k] !== undefined) ? [...memberSession[k].map(Number)] : [...(memberData[k] || []).map(Number)]; 
-        document.getElementById('member-direct-hint').style.display = 'block'; 
+        panelTempSlots = (memberSession[k] !== undefined) ? [...memberSession[k].map(Number)] : [...(memberData[k] || []).map(Number)];
+        document.getElementById('member-direct-hint').style.display = 'block';
       }
-      else { 
-        panelTempSlots = (trainerConfirmed[selectedTrainer] && trainerConfirmed[selectedTrainer][k]) ? [...trainerConfirmed[selectedTrainer][k].map(Number)] : []; 
-        document.getElementById('member-direct-hint').style.display = 'none'; 
+      else {
+        // ✅ 身分標籤化修正：僅載入屬於「此教練」且標籤為「此學員」的時段
+        const coachFullSlots = (trainerConfirmed[selectedTrainer] && trainerConfirmed[selectedTrainer][k]) ? trainerConfirmed[selectedTrainer][k] : [];
+        panelTempSlots = coachFullSlots
+          .filter(s => typeof s === 'string' && s.split(':')[1] === selectedMemberInTrainerMode)
+          .map(s => Number(s.split(':')[0]));
+
+        // 兼容舊資料 (若完全沒標籤資料，則退回舊交集邏輯)
+        if (panelTempSlots.length === 0 && coachFullSlots.length > 0) {
+          const memberData = allMembersData[selectedMemberInTrainerMode] || {};
+          const memSlots = (memberData[k] || []).map(Number);
+          panelTempSlots = coachFullSlots.filter(s => typeof s !== 'string' && memSlots.includes(Number(s))).map(Number);
+        }
+
+        document.getElementById('member-direct-hint').style.display = 'none';
       }
       renderPanelSlots(); document.getElementById('time-panel').style.display = 'flex';
     }
@@ -1723,7 +1963,7 @@
       const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
       const targetData = allMembersData[targetUser] || {};
       for (let h = 6; h <= 22; h++) {
-        const slot = document.createElement('div'); 
+        const slot = document.createElement('div');
         const hr = Number(h);
         const isMemberIn = panelTempSlots.indexOf(hr) >= 0;
         if (panelMode === 'member') {
@@ -1749,14 +1989,43 @@
           }
         } else {
           const memberDataForTrainer = allMembersData[selectedMemberInTrainerMode] || {};
-          const isMemAvail = (memberDataForTrainer[panelKey] || []).indexOf(h) >= 0;
-          let other = Object.keys(COACH_DATA).find(ot => ot !== selectedTrainer && trainerConfirmed[ot] && trainerConfirmed[ot][panelKey] && trainerConfirmed[ot][panelKey].indexOf(h) >= 0);
+          const isMemAvail = (memberDataForTrainer[panelKey] || []).map(Number).indexOf(h) >= 0;
+          let other = Object.keys(COACH_DATA).find(ot => {
+            if (ot === selectedTrainer || !trainerConfirmed[ot] || !trainerConfirmed[ot][panelKey]) return false;
+            // 支援新格式 ["16:Paul"] 與舊格式 [16]
+            return trainerConfirmed[ot][panelKey].some(s => {
+              if (typeof s === 'string' && s.includes(':')) return Number(s.split(':')[0]) === h;
+              return Number(s) === h;
+            });
+          });
+
+          // 判斷此教練是否正與「他人」約在該時段
+          const currentTrConfirmed = (trainerConfirmed[selectedTrainer] && trainerConfirmed[selectedTrainer][panelKey]) ? trainerConfirmed[selectedTrainer][panelKey] : [];
+          const isWithSomeoneElse = currentTrConfirmed.some(s => {
+            if (typeof s === 'string' && s.includes(':')) {
+              const parts = s.split(':');
+              return Number(parts[0]) === h && parts[1] !== selectedMemberInTrainerMode;
+            }
+            return false;
+          });
+
           const isPicked = panelTempSlots.indexOf(h) >= 0;
           if (!isMemAvail) { slot.className = 'time-slot blocked'; slot.textContent = h + ':00'; }
           else if (other) { slot.className = 'time-slot booked-by-other'; slot.innerHTML = `${h}:00<br><span style="font-size:9px">${other}已約</span>`; }
+          else if (isWithSomeoneElse) {
+            const found = currentTrConfirmed.find(st => typeof st === 'string' && Number(st.split(':')[0]) === h);
+            const otherMem = found ? found.split(':')[1] : "他人";
+            slot.className = 'time-slot booked-by-other';
+            slot.innerHTML = `${h}:00<br><span style="font-size:9px">${selectedTrainer}已約(${otherMem})</span>`;
+          }
           else {
             let isSoftLocked = false;
-            if ((consecutiveLocking === true || consecutiveLocking === 'true') && !isPicked) { if (isMemAvail && (memberDataForTrainer[panelKey] || []).map(Number).indexOf(Number(h) - 1) >= 0 && !isBookedLocally(Number(h) - 1)) isSoftLocked = true; }
+            if ((consecutiveLocking === true || consecutiveLocking === 'true') && !isPicked) {
+              // ✅ 修正連排邏輯：前一小時必須是「此會員」已預訂才解鎖
+              if (isMemAvail && (memberDataForTrainer[panelKey] || []).map(Number).indexOf(Number(h) - 1) >= 0 && !isForThisMemberAtHourInPanel(panelKey, Number(h) - 1)) {
+                isSoftLocked = true;
+              }
+            }
             slot.className = 'time-slot' + (isPicked ? ' confirmed' : '') + (isSoftLocked ? ' consecutive-soft-locked' : '');
             if (isSoftLocked) {
               slot.style.position = 'relative';
@@ -1782,13 +2051,11 @@
         const memAvail = (memberDataForTrainer[panelKey] || []).map(Number);
         if (!isPicked) {
           const hPrev = Number(h) - 1;
-          if (memAvail.includes(hPrev) && !isBookedLocally(hPrev)) {
+          // ✅ 修正連排邏輯
+          if (memAvail.includes(hPrev) && !isForThisMemberAtHourInPanel(panelKey, hPrev)) {
             showToast(`請先預約 ${hPrev}:00`, 3, true); return;
           }
         } else {
-          // ⚠️ 修正：取消時只看 panelTempSlots（面板暫存），
-          // 不可用 isBookedLocally，因為它還會查 trainerConfirmed 舊資料，
-          // 導致「下一格在面板已取消但舊存檔還在」時錯誤卡住。
           const hNext = Number(h) + 1;
           if (memAvail.includes(hNext) && panelTempSlots.indexOf(hNext) >= 0) {
             showToast(`${hNext}:00 已有預約，請先取消`, 4, true); return;
@@ -1797,6 +2064,21 @@
       }
       if (isPicked) panelTempSlots.splice(i, 1); else panelTempSlots.push(h);
       renderPanelSlots();
+    }
+
+    // 輔助函式：綜合檢查此時段是否屬於「此會員」
+    function isForThisMemberAtHour(dateK, hourH) {
+      return Object.keys(COACH_DATA).some(tr => {
+        if (!trainerConfirmed[tr] || !trainerConfirmed[tr][dateK]) return false;
+        return trainerConfirmed[tr][dateK].some(s =>
+          (typeof s === 'string' && s.includes(':') && Number(s.split(':')[0]) === hourH && s.split(':')[1] === selectedMemberInTrainerMode)
+        );
+      });
+    }
+    function isForThisMemberAtHourInPanel(dateK, hourH) {
+      if (panelMode !== 'trainer') return false;
+      // ✅ 聯集檢查：面板暫存時段 OR 資料庫內該學員已由任一教練預訂的時段
+      return panelTempSlots.includes(hourH) || isForThisMemberAtHour(dateK, hourH);
     }
     function applyPanel() {
       if (panelMode === 'member') {
@@ -1833,13 +2115,31 @@
       const batch = {};
       const trainerKey = `trainerConfirmed.${selectedTrainer}.${panelKey}`;
       const memberKey = `members.${selectedMemberInTrainerMode}.${panelKey}`;
-      if (slots.length === 0) {
-        batch[trainerKey] = firebase.firestore.FieldValue.delete();
-        batch[memberKey] = firebase.firestore.FieldValue.delete();
-      } else {
-        batch[trainerKey] = slots;
-        batch[memberKey] = slots;
+
+      const rawOldSlots = (trainerConfirmed[selectedTrainer] && trainerConfirmed[selectedTrainer][panelKey]) ? trainerConfirmed[selectedTrainer][panelKey] : [];
+      // 提取屬於目前學員的舊時段 (支援新舊格式)
+      const myOldSlotsWithThisMember = rawOldSlots.filter(s => {
+        if (typeof s === 'string' && s.includes(':')) return s.split(':')[1] === selectedMemberInTrainerMode;
+        // 舊格式則需比對會員資料
+        const memData = allMembersData[selectedMemberInTrainerMode] || {};
+        return (memData[panelKey] || []).map(Number).includes(Number(s));
+      }).map(s => (typeof s === 'string' ? Number(s.split(':')[0]) : Number(s)));
+
+      const added = slots.filter(h => !myOldSlotsWithThisMember.includes(h));
+      const removed = myOldSlotsWithThisMember.filter(h => !slots.includes(h));
+
+      if (added.length > 0) {
+        const addedWithTags = added.map(h => h + ":" + selectedMemberInTrainerMode);
+        batch[trainerKey] = firebase.firestore.FieldValue.arrayUnion(...addedWithTags);
+        batch[memberKey] = firebase.firestore.FieldValue.arrayUnion(...added);
       }
+      if (removed.length > 0) {
+        // 移除時需考慮新舊兩種可能格式以確保乾淨
+        const removedWithTags = removed.map(h => h + ":" + selectedMemberInTrainerMode);
+        batch[trainerKey] = firebase.firestore.FieldValue.arrayRemove(...removedWithTags, ...removed);
+        batch[memberKey] = firebase.firestore.FieldValue.arrayRemove(...removed);
+      }
+
       saveData(batch);
       renderTrainerCal();
       initCoachPicker();
@@ -1850,29 +2150,26 @@
     function confirmMember() {
       const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
       const targetData = allMembersData[targetUser] || {};
-      
+
       // 收集異動
-      const batch = {}; 
+      const batch = {};
       // 1. 處理新申請的時段 (memberSession)
       Object.keys(memberSession).forEach(k => {
         const slots = [...memberSession[k]];
         const updateKey = `members.${targetUser}.${k}`;
-        if (slots.length === 0) {
-          batch[updateKey] = firebase.firestore.FieldValue.delete();
-        } else {
-          batch[updateKey] = slots;
-        }
+
+        const oldMemSlots = (targetData[k] || []).map(Number);
+        const added = slots.filter(h => !oldMemSlots.includes(h));
+        const removed = oldMemSlots.filter(h => !slots.includes(h));
+
+        if (added.length > 0) batch[updateKey] = firebase.firestore.FieldValue.arrayUnion(...added);
+        if (removed.length > 0) batch[updateKey] = firebase.firestore.FieldValue.arrayRemove(...removed);
       });
-      // 2. 處理「取消」的時段 (pendingCoachRemovals) 連動修復
+      // 2. 處理「取消」的時段 (pendingCoachRemovals)
       Object.keys(pendingCoachRemovals).forEach(k => {
         const updateKey = `members.${targetUser}.${k}`;
-        const currentSlots = [...(targetData[k] || [])];
-        const newSlots = currentSlots.filter(h => pendingCoachRemovals[k].indexOf(h) < 0);
-        if (newSlots.length === 0) {
-          batch[updateKey] = firebase.firestore.FieldValue.delete();
-        } else {
-          batch[updateKey] = newSlots;
-        }
+        const removed = [...pendingCoachRemovals[k]].map(Number);
+        if (removed.length > 0) batch[updateKey] = firebase.firestore.FieldValue.arrayRemove(...removed);
       });
 
       let removedInfo = [];
@@ -1880,11 +2177,11 @@
         Object.keys(COACH_DATA).forEach(tr => {
           if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
             const oldSlots = [...trainerConfirmed[tr][k]];
-            const newSlots = oldSlots.filter(h => 
-              pendingCoachRemovals[k].indexOf(h) < 0 && (memberConfirmed[k] || memberSession[k] || []).indexOf(h) >= 0
+            const newSlots = oldSlots.filter(h =>
+              pendingCoachRemovals[k].indexOf(h) < 0 && (targetData[k] || memberSession[k] || []).indexOf(h) >= 0
             );
             if (oldSlots.length !== newSlots.length) {
-              const removed = oldSlots.filter(h => !newSlots.includes(h)).sort((a,b)=>a-b);
+              const removed = oldSlots.filter(h => !newSlots.includes(h)).sort((a, b) => a - b);
               removedInfo.push({ trainer: tr, date: k, times: removed });
             }
           }
@@ -1894,7 +2191,7 @@
       // 檢查環境
       const isApp = (typeof liff !== 'undefined' && liff.isInClient());
       const envNote = isApp ? "並發送異動通知至 LINE 群組。" : "<br><span style='color:#E57373; font-size:11px;'>⚠️ 注意：目前偵測到您未使用 LINE App，<br>提交後將「不會」發送通知。</span>";
-      
+
       const cc = document.getElementById('custom-confirm');
       document.getElementById('cc-title').textContent = "確認提交異動？";
       document.getElementById('confirm-msg').innerHTML = `您即將提交本月份的預約修改，<br>${envNote}`;
@@ -1907,22 +2204,16 @@
 
     function doActualConfirmMember(batch, removedInfo) {
       const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
-      // 處理被標記取消的教練預約
+
+      // 處理被標記取消的教練預約：僅從教練總表移出帶有「此身分標籤」的時段
       Object.keys(pendingCoachRemovals).forEach(k => {
         Object.keys(COACH_DATA).forEach(tr => {
           if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
-            const memberData = allMembersData[targetUser] || {};
-            const newSlots = trainerConfirmed[tr][k].filter(h => 
-              pendingCoachRemovals[k].indexOf(h) < 0 && (memberData[k] || memberSession[k] || []).indexOf(h) >= 0
-            );
+            const removedHours = [...pendingCoachRemovals[k]].map(Number);
+            const tagsToRemove = removedHours.map(h => h + ":" + targetUser);
+            // 同時嘗試移除標籤格式與舊數字格式
             const updateKey = `trainerConfirmed.${tr}.${k}`;
-            if (newSlots.length === 0) {
-              batch[updateKey] = firebase.firestore.FieldValue.delete();
-              delete trainerConfirmed[tr][k];
-            } else {
-              batch[updateKey] = newSlots;
-              trainerConfirmed[tr][k] = newSlots;
-            }
+            batch[updateKey] = firebase.firestore.FieldValue.arrayRemove(...tagsToRemove, ...removedHours);
           }
         });
       });
