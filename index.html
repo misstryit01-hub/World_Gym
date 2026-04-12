@@ -1014,7 +1014,7 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = '7.3';
+    const APP_VERSION = '7.4';
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1136,7 +1136,8 @@
 
     function showToast(m, sec = 2, isErr = false) { const t = document.getElementById('toast'); t.textContent = m; t.style.background = isErr ? '#D32F2F' : '#2C3E50'; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', sec * 1000); }
     function openCustomConfirm(msg, onOk, title = "確認取消預約？", cancelTxt = "保留預約", okTxt = "確定取消") {
-      document.getElementById('cc-title').textContent = title; document.getElementById('confirm-msg').textContent = msg;
+      document.getElementById('cc-title').textContent = title;
+      document.getElementById('confirm-msg').innerHTML = msg;
       const okBtn = document.getElementById('confirm-ok-btn'), canv = document.getElementById('confirm-cancel-btn');
       okBtn.textContent = okTxt; canv.textContent = cancelTxt; okBtn.onclick = () => { onOk(); closeCustomConfirm(); };
       document.getElementById('custom-confirm').style.display = 'flex';
@@ -1465,11 +1466,14 @@
             slot.className = 'time-slot' + (isRefCancelled ? ' cancel-pending' : ' member-direct-cancel booked-by-other');
             slot.innerHTML = `${h}:00<br><span style="font-size:9px">${coach}${isRefCancelled ? '(已標記取消)' : '已約'}</span>`;
             slot.onclick = () => {
-              if (isRefCancelled) return; openCustomConfirm(`確認要無條件取消 ${coach} 在此時段的課程預約？`, () => {
+              if (isRefCancelled) return;
+              const timeRange = formatTimeRange(h);
+              // 方案 B：標註詳盡、視覺分明
+              openCustomConfirm(`${coach} 的教練課程時段：<br><b>${timeRange}</b>`, () => {
                 if (!pendingCoachRemovals[panelKey]) pendingCoachRemovals[panelKey] = [];
                 if (pendingCoachRemovals[panelKey].indexOf(h) < 0) pendingCoachRemovals[panelKey].push(h);
                 renderPanelSlots(); showToast('已標記取消', 2); renderMemberCal();
-              });
+              }, "確定要取消預約？", "保留預約", "確定取消");
             };
           } else {
             slot.className = 'time-slot' + (isMemberIn ? ' selected' : '');
