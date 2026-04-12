@@ -943,7 +943,7 @@
               style="flex:2;">提交全部修改</button>
           </div>
         </div>
-        <div class="version-tag">V7.1</div>
+        <div class="version-tag">V7.2</div>
       </div>
     </div>
 
@@ -977,7 +977,7 @@
           <div class="cal-day-label">六</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V7.1</div>
+        <div class="version-tag">V7.2</div>
       </div>
     </div>
   </div>
@@ -1014,7 +1014,7 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = '7.1';
+    const APP_VERSION = '7.2';
     (function () {
       const stored = localStorage.getItem('wg_app_version');
       if (stored !== APP_VERSION) {
@@ -1537,8 +1537,11 @@
         }
 
         const cc = document.getElementById('custom-confirm');
+        const isApp = (typeof liff !== 'undefined' && liff.isInClient());
+        const envNote = isApp ? "" : "<br><span style='color:#E57373; font-size:11px;'>⚠️ 偵測到您未使用 LINE App 開啟，<br>套用後將「不會」發送 LINE 通知。</span>";
+        
         document.getElementById('cc-title').textContent = "確認發送預訂？";
-        document.getElementById('confirm-msg').innerHTML = `您即將更新 ${panelKey} 的排班，<br>並發送通知至 LINE 群組。`;
+        document.getElementById('confirm-msg').innerHTML = `您即將更新 ${panelKey} 的排班，<br>並同步至雲端系統。${envNote}`;
         document.getElementById('confirm-ok-btn').onclick = () => {
           doActualApply(slots, diffText);
           closeCustomConfirm();
