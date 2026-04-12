@@ -1117,8 +1117,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.4"; // 核心版號
-    const VERSION_TAG = "V8.4 - 2026/04/13"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.5"; // 核心版號
+    const VERSION_TAG = "V8.5 - 2026/04/13"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1789,9 +1789,10 @@
         if (emptyState) emptyState.style.display = hasMember ? 'none' : 'block';
 
         if (!hasMember) return;
-        
-        // ✅ 恢復：學員核心全局掃描 (不依賴日曆迴圈)
+
+        // ✅ 修正：教練中心化掃描
         let memberAllSess = [];
+        let thisTrainerCount = 0;
         Object.keys(COACH_DATA).forEach(tn => {
           if (trainerConfirmed[tn]) {
             Object.keys(trainerConfirmed[tn]).forEach(dk => {
@@ -1799,14 +1800,15 @@
                 trainerConfirmed[tn][dk].forEach(s => {
                   if (typeof s === 'string' && s.includes(':') && s.split(':')[1] === selectedMemberInTrainerMode) {
                     memberAllSess.push({ date: dk, hr: s.split(':')[0], coach: tn });
+                    if (tn === selectedTrainer) thisTrainerCount++;
                   }
                 });
               }
             });
           }
         });
-        memberAllSess.sort((a,b) => a.date.localeCompare(b.date) || Number(a.hr) - Number(b.hr));
-        const finalCount = memberAllSess.length;
+        memberAllSess.sort((a, b) => a.date.localeCompare(b.date) || Number(a.hr) - Number(b.hr));
+        const allTrainersCount = memberAllSess.length;
 
         document.getElementById('trainer-month-label').textContent = tY + '年 ' + String(tM + 1).padStart(2, '0') + '月';
         const grid = document.getElementById('trainer-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
@@ -1833,8 +1835,8 @@
             if (trainerConfirmed[trName] && trainerConfirmed[trName][k]) {
               trainerConfirmed[trName][k].forEach(s => {
                 if (typeof s === 'string' && s.includes(':')) {
-                   const [phr, pm] = s.split(':');
-                   if (pm === selectedMemberInTrainerMode) allCoachesBookingsForThisMember.push(Number(phr));
+                  const [phr, pm] = s.split(':');
+                  if (pm === selectedMemberInTrainerMode) allCoachesBookingsForThisMember.push(Number(phr));
                 }
               });
             }
@@ -1865,14 +1867,14 @@
                 } else {
                   allS.push({ h: hr, type: 'act', tr: bookingCoach });
                 }
-                return; 
+                return;
               }
 
               // ✅ 2. 衝堂衝突檢核
               if (t) {
                 const isConflict = trainerConfirmed[t] && trainerConfirmed[t][k] && trainerConfirmed[t][k].find(st => {
-                   const c_hr = (typeof st === 'string' && st.includes(':')) ? Number(st.split(':')[0]) : Number(st);
-                   return c_hr === hr;
+                  const c_hr = (typeof st === 'string' && st.includes(':')) ? Number(st.split(':')[0]) : Number(st);
+                  return c_hr === hr;
                 });
                 if (isConflict) {
                   const mName = (typeof isConflict === 'string' && isConflict.includes(':')) ? isConflict.split(':')[1] : "他人";
@@ -1887,7 +1889,7 @@
                 else {
                   const loc = (consecutiveLocking === true || consecutiveLocking === 'true') &&
                     memAvail.map(Number).includes(hr - 1) &&
-                   !isForThisMemberAtHour(k, hr - 1);
+                    !isForThisMemberAtHour(k, hr - 1);
                   allS.push({ h: hr, type: 'avl', loc });
                 }
               }
@@ -1931,7 +1933,7 @@
             const shouldDim = (t && !isMyMission && !isAvailable);
 
             if (shouldDim) {
-              slot.style.opacity = 0.8; 
+              slot.style.opacity = 0.8;
               slot.style.filter = 'grayscale(0.6)';
               if (s.type === 'oth') {
                 slot.style.color = '#fff';
@@ -1963,8 +1965,8 @@
         // --- 恢復：學員專屬明細面板渲染 (V8.5 最終版) ---
         const statsArea = document.getElementById('trainer-stats-area');
         if (selectedMemberInTrainerMode && statsArea) {
-           statsArea.style.display = 'block';
-           let detailHtml = memberAllSess.map(s => `
+          statsArea.style.display = 'block';
+          let detailHtml = memberAllSess.map(s => `
              <div style="font-size:11px; padding:8px 12px; background:#fdfdfd; border-radius:10px; display:flex; justify-content:space-between; margin-top:5px; border:1px solid #f0f0f0; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
                <div>
                   <span style="font-weight:900; color:#555; margin-right:5px;">${s.date.split('-')[1]}/${s.date.split('-')[2]}</span>
@@ -1974,7 +1976,7 @@
              </div>
            `).join('');
 
-           statsArea.innerHTML = `
+          statsArea.innerHTML = `
              <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:1.5px solid #eee; padding-bottom:12px; margin-bottom:12px;">
                <div>
                  <div style="font-size:10px; font-weight:800; color:#bbb; letter-spacing:1.5px; margin-bottom:3px; text-transform:uppercase;">Monthly Attendance</div>
@@ -2050,12 +2052,12 @@
             slot.innerHTML = `${hr}:00<br><span style="font-size:9px">${coach}${isRefCancelled ? '(已標記取消)' : '已約'}</span>`;
             slot.onclick = () => {
               if (isRefCancelled) return;
-              
+
               const hNext = hr + 1;
               // ✅ 狀態感知連鎖檢核：檢查後一小時是否還有約 (已含暫存扣除)
               if (isForThisMemberAtHour(panelKey, hNext)) {
-                 showToast(`請先取消 ${hNext}:00`, 3, true); 
-                 return;
+                showToast(`請先取消 ${hNext}:00`, 3, true);
+                return;
               }
 
               const timeRange = formatTimeRange(hr);
@@ -2063,7 +2065,7 @@
               openCustomConfirm(`確定要發起取消課程請求嗎？<br>${timeRange} (${coach})`, () => {
                 if (!pendingCoachRemovals[panelKey]) pendingCoachRemovals[panelKey] = [];
                 if (pendingCoachRemovals[panelKey].map(Number).indexOf(hr) < 0) {
-                   pendingCoachRemovals[panelKey].push(hr);
+                  pendingCoachRemovals[panelKey].push(hr);
                 }
                 // ✅ 同步清空學員本人意向 (讓綠色格變回灰色格)
                 const sIdx = panelTempSlots.indexOf(hr);
@@ -2102,12 +2104,12 @@
 
           const isPicked = panelTempSlots.indexOf(h) >= 0;
 
-          if (!isMemAvail) { 
-            slot.className = 'time-slot blocked'; slot.textContent = h + ':00'; 
+          if (!isMemAvail) {
+            slot.className = 'time-slot blocked'; slot.textContent = h + ':00';
           }
-          else if (bookedByOtherCoachForMe) { 
-            slot.className = 'time-slot booked-by-other'; 
-            slot.innerHTML = `${h}:00<br><span style="font-size:9px; color:var(--wg-red); font-weight:900;">${bookedByOtherCoachForMe}已約</span>`; 
+          else if (bookedByOtherCoachForMe) {
+            slot.className = 'time-slot booked-by-other';
+            slot.innerHTML = `${h}:00<br><span style="font-size:9px; color:var(--wg-red); font-weight:900;">${bookedByOtherCoachForMe}已約</span>`;
           }
           else if (myOwnConflictFound) {
             const otherMem = myOwnConflictFound.split(':')[1] || "他人";
@@ -2168,16 +2170,16 @@
       // ✅ 自動識別目前操作中的學員 (教練模式下的目標 或 登入學員本人)
       const isTrainerMode = (document.getElementById('screen-trainer').classList.contains('active'));
       const targetM = isTrainerMode ? selectedMemberInTrainerMode : ((currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember);
-      
+
       if (!targetM) return false;
 
       // ✅ 狀態感知：如果該時段已經在本地「標記取消」名單中，則視為「無約」
       if (pendingCoachRemovals[dateK] && pendingCoachRemovals[dateK].map(Number).includes(hourH)) return false;
-      
+
       return Object.keys(COACH_DATA).some(tr => {
         // ✅ 狀態感知加強：如果是目前正在編輯的教練，則以面板暫存區為準 (處理教練模式下的取消)
         if (isTrainerMode && tr === selectedTrainer) {
-           return panelTempSlots.includes(hourH);
+          return panelTempSlots.includes(hourH);
         }
 
         if (!trainerConfirmed[tr] || !trainerConfirmed[tr][dateK]) return false;
