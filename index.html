@@ -901,7 +901,7 @@
           </div>
         </div>
       </div>
-      <div class="version-tag">V7.1</div>
+      <div class="version-tag">V7.2</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -1118,7 +1118,7 @@
 
     function doMemberLogin() {
       const u = document.getElementById('login-user').value, p = document.getElementById('login-pass').value;
-      if (u === '1' && p === '1') {
+      if (u === 'Paul' && p === '1') {
         showScreen('member');
         renderMemberCal();
         // 若資料尚未載入，顯示提示（不阻擋登入，Firebase 到了會自動刷新）
@@ -1177,8 +1177,8 @@
     }
 
     function getDiffMessage(oldArr = [], newArr = []) {
-      const added = newArr.filter(x => !oldArr.includes(x)).sort((a,b)=>a-b);
-      const removed = oldArr.filter(x => !newArr.includes(x)).sort((a,b)=>a-b);
+      const added = newArr.filter(x => !oldArr.includes(x)).sort((a, b) => a - b);
+      const removed = oldArr.filter(x => !newArr.includes(x)).sort((a, b) => a - b);
       let msg = "";
       if (added.length > 0) {
         msg += `\n\n✅ 新增預約時段：\n${added.map(h => formatTimeRange(h)).join('\n')}`;
@@ -1539,7 +1539,7 @@
         const cc = document.getElementById('custom-confirm');
         const isApp = (typeof liff !== 'undefined' && liff.isInClient());
         const envNote = isApp ? "並發送通知至 LINE 群組。" : "<br><span style='color:#E57373; font-size:11px;'>⚠️ 注意：目前偵測到您未使用 LINE App，<br>套用後將「不會」發送通知。</span>";
-        
+
         document.getElementById('cc-title').textContent = "確認發送預訂？";
         document.getElementById('confirm-msg').innerHTML = `您即將更新 ${panelKey} 的排班，<br>${envNote}`;
         document.getElementById('confirm-ok-btn').onclick = () => {
