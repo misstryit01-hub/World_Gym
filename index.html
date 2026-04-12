@@ -109,6 +109,25 @@
       box-shadow: 0 4px 8px rgba(211, 47, 47, 0.2);
     }
 
+    .btn-clear-month {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid #FFCDD2;
+      background: linear-gradient(135deg, #FF8A80, #EF5350);
+      font-size: 12px;
+      font-weight: 800;
+      color: #fff;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 6px rgba(239, 83, 80, 0.2);
+    }
+
+    .btn-clear-month:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px rgba(239, 83, 80, 0.3);
+    }
+
     /* --- 登入頁面 --- */
     .logo-area {
       text-align: center;
@@ -910,8 +929,17 @@
           <div style="display:flex; align-items:center; gap:8px;">
             <h3 id="member-title">會員個人專屬課表</h3>
             <button type="button" class="btn-clear-month" onclick="promptClearMonth()">清空整月預約</button>
+            <button type="button" id="btn-admin-panel" class="btn-clear-month" onclick="openAdminPanel()" style="display:none;">👤 成員管理</button>
           </div>
           <button type="button" class="btn-logout" onclick="logout()">登出</button>
+        </div>
+        <div id="admin-selector-row" class="px-main" style="display:none; margin-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:8px; background:#f0f7ff; padding:8px 12px; border-radius:8px; border:1px solid #d0e3ff;">
+            <span style="font-size:12px; font-weight:800; color:#1976D2; white-space:nowrap;">切換學員帳號:</span>
+            <select id="admin-member-selector" style="flex:1; padding:4px 8px; border-radius:6px; border:1.5px solid #BBDEFB; font-weight:700;" onchange="onAdminSelectMember(this.value)">
+               <!-- 動態置入 -->
+            </select>
+          </div>
         </div>
         <div class="member-toggles-row px-main">
           <div id="batch-toggle" class="toggle-item green" onclick="toggleBatchMode()"><span>複製套用模式</span><span
@@ -992,6 +1020,17 @@
     </div>
   </div>
 
+  <!-- 管理員成員管理彈窗 -->
+  <div id="admin-overlay" class="custom-confirm-overlay" style="z-index: 2100;">
+    <div class="custom-confirm-card" style="width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto;">
+      <h3 style="text-align:center; padding-bottom:10px; border-bottom:1.5px solid #eee;">👥 學員帳號管理</h3>
+      <div id="admin-user-list" style="margin:15px 0;">
+        <!-- 動態置入清單 -->
+      </div>
+      <button class="btn-ui btn-ui-secondary" onclick="closeAdminPanel()" style="width:100%;">關閉管理視窗</button>
+    </div>
+  </div>
+
   <div id="custom-confirm" class="custom-confirm-overlay">
     <div class="custom-confirm-card">
       <div class="confirm-title" id="cc-title">確認取消預約？</div>
@@ -1024,7 +1063,7 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = '8.0';
+    const APP_VERSION = '8.1';
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1045,9 +1084,11 @@
 
     // --- 全域變數 (V8.0 多人擴展) ---
     let currentLogonMember = null;
+    let currentLogonRole = 'member';
     let allMembersData = {}; // 存儲所有學員的預約數據 { name: { date: slots } }
     let memberList = []; // 存儲雲端學員名單
-    let selectedMemberInTrainerMode = "Paul"; // 教練模式目前篩選的學員
+    let selectedMemberInTrainerMode = ""; // 教練模式預設空值
+    let adminViewingTarget = null; // Admin 上帝視角切換的對象
 
     // --- Firebase 配置 (V4.0 Final Stable) ---
     const firebaseConfig = {
@@ -1072,34 +1113,20 @@
     var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, consecutiveLocking = false;
     var isDataLoaded = false;
 
-    // --- 背景靜默存檔 (進化版：支援欄位級更新，防止互蓋) ---
-    function saveData(customUpdates = null) {
-      if (!isDataLoaded) { showToast("連線載入中，請稍候...", 2, true); return; }
-
-      const updatePayload = customUpdates || { memberConfirmed, trainerConfirmed, consecutiveLocking };
-
-      DATA_DOC.update(updatePayload)
-        .then(() => { if (!customUpdates) showToast("✅ 資料已同步至雲端", 2); })
-        .catch((err) => {
-          showToast("❌ 儲存失敗", 2, true);
-          console.error("Save Error:", err);
-        });
-    }
-
     function initRealtimeSync() {
       // 1. 同步所有學員名單 (從 users 集合)
       db.collection('users').where('role', '==', 'member').onSnapshot((snap) => {
         memberList = [];
         const selector = document.getElementById('trainer-member-selector');
+        const adminSelector = document.getElementById('admin-member-selector');
         const oldVal = selector.value;
-        selector.innerHTML = "";
+        if(selector) selector.innerHTML = '<option value="">-- 請選取受訓學員 --</option>';
+        if(adminSelector) adminSelector.innerHTML = "";
         
-        // 優先置入 Paul (確保初始化階段不為空)
-        if (!snap.docs.find(d => d.id === 'Paul')) {
-           memberList.push("Paul");
+        if (currentLogonRole === 'superuser' && adminSelector) {
            const opt = document.createElement('option');
-           opt.value = "Paul"; opt.textContent = "Paul";
-           selector.appendChild(opt);
+           opt.value = "admin"; opt.textContent = "管理員 (空白視角)";
+           adminSelector.appendChild(opt);
         }
 
         snap.forEach(doc => {
@@ -1107,14 +1134,22 @@
             memberList.push(doc.id);
             const opt = document.createElement('option');
             opt.value = doc.id; opt.textContent = doc.id;
-            selector.appendChild(opt);
+            if(selector) selector.appendChild(opt);
+            if(adminSelector) adminSelector.appendChild(opt.cloneNode(true));
           }
         });
         
-        if (memberList.includes(oldVal)) selector.value = oldVal;
-        else if (memberList.length > 0) {
-          selectedMemberInTrainerMode = memberList[0];
-          selector.value = memberList[0];
+        if(selector) {
+          if (memberList.includes(oldVal)) {
+            selector.value = oldVal;
+          } else {
+            selector.value = "";
+            selectedMemberInTrainerMode = "";
+          }
+        }
+        
+        if (adminSelector) {
+           adminSelector.value = adminViewingTarget || 'admin';
         }
       });
 
@@ -1139,13 +1174,17 @@
     }
 
     function saveData(payload) {
+      if (!isDataLoaded) { showToast("連線載入中，請稍候...", 2, true); return; }
+      const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
+      const isMemScreen = document.getElementById('screen-member').classList.contains('active');
+      
       // 若是學員模式存檔，需要加上路徑前綴
-      if (document.getElementById('screen-member').classList.contains('active') && currentLogonMember) {
+      if (isMemScreen && targetUser) {
         const memberPayload = {};
         Object.keys(payload).forEach(k => {
           if (k.startsWith('memberConfirmed.')) {
             const date = k.split('.')[1];
-            memberPayload[`members.${currentLogonMember}.${date}`] = payload[k];
+            memberPayload[`members.${targetUser}.${date}`] = payload[k];
           } else {
             memberPayload[k] = payload[k];
           }
@@ -1173,23 +1212,34 @@
         const userRef = db.collection('users').doc(u);
         const doc = await userRef.get();
 
-        if (doc.exists) {
-          const userData = doc.data();
-          if (userData.p === p) {
-            currentLogonMember = u;
-            document.getElementById('member-title').textContent = `${u} 的個人專屬課表`;
-            showScreen('member');
-            renderMemberCal();
-          } else {
-            showToast('密碼錯誤', 2, true);
-          }
-        } else if (u === 'Paul' && p === '1') {
-          // V8.0 Bootstrap: 第一次登入自動初始化 Paul 帳號
-          await userRef.set({ u: 'Paul', p: '1', role: 'member' });
+        const processLogin = (userData) => {
           currentLogonMember = u;
-          document.getElementById('member-title').textContent = `${u} 的個人專屬課表`;
+          currentLogonRole = userData.role || 'member';
+          adminViewingTarget = (currentLogonRole === 'superuser') ? 'admin' : u; 
+          const adminBtn = document.getElementById('btn-admin-panel');
+          const adminSelector = document.getElementById('admin-selector-row');
+          if (adminBtn) adminBtn.style.display = (currentLogonRole === 'superuser') ? 'block' : 'none';
+          if (adminSelector) {
+            adminSelector.style.display = (currentLogonRole === 'superuser') ? 'block' : 'none';
+            document.getElementById('admin-member-selector').value = adminViewingTarget;
+          }
+          
           showScreen('member');
           renderMemberCal();
+        };
+
+        if (doc.exists) {
+          const userData = doc.data();
+          if (userData.p === p) processLogin(userData);
+          else showToast('密碼錯誤', 2, true);
+        } else if (u === 'admin' && p === 'admin') {
+          const adminData = { u: 'admin', p: 'admin', role: 'superuser' };
+          await userRef.set(adminData);
+          processLogin(adminData);
+        } else if (u === 'Paul' && p === '1') {
+          const paulData = { u: 'Paul', p: '1', role: 'member' };
+          await userRef.set(paulData);
+          processLogin(paulData);
           showToast('已初始化雲端帳號', 2);
         } else {
           showToast('帳號不存在', 2, true);
@@ -1199,6 +1249,103 @@
         showToast('連線失敗，請檢查網路', 2, true);
       }
     }
+
+    // --- 管理員成員管理 ---
+    function openAdminPanel() {
+      const listDiv = document.getElementById('admin-user-list');
+      listDiv.innerHTML = "";
+      
+      // 過濾掉 admin 本身
+      const displayList = memberList.filter(name => name !== 'admin');
+      
+      if (displayList.length === 0) {
+        listDiv.innerHTML = "<div style='text-align:center; color:#999; padding:20px;'>尚無其他學員帳號</div>";
+      } else {
+        displayList.forEach(name => {
+          const row = document.createElement('div');
+          row.style = "display:flex; justify-content:space-between; align-items:center; padding:12px; margin-bottom:8px; background:#fcfcfc; border-radius:10px; border:1px solid #f0f0f0; box-shadow: 0 2px 5px rgba(0,0,0,0.02);";
+          row.innerHTML = `
+            <span style="font-weight:800; color:#37474F; font-size:14px;">${name}</span>
+            <button onclick="confirmDeleteUser('${name}')" style="background:#FFF5F5; color:#E53935; border:1.5px solid #FFEBEE; padding:6px 12px; border-radius:8px; font-size:12px; font-weight:800; cursor:pointer; transition:all 0.2s;">🗑️ 移除</button>
+          `;
+          listDiv.appendChild(row);
+        });
+      }
+      document.getElementById('admin-overlay').style.display = 'flex';
+    }
+
+    function closeAdminPanel() {
+      document.getElementById('admin-overlay').style.display = 'none';
+    }
+
+    function confirmDeleteUser(name) {
+      // 暫時降低背景層級
+      document.getElementById('admin-overlay').style.zIndex = '1000';
+      openCustomConfirm(`確定要永久刪除學員 [${name}] 嗎？<br><br><span style="color:red; font-size:11px;">❗注意：該學員的所有紀錄將會同步被清除，且無法還原。</span>`, () => {
+        executeDeleteUser(name);
+      }, "危險操作：刪除學員", "放棄", "確定刪除");
+      
+      // 攔截取消按鈕
+      const cBtn = document.getElementById('confirm-cancel-btn');
+      cBtn.onclick = () => {
+        document.getElementById('admin-overlay').style.zIndex = '2100';
+        closeCustomConfirm();
+      };
+    }
+
+    async function executeDeleteUser(name) {
+      showToast(`正在刪除 ${name}...`, 1);
+      try {
+        await db.collection('users').doc(name).delete();
+        const payload = {};
+        payload[`members.${name}`] = firebase.firestore.FieldValue.delete();
+        await DATA_DOC.update(payload);
+        
+        showToast(`學員 ${name} 已成功移除`, 3);
+        
+        // 防呆：若刪除的是目前正在觀看的學員，跳回空白視角
+        if (adminViewingTarget === name) {
+           adminViewingTarget = 'admin';
+           document.getElementById('admin-member-selector').value = 'admin';
+           onAdminSelectMember('admin');
+        }
+        
+        document.getElementById('admin-overlay').style.zIndex = '2100';
+        closeCustomConfirm();
+        openAdminPanel(); // 刷新清單
+      } catch (e) {
+        document.getElementById('admin-overlay').style.zIndex = '2100';
+        alert("刪除失敗: " + e.message);
+      }
+    }
+
+    function onAdminSelectMember(name) {
+      adminViewingTarget = name;
+      const isSelf = (name === 'admin');
+      
+      if (isSelf) {
+        document.getElementById('member-title').textContent = `管理員個人主頁 (無排課)`;
+        showToast('已回到管理員空白視角', 2);
+      } else {
+        document.getElementById('member-title').textContent = `${name} 的個人專屬課表 (管理中)`;
+        showToast(`⚠️ 注意：您正在操作 [ ${name} ] 的課表`, 3, true);
+      }
+      
+      renderMemberCal();
+    }
+
+    function showAdminDiagnostic() {
+      const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
+      const tData = allMembersData[targetUser] || {};
+      const diagStr = `
+        [系統診斷項]<br>
+        目前視角: ${targetUser}<br>
+        Pending取消: ${JSON.stringify(pendingCoachRemovals)}<br>
+        本地名單: ${JSON.stringify(tData)}
+      `;
+      openCustomConfirm(diagStr, () => {}, "🔧 管理員診斷中心", "關閉", "了解");
+    }
+
 
     function onTrainerSelectMember(name) {
       selectedMemberInTrainerMode = name;
@@ -1362,7 +1509,11 @@
       else { tM += f; if (tM > 11) { tM = 0; tY++; } else if (tM < 0) { tM = 11; tY--; } renderTrainerCal(); initCoachPicker(); }
     }
     function toggleBatchMode() { isBatchMode = !isBatchMode; document.getElementById('batch-toggle').classList.toggle('active', isBatchMode); document.getElementById('batch-status').textContent = isBatchMode ? 'ON' : 'OFF'; }
-    function isBooked(k, h) { if (pendingCoachRemovals[k] && pendingCoachRemovals[k].indexOf(h) >= 0) return false; return Object.keys(COACH_DATA).some(tr => trainerConfirmed[tr] && trainerConfirmed[tr][k] && trainerConfirmed[tr][k].indexOf(h) >= 0); }
+    function isBooked(k, h) { 
+      const hr = Number(h);
+      if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return false; 
+      return Object.keys(COACH_DATA).some(tr => trainerConfirmed[tr] && trainerConfirmed[tr][k] && trainerConfirmed[tr][k].map(Number).indexOf(hr) >= 0); 
+    }
     function isBookedLocally(h) {
       if (panelTempSlots.indexOf(h) >= 0) return true;
       // ⚠️ 修正：在教練面板模式下，判斷「是否有約」應排除「自己」的雲端舊資料
@@ -1378,12 +1529,13 @@
       const prefix = mY + '-' + String(mM + 1).padStart(2, '0');
       let batch = {};
       let hasCleared = false;
-      const memberData = allMembersData[currentLogonMember] || {};
+      const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
+      const memberData = allMembersData[targetUser] || {};
 
       // 清除會員確認位
       Object.keys(memberData).forEach(k => {
         if (k.startsWith(prefix)) {
-          batch[`members.${currentLogonMember}.${k}`] = firebase.firestore.FieldValue.delete();
+          batch[`members.${targetUser}.${k}`] = firebase.firestore.FieldValue.delete();
           hasCleared = true;
         }
       });
@@ -1412,7 +1564,8 @@
 
     function promptClearMonth() {
       const prefix = mY + '-' + String(mM + 1).padStart(2, '0');
-      const memberData = allMembersData[currentLogonMember] || {};
+      const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
+      const memberData = allMembersData[targetUser] || {};
       let hasRecords = Object.keys(memberData).some(k => k.startsWith(prefix));
       if (!hasRecords) { showToast("本月份目前無排課資料", 2, true); return; }
 
@@ -1436,21 +1589,44 @@
     }
 
     function renderMemberCal() {
+      const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
       document.getElementById('member-month-label').textContent = mY + '年 ' + String(mM + 1).padStart(2, '0') + '月';
       const grid = document.getElementById('member-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
       const first = new Date(mY, mM, 1).getDay(), days = new Date(mY, mM + 1, 0).getDate();
       for (let i = 0; i < first; i++) grid.appendChild(Object.assign(document.createElement('div'), { className: 'cal-cell empty' }));
       
-      const memberData = allMembersData[currentLogonMember] || {};
+      const memberData = allMembersData[targetUser] || {};
 
       for (let d = 1; d <= days; d++) {
         let k = dateKey(mY, mM, d), isPast = new Date(mY, mM, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const el = document.createElement('div'); const list = document.createElement('div'); list.className = 'mini-slot-list';
         let allS = [];
-        Object.keys(COACH_DATA).forEach(tr => { if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) trainerConfirmed[tr][k].forEach(h => { if ((memberSession[k] && memberSession[k].indexOf(h) < 0) || (pendingCoachRemovals[k] && pendingCoachRemovals[k].indexOf(h) >= 0)) return; allS.push({ h, tr, type: 'conf' }); }); });
+        Object.keys(COACH_DATA).forEach(tr => { 
+          if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
+            trainerConfirmed[tr][k].forEach(h => { 
+               const hr = Number(h);
+               if ((memberSession[k] && memberSession[k].map(Number).indexOf(hr) < 0) || (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0)) return; 
+               // 只有確定屬於該學員的教練預約才畫出來
+               const isMine = (memberData[k] && memberData[k].map(Number).indexOf(hr) >= 0);
+               if (isMine) allS.push({ h: hr, tr, type: 'conf' }); 
+            }); 
+          }
+        });
         
-        if (memberSession[k]) memberSession[k].forEach(h => { if (!isBooked(k, h)) allS.push({ h, tr: 'M', type: 'sess' }) });
-        else if (memberData[k]) memberData[k].forEach(h => { if (!isBooked(k, h)) allS.push({ h, tr: 'M', type: 'conf' }) });
+        if (memberSession[k]) {
+          memberSession[k].forEach(h => { 
+            const hr = Number(h);
+            if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return;
+            if (!isBooked(k, hr)) allS.push({ h: hr, tr: 'M', type: 'sess' }) 
+          });
+        }
+        else if (memberData[k]) {
+          memberData[k].forEach(h => { 
+            const hr = Number(h);
+            if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return;
+            if (!isBooked(k, hr)) allS.push({ h: hr, tr: 'M', type: 'conf' }) 
+          });
+        }
         
         allS.sort((a, b) => a.h - b.h).forEach(s => {
           const slot = document.createElement('div');
@@ -1529,39 +1705,47 @@
 
     function openPanel(mode, k) {
       panelMode = mode; panelKey = k; isCancelCoachMode = false;
+      const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
       if (mode === 'member') { 
-        const memberData = allMembersData[currentLogonMember] || {};
-        panelTempSlots = (memberSession[k] !== undefined) ? [...memberSession[k]] : [...(memberData[k] || [])]; 
+        const memberData = allMembersData[targetUser] || {};
+        panelTempSlots = (memberSession[k] !== undefined) ? [...memberSession[k].map(Number)] : [...(memberData[k] || []).map(Number)]; 
         document.getElementById('member-direct-hint').style.display = 'block'; 
       }
-      else { panelTempSlots = (trainerConfirmed[selectedTrainer] && trainerConfirmed[selectedTrainer][k]) ? [...trainerConfirmed[selectedTrainer][k]] : []; document.getElementById('member-direct-hint').style.display = 'none'; }
+      else { 
+        panelTempSlots = (trainerConfirmed[selectedTrainer] && trainerConfirmed[selectedTrainer][k]) ? [...trainerConfirmed[selectedTrainer][k].map(Number)] : []; 
+        document.getElementById('member-direct-hint').style.display = 'none'; 
+      }
       renderPanelSlots(); document.getElementById('time-panel').style.display = 'flex';
     }
 
     function renderPanelSlots() {
       const c = document.getElementById('panel-slots'); c.innerHTML = '';
+      const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
+      const targetData = allMembersData[targetUser] || {};
       for (let h = 6; h <= 22; h++) {
-        const slot = document.createElement('div'); const isMemberIn = panelTempSlots.indexOf(h) >= 0;
+        const slot = document.createElement('div'); 
+        const hr = Number(h);
+        const isMemberIn = panelTempSlots.indexOf(hr) >= 0;
         if (panelMode === 'member') {
-          let coach = Object.keys(COACH_DATA).find(tr => trainerConfirmed[tr] && trainerConfirmed[tr][panelKey] && trainerConfirmed[tr][panelKey].indexOf(h) >= 0);
-          let isRefCancelled = pendingCoachRemovals[panelKey] && pendingCoachRemovals[panelKey].indexOf(h) >= 0;
-          if (coach) {
+          let coach = Object.keys(COACH_DATA).find(tr => trainerConfirmed[tr] && trainerConfirmed[tr][panelKey] && trainerConfirmed[tr][panelKey].map(Number).indexOf(hr) >= 0);
+          let isRefCancelled = pendingCoachRemovals[panelKey] && pendingCoachRemovals[panelKey].map(Number).indexOf(hr) >= 0;
+          const isActuallyHisBook = (targetData[panelKey] || []).map(Number).indexOf(hr) >= 0;
+          if (coach && isActuallyHisBook) {
             slot.className = 'time-slot' + (isRefCancelled ? ' cancel-pending' : ' member-direct-cancel booked-by-other');
-            slot.innerHTML = `${h}:00<br><span style="font-size:9px">${coach}${isRefCancelled ? '(已標記取消)' : '已約'}</span>`;
+            slot.innerHTML = `${hr}:00<br><span style="font-size:9px">${coach}${isRefCancelled ? '(已標記取消)' : '已約'}</span>`;
             slot.onclick = () => {
               if (isRefCancelled) return;
-              const timeRange = formatTimeRange(h);
-              // 方案 B：標註詳盡、視覺分明
+              const timeRange = formatTimeRange(hr);
               openCustomConfirm(`${coach} 的教練課程時段：<br><b>${timeRange}</b>`, () => {
                 if (!pendingCoachRemovals[panelKey]) pendingCoachRemovals[panelKey] = [];
-                if (pendingCoachRemovals[panelKey].indexOf(h) < 0) pendingCoachRemovals[panelKey].push(h);
+                if (pendingCoachRemovals[panelKey].map(Number).indexOf(hr) < 0) pendingCoachRemovals[panelKey].push(hr);
                 renderPanelSlots(); showToast('已標記取消', 2); renderMemberCal();
               }, "確定要取消預約？", "保留預約", "確定取消");
             };
           } else {
             slot.className = 'time-slot' + (isMemberIn ? ' selected' : '');
-            slot.textContent = h + ':00' + (isMemberIn ? '可預約' : '');
-            slot.onclick = () => toggleSlot(h);
+            slot.textContent = hr + ':00' + (isMemberIn ? '可預約' : '');
+            slot.onclick = () => toggleSlot(hr);
           }
         } else {
           const memberDataForTrainer = allMembersData[selectedMemberInTrainerMode] || {};
@@ -1646,12 +1830,17 @@
     }
 
     function doActualApply(slots, diffText) {
-      const updateKey = `trainerConfirmed.${selectedTrainer}.${panelKey}`;
+      const batch = {};
+      const trainerKey = `trainerConfirmed.${selectedTrainer}.${panelKey}`;
+      const memberKey = `members.${selectedMemberInTrainerMode}.${panelKey}`;
       if (slots.length === 0) {
-        saveData({ [updateKey]: firebase.firestore.FieldValue.delete() });
+        batch[trainerKey] = firebase.firestore.FieldValue.delete();
+        batch[memberKey] = firebase.firestore.FieldValue.delete();
       } else {
-        saveData({ [updateKey]: slots });
+        batch[trainerKey] = slots;
+        batch[memberKey] = slots;
       }
+      saveData(batch);
       renderTrainerCal();
       initCoachPicker();
       showToast('更新成功！', 2);
@@ -1659,15 +1848,30 @@
       closePanel();
     }
     function confirmMember() {
+      const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
+      const targetData = allMembersData[targetUser] || {};
+      
       // 收集異動
       const batch = {}; 
+      // 1. 處理新申請的時段 (memberSession)
       Object.keys(memberSession).forEach(k => {
         const slots = [...memberSession[k]];
-        const updateKey = `members.${currentLogonMember}.${k}`;
+        const updateKey = `members.${targetUser}.${k}`;
         if (slots.length === 0) {
           batch[updateKey] = firebase.firestore.FieldValue.delete();
         } else {
           batch[updateKey] = slots;
+        }
+      });
+      // 2. 處理「取消」的時段 (pendingCoachRemovals) 連動修復
+      Object.keys(pendingCoachRemovals).forEach(k => {
+        const updateKey = `members.${targetUser}.${k}`;
+        const currentSlots = [...(targetData[k] || [])];
+        const newSlots = currentSlots.filter(h => pendingCoachRemovals[k].indexOf(h) < 0);
+        if (newSlots.length === 0) {
+          batch[updateKey] = firebase.firestore.FieldValue.delete();
+        } else {
+          batch[updateKey] = newSlots;
         }
       });
 
@@ -1702,11 +1906,12 @@
     }
 
     function doActualConfirmMember(batch, removedInfo) {
+      const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
       // 處理被標記取消的教練預約
       Object.keys(pendingCoachRemovals).forEach(k => {
         Object.keys(COACH_DATA).forEach(tr => {
           if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
-            const memberData = allMembersData[currentLogonMember] || {};
+            const memberData = allMembersData[targetUser] || {};
             const newSlots = trainerConfirmed[tr][k].filter(h => 
               pendingCoachRemovals[k].indexOf(h) < 0 && (memberData[k] || memberSession[k] || []).indexOf(h) >= 0
             );
