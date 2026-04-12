@@ -37,13 +37,15 @@
       display: flex;
       justify-content: center;
       min-height: 100vh;
-      padding-bottom: 50px; /* 避免手機瀏覽器底部工具列遮擋最後一排 */
+      padding-bottom: 50px;
+      /* 避免手機瀏覽器底部工具列遮擋最後一排 */
     }
 
     .app-container {
       width: 100%;
       max-width: 650px;
-      padding: 1.5rem 0; /* 徹底移除外層側邊間距，讓內容能貼邊 */
+      padding: 1.5rem 0;
+      /* 徹底移除外層側邊間距，讓內容能貼邊 */
     }
 
     .screen {
@@ -70,11 +72,13 @@
     .card {
       background: var(--bg-card);
       border-radius: var(--radius-lg);
-      padding: 1.5rem 0; /* 內部側邊改為 0，讓日曆能貼齊邊框 */
+      padding: 1.5rem 0;
+      /* 內部側邊改為 0，讓日曆能貼齊邊框 */
       box-shadow: var(--shadow-sm);
       margin-bottom: 1rem;
       border: 1px solid rgba(0, 0, 0, 0.02);
-      overflow: hidden; /* 防止內部日曆圓角溢出 */
+      overflow: hidden;
+      /* 防止內部日曆圓角溢出 */
     }
 
     .px-main {
@@ -629,7 +633,8 @@
       gap: 12px;
       margin: 1rem 0;
       overflow-y: auto;
-      padding-bottom: 10px; /* 增加底部呼吸空間，避免文字被壓住 */
+      padding-bottom: 10px;
+      /* 增加底部呼吸空間，避免文字被壓住 */
     }
 
     .time-slot {
@@ -709,8 +714,10 @@
       display: flex;
       flex-wrap: wrap;
       justify-content: center;
-      gap: 5px; /* 縮小間距以容納五人 */
-      margin: 1.5rem -1rem -1.5rem -1rem; /* 延伸到邊界 */
+      gap: 5px;
+      /* 縮小間距以容納五人 */
+      margin: 1.5rem -1rem -1.5rem -1rem;
+      /* 延伸到邊界 */
       border-top: 1.5px solid #f2f2f2;
       padding: 18px 12px;
       background: #fafafa;
@@ -719,7 +726,8 @@
 
     .legend-item {
       display: flex;
-      flex-direction: column; /* 改為垂直排列 */
+      flex-direction: column;
+      /* 改為垂直排列 */
       align-items: center;
       gap: 2px;
       font-size: 10px;
@@ -729,9 +737,10 @@
       background: #fff;
       border-radius: 8px;
       border: 1px solid #eee;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      min-width: 58px; /* 確保寬度一致 */
+      min-width: 58px;
+      /* 確保寬度一致 */
     }
 
     .legend-item.dimmed {
@@ -839,7 +848,8 @@
       animation: slideUp 0.3s forwards;
       display: flex;
       flex-direction: column;
-      max-height: 85vh; /* 限制最高高度，強迫時間時段內部出現捲軸 */
+      max-height: 85vh;
+      /* 限制最高高度，強迫時間時段內部出現捲軸 */
     }
 
     .version-tag {
@@ -853,7 +863,8 @@
 
     .toast {
       position: fixed;
-      top: 33%; /* 螢幕上方 1/3 處，最舒適的視覺落點 */
+      top: 33%;
+      /* 螢幕上方 1/3 處，最舒適的視覺落點 */
       left: 50%;
       transform: translate(-50%, -50%);
       color: #fff;
@@ -867,7 +878,6 @@
       text-align: center;
       max-width: 80%;
     }
-
   </style>
 </head>
 
@@ -883,8 +893,10 @@
         <div class="px-main">
           <button type="button" class="btn-trainer-gate" onclick="doTrainerLogin()">教練專區入口</button>
           <div style="border-top: 2.5px dashed #eee; padding-top: 1.5rem;">
-            <div class="field"><label>Account 帳號</label><input type="text" id="login-user" placeholder="帳號" autocomplete="off"></div>
-            <div class="field"><label>Password 密碼</label><input type="password" id="login-pass" placeholder="密碼" autocomplete="off"></div>
+            <div class="field"><label>Account 帳號</label><input type="text" id="login-user" placeholder="帳號"
+                autocomplete="off"></div>
+            <div class="field"><label>Password 密碼</label><input type="password" id="login-pass" placeholder="密碼"
+                autocomplete="off"></div>
             <button type="button" class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
           </div>
         </div>
@@ -908,9 +920,11 @@
               style="font-size:10px; color:#aaa;">OFF</span></div>
         </div>
         <div class="cal-nav px-main">
-          <button type="button" class="nav-btn" onclick="changeMonth('m',-1)"><span class="arrow arrow-left"></span></button>
+          <button type="button" class="nav-btn" onclick="changeMonth('m',-1)"><span
+              class="arrow arrow-left"></span></button>
           <span class="month-label" id="member-month-label"></span>
-          <button type="button" class="nav-btn" onclick="changeMonth('m',1)"><span class="arrow arrow-right"></span></button>
+          <button type="button" class="nav-btn" onclick="changeMonth('m',1)"><span
+              class="arrow arrow-right"></span></button>
         </div>
         <div class="cal-grid" id="member-cal">
           <div class="cal-day-label">日</div>
@@ -1001,7 +1015,7 @@
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
     const APP_VERSION = '7.1';
-    (function() {
+    (function () {
       const stored = localStorage.getItem('wg_app_version');
       if (stored !== APP_VERSION) {
         localStorage.setItem('wg_app_version', APP_VERSION);
@@ -1040,14 +1054,14 @@
     // --- 背景靜默存檔 (進化版：支援欄位級更新，防止互蓋) ---
     function saveData(customUpdates = null) {
       if (!isDataLoaded) { showToast("連線載入中，請稍候...", 2, true); return; }
-      
+
       const updatePayload = customUpdates || { memberConfirmed, trainerConfirmed, consecutiveLocking };
-      
+
       DATA_DOC.update(updatePayload)
         .then(() => { if (!customUpdates) showToast("✅ 資料已同步至雲端", 2); })
-        .catch((err) => { 
+        .catch((err) => {
           showToast("❌ 儲存失敗", 2, true);
-          console.error("Save Error:", err); 
+          console.error("Save Error:", err);
         });
     }
 
@@ -1055,7 +1069,7 @@
       DATA_DOC.onSnapshot((doc) => {
         if (doc.exists) {
           const d = doc.data();
-          
+
           // ✅ 資料正規化：強制所有時段轉為數字
           memberConfirmed = {};
           if (d.memberConfirmed) {
@@ -1063,7 +1077,7 @@
               memberConfirmed[k] = (d.memberConfirmed[k] || []).map(Number);
             });
           }
-          
+
           trainerConfirmed = {};
           if (d.trainerConfirmed) {
             Object.keys(d.trainerConfirmed).forEach(coach => {
@@ -1073,13 +1087,13 @@
               });
             });
           }
-          
+
           if (typeof d.consecutiveLocking !== 'undefined') consecutiveLocking = d.consecutiveLocking;
           console.log("[FIREBASE] 數據已載入:", memberConfirmed);
         }
         isDataLoaded = true;
         updateLockUI(); // 修復重點：讓剛剛取得的連續排課設定確實反映在畫面上
-        
+
         // 🔥 解法2：資料回來後，若當前在 member/trainer 頁則立即刷新
         if (document.getElementById('screen-member').classList.contains('active')) {
           renderMemberCal();
@@ -1088,9 +1102,9 @@
           renderTrainerCal();
           initCoachPicker();
         }
-      }, (err) => { 
+      }, (err) => {
         console.error("Firebase Sync Error:", err);
-        isDataLoaded = true; 
+        isDataLoaded = true;
       });
     }
 
@@ -1123,8 +1137,8 @@
     }
     function closeCustomConfirm() { document.getElementById('custom-confirm').style.display = 'none'; }
 
-    window.onload = () => { 
-      initRealtimeSync(); 
+    window.onload = () => {
+      initRealtimeSync();
       initLiff('2009775588-tjfF8qqB');
     };
 
@@ -1149,7 +1163,7 @@
       if (typeof liff !== 'undefined' && liff.isInClient()) {
         liff.sendMessages([{ type: 'text', text: msg }])
           .then(() => { console.log("LINE Message Sent"); })
-          .catch(err => { 
+          .catch(err => {
             console.error("LINE Send Error:", err);
             showToast("⚠️ LINE 通知發送失敗，請確認是否已授權「傳送訊息」權限", 4, true);
           });
@@ -1163,8 +1177,8 @@
     }
 
     function getDiffMessage(oldArr = [], newArr = []) {
-      const added = newArr.filter(x => !oldArr.includes(x)).sort((a,b)=>a-b);
-      const removed = oldArr.filter(x => !newArr.includes(x)).sort((a,b)=>a-b);
+      const added = newArr.filter(x => !oldArr.includes(x)).sort((a, b) => a - b);
+      const removed = oldArr.filter(x => !newArr.includes(x)).sort((a, b) => a - b);
       let msg = "";
       if (added.length > 0) msg += `\n✅ 新增預約：${added.map(h => formatTimeRange(h)).join(', ')}`;
       if (removed.length > 0) msg += `\n❌ 取消預約：${removed.map(h => formatTimeRange(h)).join(', ')}`;
@@ -1192,9 +1206,9 @@
         rt.appendChild(chip);
         let count = 0; const prefix = tY + '-' + String(tM + 1).padStart(2, '0');
         if (trainerConfirmed[n]) { Object.keys(trainerConfirmed[n]).forEach(k => { if (k.startsWith(prefix)) count += trainerConfirmed[n][k].length; }); }
-        
+
         const isDimmed = selectedTrainer && selectedTrainer !== n;
-        const item = document.createElement('div'); 
+        const item = document.createElement('div');
         item.className = 'legend-item' + (isDimmed ? ' dimmed' : '');
         item.innerHTML = `
           <div style="display:flex; align-items:center; gap:3px;">
@@ -1212,7 +1226,7 @@
       const elM = document.getElementById('lock-toggle');
       if (elM) { elM.classList.toggle('active', consecutiveLocking); document.getElementById('lock-status').textContent = consecutiveLocking ? 'ON' : 'OFF'; }
     }
-    function toggleLockMode() { 
+    function toggleLockMode() {
       const hasUnsaved = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
       if (hasUnsaved) {
         showToast('請先「提交全部修改」或「取消選取」後，再切換此模式', 4, true);
@@ -1222,8 +1236,8 @@
         openCustomConfirm(
           "教練在您的「連續空堂」內\n必須依照順序排課，不可跳空！\n\n( 註：分開的獨立時段不受影響 )\n\n確定要啟用嗎？",
           () => {
-            consecutiveLocking = true; 
-            updateLockUI(); 
+            consecutiveLocking = true;
+            updateLockUI();
             saveData({ consecutiveLocking: true });
             showToast('防爆鎖定已啟用', 3);
           },
@@ -1232,8 +1246,8 @@
           "了解並啟用"
         );
       } else {
-        consecutiveLocking = false; 
-        updateLockUI(); 
+        consecutiveLocking = false;
+        updateLockUI();
         saveData({ consecutiveLocking: false });
         showToast('已關閉強制連續排課', 2, true);
       }
@@ -1244,14 +1258,14 @@
       const m = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
       if (m) openCustomConfirm("尚未確認提交，登出將遺失資料。確定嗎？", () => { executeLogout(); }, "尚未存檔", "繼續", "確定登出"); else executeLogout();
     }
-    function executeLogout() { 
-      showScreen('login'); 
-      memberSession = {}; 
-      trainerSession = {}; 
-      pendingCoachRemovals = {}; 
-      selectedTrainer = ""; 
-      batchTemplate = null; 
-      isOnlyMy = false; 
+    function executeLogout() {
+      showScreen('login');
+      memberSession = {};
+      trainerSession = {};
+      pendingCoachRemovals = {};
+      selectedTrainer = "";
+      batchTemplate = null;
+      isOnlyMy = false;
       isBatchMode = false;
       const tgl = document.getElementById('batch-toggle');
       if (tgl) {
@@ -1267,8 +1281,8 @@
     }
     function toggleBatchMode() { isBatchMode = !isBatchMode; document.getElementById('batch-toggle').classList.toggle('active', isBatchMode); document.getElementById('batch-status').textContent = isBatchMode ? 'ON' : 'OFF'; }
     function isBooked(k, h) { if (pendingCoachRemovals[k] && pendingCoachRemovals[k].indexOf(h) >= 0) return false; return Object.keys(COACH_DATA).some(tr => trainerConfirmed[tr] && trainerConfirmed[tr][k] && trainerConfirmed[tr][k].indexOf(h) >= 0); }
-    function isBookedLocally(h) { 
-      if (panelTempSlots.indexOf(h) >= 0) return true; 
+    function isBookedLocally(h) {
+      if (panelTempSlots.indexOf(h) >= 0) return true;
       // ⚠️ 修正：在教練面板模式下，判斷「是否有約」應排除「自己」的雲端舊資料
       // 否則取消時會因為雲端還有舊紀錄而誤判
       return Object.keys(COACH_DATA).some(tr => {
@@ -1285,9 +1299,9 @@
 
       // 清除會員確認位
       Object.keys(memberConfirmed).forEach(k => {
-        if (k.startsWith(prefix)) { 
+        if (k.startsWith(prefix)) {
           batch[`memberConfirmed.${k}`] = firebase.firestore.FieldValue.delete();
-          hasCleared = true; 
+          hasCleared = true;
         }
       });
       // 清除本地暫存
@@ -1297,9 +1311,9 @@
       // 清除所有教練的確認位
       Object.keys(trainerConfirmed).forEach(coach => {
         Object.keys(trainerConfirmed[coach]).forEach(k => {
-          if (k.startsWith(prefix)) { 
+          if (k.startsWith(prefix)) {
             batch[`trainerConfirmed.${coach}.${k}`] = firebase.firestore.FieldValue.delete();
-            hasCleared = true; 
+            hasCleared = true;
           }
         });
       });
@@ -1405,12 +1419,12 @@
             let clsName = 'mini-slot';
             if ((!selectedTrainer || s.tr === selectedTrainer) && (s.type === 'act' || s.type === 'add' || s.type === 'oth')) clsName += ' slot-embossed-focus';
             slot.className = clsName;
-            
+
             if (s.type === 'act') { slot.style.background = COACH_DATA[s.tr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
             else if (s.type === 'add') { slot.style.background = COACH_DATA[s.tr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}(+)</span>`; }
             else if (s.type === 'rem') { slot.innerHTML = `<span>${s.h}:00</span><span>${selectedTrainer}</span>`; }
             else if (s.type === 'oth') { slot.style.background = COACH_DATA[s.tr]; slot.style.opacity = selectedTrainer ? 0.3 : 1.0; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
-            else if (s.type === 'avl') { 
+            else if (s.type === 'avl') {
               if (s.loc) { slot.className += ' slot-avail-locked'; slot.innerHTML = `<span>${s.h}:00</span><span>鎖定</span>`; }
               else { slot.className += ' slot-avail-member'; slot.innerHTML = `<span>${s.h}:00</span><span>可預約</span>`; }
             }
@@ -1544,7 +1558,7 @@
     }
     function confirmMember() {
       let batch = {};
-      
+
       // 處理會員選取的時段
       Object.keys(memberSession).forEach(k => {
         const slots = [...memberSession[k]];
@@ -1563,12 +1577,12 @@
         Object.keys(COACH_DATA).forEach(tr => {
           if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
             const oldSlots = [...trainerConfirmed[tr][k]];
-            const newSlots = oldSlots.filter(h => 
+            const newSlots = oldSlots.filter(h =>
               pendingCoachRemovals[k].indexOf(h) < 0 && (memberConfirmed[k] || memberSession[k] || []).indexOf(h) >= 0
             );
-            
+
             if (oldSlots.length !== newSlots.length) {
-              const removed = oldSlots.filter(h => !newSlots.includes(h)).sort((a,b)=>a-b);
+              const removed = oldSlots.filter(h => !newSlots.includes(h)).sort((a, b) => a - b);
               removedInfo.push({ trainer: tr, date: k, times: removed });
             }
 
@@ -1584,15 +1598,15 @@
         });
       });
 
-      memberSession = {}; 
-      pendingCoachRemovals = {}; 
-      isBatchMode = false; 
-      updateLockUI(); 
-      document.getElementById('batch-toggle').classList.remove('active'); 
-      document.getElementById('batch-status').textContent = 'OFF'; 
-      
-      saveData(batch); 
-      renderMemberCal(); 
+      memberSession = {};
+      pendingCoachRemovals = {};
+      isBatchMode = false;
+      updateLockUI();
+      document.getElementById('batch-toggle').classList.remove('active');
+      document.getElementById('batch-status').textContent = 'OFF';
+
+      saveData(batch);
+      renderMemberCal();
       showToast('修改成功提交！', 3);
 
       // 發送學員異動通知
