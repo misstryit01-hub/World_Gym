@@ -1122,7 +1122,9 @@
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('.version-tag').forEach(el => el.textContent = 'V' + APP_VERSION);
+        // 確保 APP_VERSION 若已包含 V 則不重複疊加
+        const displayV = APP_VERSION.startsWith('V') ? APP_VERSION : 'V' + APP_VERSION;
+        document.querySelectorAll('.version-tag').forEach(el => el.textContent = displayV);
       });
 
       // 2. 版本檢核與自動刷新機制
