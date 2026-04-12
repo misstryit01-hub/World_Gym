@@ -1564,14 +1564,15 @@
             slot.onclick = () => toggleSlot(h);
           }
         } else {
-          const isMemAvail = (memberConfirmed[panelKey] || []).indexOf(h) >= 0;
+          const memberDataForTrainer = allMembersData[selectedMemberInTrainerMode] || {};
+          const isMemAvail = (memberDataForTrainer[panelKey] || []).indexOf(h) >= 0;
           let other = Object.keys(COACH_DATA).find(ot => ot !== selectedTrainer && trainerConfirmed[ot] && trainerConfirmed[ot][panelKey] && trainerConfirmed[ot][panelKey].indexOf(h) >= 0);
           const isPicked = panelTempSlots.indexOf(h) >= 0;
           if (!isMemAvail) { slot.className = 'time-slot blocked'; slot.textContent = h + ':00'; }
           else if (other) { slot.className = 'time-slot booked-by-other'; slot.innerHTML = `${h}:00<br><span style="font-size:9px">${other}已約</span>`; }
           else {
             let isSoftLocked = false;
-            if ((consecutiveLocking === true || consecutiveLocking === 'true') && !isPicked) { if (isMemAvail && (memberConfirmed[panelKey] || []).map(Number).indexOf(Number(h) - 1) >= 0 && !isBookedLocally(Number(h) - 1)) isSoftLocked = true; }
+            if ((consecutiveLocking === true || consecutiveLocking === 'true') && !isPicked) { if (isMemAvail && (memberDataForTrainer[panelKey] || []).map(Number).indexOf(Number(h) - 1) >= 0 && !isBookedLocally(Number(h) - 1)) isSoftLocked = true; }
             slot.className = 'time-slot' + (isPicked ? ' confirmed' : '') + (isSoftLocked ? ' consecutive-soft-locked' : '');
             if (isSoftLocked) {
               slot.style.position = 'relative';
@@ -1593,7 +1594,8 @@
       h = Number(h);
       let i = panelTempSlots.indexOf(h); const isPicked = i >= 0;
       if (panelMode === 'trainer' && (consecutiveLocking === true || consecutiveLocking === 'true')) {
-        const memAvail = (memberConfirmed[panelKey] || []).map(Number);
+        const memberDataForTrainer = allMembersData[selectedMemberInTrainerMode] || {};
+        const memAvail = (memberDataForTrainer[panelKey] || []).map(Number);
         if (!isPicked) {
           const hPrev = Number(h) - 1;
           if (memAvail.includes(hPrev) && !isBookedLocally(hPrev)) {
