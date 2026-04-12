@@ -1117,8 +1117,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.3"; // 核心版號
-    const VERSION_TAG = "V8.3 - 2026/04/13"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.4"; // 核心版號
+    const VERSION_TAG = "V8.4 - 2026/04/13"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1753,7 +1753,7 @@
           // 如果該時段還沒被教練約走，則顯示為綠色可預約
           const alreadyBooked = allS.some(s => s.h === hr && s.type === 'booked');
           if (!alreadyBooked) {
-             allS.push({ h: hr, tr: 'M', type: 'avail' });
+            allS.push({ h: hr, tr: 'M', type: 'avail' });
           }
         });
 
@@ -1788,13 +1788,13 @@
         if (mainView) mainView.style.display = hasMember ? 'block' : 'none';
         if (emptyState) emptyState.style.display = hasMember ? 'none' : 'block';
 
-        if (!hasMember) return; 
+        if (!hasMember) return;
 
         document.getElementById('trainer-month-label').textContent = tY + '年 ' + String(tM + 1).padStart(2, '0') + '月';
         const grid = document.getElementById('trainer-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
         const first = new Date(tY, tM, 1).getDay(), days = new Date(tY, tM + 1, 0).getDate();
         for (let i = 0; i < first; i++) grid.appendChild(Object.assign(document.createElement('div'), { className: 'cal-cell empty' }));
-        
+
         const t = selectedTrainer;
         const memberData = allMembersData[selectedMemberInTrainerMode] || {};
 
@@ -1803,17 +1803,18 @@
           const el = document.createElement('div');
           let memAvail = memberData[k] || [], sess = trainerSession[k], isChg = sess !== undefined;
           const memConfirmed = (memberData[k] || []).map(Number);
-          
+
           const trFullBusy = (t && trainerConfirmed[t] && trainerConfirmed[t][k]) ? trainerConfirmed[t][k].map(s => {
-              if (typeof s === 'string' && s.includes(':')) return Number(s.split(':')[0]);
-              return Number(s);
+            if (typeof s === 'string' && s.includes(':')) return Number(s.split(':')[0]);
+            return Number(s);
           }) : [];
-          
+
           // ✅ 精簡視角修正：僅當教練繁忙時段與學員空檔 (memAvail) 重疊時，才視為需呈現的衝堂障礙
           const trBusyRelevant = Array.from(new Set(trFullBusy.filter(hr => memAvail.map(Number).includes(hr))));
-          
-          const unionSlots = t ? new Set([...memAvail.map(Number), ...memConfirmed, ...trBusyRelevant]) : new Set([...memConfirmed]);
-          
+
+          // 聯集範圍：學員空檔 + 學員已定案 + 會產生衝堂的教練時段 (始終顯示空檔)
+          const unionSlots = new Set([...memAvail.map(Number), ...memConfirmed, ...trBusyRelevant]);
+
           let allS = [];
           if (unionSlots.size > 0) {
             Array.from(unionSlots).forEach(hr => {
@@ -1834,7 +1835,9 @@
               }
 
               if (!t) {
+                // ✅ 未選教練身分時：呈現成交事實 (Fact) 與學員空檔 (Avail)
                 if (cn && isForThisMember) allS.push({ h: hr, type: 'act', tr: cn });
+                else if (memAvail.map(Number).includes(hr)) allS.push({ h: hr, type: 'avl', loc: false });
                 return;
               }
 
@@ -1843,21 +1846,21 @@
                   if (isChg && sess.indexOf(hr) < 0) allS.push({ h: hr, type: 'rem', tr: t });
                   else allS.push({ h: hr, type: 'act', tr: t });
                 } else {
-                  allS.push({ h: hr, type: 'act', tr: cn }); 
+                  allS.push({ h: hr, type: 'act', tr: cn });
                 }
-              } 
+              }
               else if (cn === t && !isForThisMember) {
                 let memberName = "";
                 const foundSlot = trainerConfirmed[cn][k].find(st => typeof st === 'string' && Number(st.split(':')[0]) === hr);
                 if (foundSlot) memberName = "-" + foundSlot.split(':')[1];
-                allS.push({ h: hr, type: 'oth', tr: cn + memberName }); 
+                allS.push({ h: hr, type: 'oth', tr: cn + memberName });
               }
               else if (memAvail.map(Number).includes(hr)) {
                 if (isChg && sess.indexOf(hr) >= 0) allS.push({ h: hr, type: 'add', tr: t });
                 else {
-                  const loc = (consecutiveLocking === true || consecutiveLocking === 'true') && 
-                              memAvail.map(Number).includes(hr - 1) && 
-                              !isForThisMemberAtHour(k, hr - 1);
+                  const loc = (consecutiveLocking === true || consecutiveLocking === 'true') &&
+                    memAvail.map(Number).includes(hr - 1) &&
+                    !isForThisMemberAtHour(k, hr - 1);
                   allS.push({ h: hr, type: 'avl', loc });
                 }
               }
@@ -1865,8 +1868,8 @@
           }
 
           const hasInteractable = !!t && memAvail.length > 0 && allS.some(s => s.type === 'act' || s.type === 'add' || (s.type === 'avl' && !s.loc));
-          const isGridVisible = (t ? (memAvail.length > 0 || memConfirmed.length > 0 || trFullBusy.length > 0) : (memConfirmed.length > 0));
-          
+          const isGridVisible = (memAvail.length > 0 || memConfirmed.length > 0 || trFullBusy.length > 0);
+
           el.className = 'cal-cell' + (isPast ? ' past' : '') + (isGridVisible ? ' clickable-view' : ' is-grey-out') + (isChg ? ' is-changed' : '');
           el.style.pointerEvents = isGridVisible ? 'auto' : 'none';
           el.innerHTML = `<span class="cal-cell-num">${d}</span>`;
@@ -1877,7 +1880,7 @@
             let clsName = 'mini-slot';
             const baseTr = (s.tr || "").split('-')[0];
             const isMe = (t && baseTr === t);
-            
+
             const shouldEmboss = (!t && (s.type === 'act')) || (isMe && (s.type === 'act' || s.type === 'add'));
             if (shouldEmboss) clsName += ' slot-embossed-focus';
             slot.className = clsName;
@@ -1891,10 +1894,15 @@
               else { slot.className += ' slot-avail-member'; slot.innerHTML = `<span>${s.h}:00</span><span>可預約</span>`; }
             }
 
-            const isMyDirectImpact = (isMe && (s.type === 'act' || s.type === 'add'));
-            const isFactOfMember = (s.type === 'act' || s.type === 'add');
-            const shouldDim = (t && s.type === 'oth');
-            
+            // ✅ 反灰邏輯 (業務對焦)：
+            // 1. 沒選身分 -> 不反灰。
+            // 2. 選身分後：
+            //    - 只有「自己的預約 (act/add)」與「可預約空檔 (avl)」保持全亮。
+            //    - 其餘（別人的預約、衝堂衝突）一律反灰。
+            const isMyMission = isMe && (s.type === 'act' || s.type === 'add');
+            const isAvailable = (s.type === 'avl');
+            const shouldDim = (t && !isMyMission && !isAvailable);
+
             if (shouldDim) {
               slot.style.opacity = 0.4; slot.style.filter = 'grayscale(0.6)';
             } else {
@@ -1958,9 +1966,22 @@
         const hr = Number(h);
         const isMemberIn = panelTempSlots.indexOf(hr) >= 0;
         if (panelMode === 'member') {
-          let coach = Object.keys(COACH_DATA).find(tr => trainerConfirmed[tr] && trainerConfirmed[tr][panelKey] && trainerConfirmed[tr][panelKey].map(Number).indexOf(hr) >= 0);
+          // ✅ 身分標籤感測識別：尋找誰約了這個學員
+          let coach = Object.keys(COACH_DATA).find(tr => {
+            if (!trainerConfirmed[tr] || !trainerConfirmed[tr][panelKey]) return false;
+            return trainerConfirmed[tr][panelKey].some(s => {
+              if (typeof s === 'string' && s.includes(':')) {
+                const parts = s.split(':');
+                return Number(parts[0]) === hr && parts[1] === targetUser;
+              }
+              // 兼容舊格式
+              return Number(s) === hr && (targetData[panelKey] || []).map(Number).includes(hr);
+            });
+          });
+
           let isRefCancelled = pendingCoachRemovals[panelKey] && pendingCoachRemovals[panelKey].map(Number).indexOf(hr) >= 0;
-          const isActuallyHisBook = (targetData[panelKey] || []).map(Number).indexOf(hr) >= 0;
+          const isActuallyHisBook = !!coach; // 只要能識別出是約我的，就視為可取消時段
+
           if (coach && isActuallyHisBook) {
             slot.className = 'time-slot' + (isRefCancelled ? ' cancel-pending' : ' member-direct-cancel booked-by-other');
             slot.innerHTML = `${hr}:00<br><span style="font-size:9px">${coach}${isRefCancelled ? '(已標記取消)' : '已約'}</span>`;
@@ -1980,19 +2001,20 @@
           }
         } else {
           const memberDataForTrainer = allMembersData[selectedMemberInTrainerMode] || {};
-          const isMemAvail = (memberDataForTrainer[panelKey] || []).map(Number).indexOf(h) >= 0;
-          let other = Object.keys(COACH_DATA).find(ot => {
+          const memAvail = (memberDataForTrainer[panelKey] || []).map(Number);
+          const isMemAvail = memAvail.includes(h);
+
+          // 1. 檢查此學員是否已被「其他教練」約走 (必須是約目前這位學員才算)
+          let bookedByOtherCoachForMe = Object.keys(COACH_DATA).find(ot => {
             if (ot === selectedTrainer || !trainerConfirmed[ot] || !trainerConfirmed[ot][panelKey]) return false;
-            // 支援新格式 ["16:Paul"] 與舊格式 [16]
-            return trainerConfirmed[ot][panelKey].some(s => {
-              if (typeof s === 'string' && s.includes(':')) return Number(s.split(':')[0]) === h;
-              return Number(s) === h;
-            });
+            return trainerConfirmed[ot][panelKey].some(s =>
+              (typeof s === 'string' && s.includes(':') && Number(s.split(':')[0]) === h && s.split(':')[1] === selectedMemberInTrainerMode)
+            );
           });
 
-          // 判斷此教練是否正與「他人」約在該時段
+          // 2. 判斷目前的教練是否「自己」在此時段有別的約 (衝堂)
           const currentTrConfirmed = (trainerConfirmed[selectedTrainer] && trainerConfirmed[selectedTrainer][panelKey]) ? trainerConfirmed[selectedTrainer][panelKey] : [];
-          const isWithSomeoneElse = currentTrConfirmed.some(s => {
+          const myOwnConflictFound = currentTrConfirmed.find(s => {
             if (typeof s === 'string' && s.includes(':')) {
               const parts = s.split(':');
               return Number(parts[0]) === h && parts[1] !== selectedMemberInTrainerMode;
@@ -2001,19 +2023,24 @@
           });
 
           const isPicked = panelTempSlots.indexOf(h) >= 0;
-          if (!isMemAvail) { slot.className = 'time-slot blocked'; slot.textContent = h + ':00'; }
-          else if (other) { slot.className = 'time-slot booked-by-other'; slot.innerHTML = `${h}:00<br><span style="font-size:9px">${other}已約</span>`; }
-          else if (isWithSomeoneElse) {
-            const found = currentTrConfirmed.find(st => typeof st === 'string' && Number(st.split(':')[0]) === h);
-            const otherMem = found ? found.split(':')[1] : "他人";
+
+          if (!isMemAvail) {
+            slot.className = 'time-slot blocked'; slot.textContent = h + ':00';
+          }
+          else if (bookedByOtherCoachForMe) {
+            slot.className = 'time-slot booked-by-other';
+            slot.innerHTML = `${h}:00<br><span style="font-size:9px">${bookedByOtherCoachForMe}已約</span>`;
+          }
+          else if (myOwnConflictFound) {
+            const otherMem = myOwnConflictFound.split(':')[1] || "他人";
             slot.className = 'time-slot booked-by-other';
             slot.innerHTML = `${h}:00<br><span style="font-size:9px">${selectedTrainer}已約(${otherMem})</span>`;
           }
           else {
             let isSoftLocked = false;
             if ((consecutiveLocking === true || consecutiveLocking === 'true') && !isPicked) {
-              // ✅ 修正連排邏輯：前一小時必須是「此會員」已預訂才解鎖
-              if (isMemAvail && (memberDataForTrainer[panelKey] || []).map(Number).indexOf(Number(h) - 1) >= 0 && !isForThisMemberAtHourInPanel(panelKey, Number(h) - 1)) {
+              // 連排鎖定：前一小時必須是「目前學員」已預約 (by Any Coach) 才能解鎖
+              if (isMemAvail && memAvail.includes(h - 1) && !isForThisMemberAtHourInPanel(panelKey, h - 1)) {
                 isSoftLocked = true;
               }
             }
@@ -2048,8 +2075,9 @@
           }
         } else {
           const hNext = Number(h) + 1;
-          if (memAvail.includes(hNext) && panelTempSlots.indexOf(hNext) >= 0) {
-            showToast(`${hNext}:00 已有預約，請先取消`, 4, true); return;
+          // ✅ 學員全局連鎖修正：檢查該學員在後續一小時是否有「任何教練」的預約 (包含跨教練)
+          if (isForThisMemberAtHourInPanel(panelKey, hNext)) {
+            showToast(`請先取消 ${hNext}:00`, 4, true); return;
           }
         }
       }
@@ -2128,7 +2156,7 @@
         // 移除時需考慮新舊兩種可能格式以確保乾淨
         const removedWithTags = removed.map(h => h + ":" + selectedMemberInTrainerMode);
         batch[trainerKey] = firebase.firestore.FieldValue.arrayRemove(...removedWithTags, ...removed);
-        batch[memberKey] = firebase.firestore.FieldValue.arrayRemove(...removed);
+        // ✅ 修正：不應在此處刪除學員端的原始需求 (memberKey)，保留其綠色空檔
       }
 
       saveData(batch);
