@@ -889,7 +889,7 @@
           </div>
         </div>
       </div>
-      <div class="version-tag">V6.14</div>
+      <div class="version-tag">V6.15</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -929,7 +929,7 @@
               style="flex:2;">提交全部修改</button>
           </div>
         </div>
-        <div class="version-tag">V6.14</div>
+        <div class="version-tag">V6.15</div>
       </div>
     </div>
 
@@ -963,7 +963,7 @@
           <div class="cal-day-label">六</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V6.14</div>
+        <div class="version-tag">V6.15</div>
       </div>
     </div>
   </div>
@@ -1000,7 +1000,7 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = '6.14';
+    const APP_VERSION = '6.15';
     (function() {
       const stored = localStorage.getItem('wg_app_version');
       if (stored !== APP_VERSION) {
@@ -1149,7 +1149,10 @@
       if (typeof liff !== 'undefined' && liff.isInClient()) {
         liff.sendMessages([{ type: 'text', text: msg }])
           .then(() => { console.log("LINE Message Sent"); })
-          .catch(err => { console.error("LINE Send Error:", err); });
+          .catch(err => { 
+            console.error("LINE Send Error:", err);
+            showToast("⚠️ LINE 通知發送失敗，請確認是否已授權「傳送訊息」權限", 4, true);
+          });
       }
     }
 
