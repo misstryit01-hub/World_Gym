@@ -1117,8 +1117,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.8"; // 核心版號
-    const VERSION_TAG = "V8.8 - 2026/04/13"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.9"; // 核心版號
+    const VERSION_TAG = "V8.9 - 2026/04/13"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1282,6 +1282,7 @@
           }
 
           // 更新個人化標題
+          const titleEl = document.getElementById('member-title');
           if (titleEl) {
             titleEl.textContent = (currentLogonRole === 'superuser') ? "管理員控制台" : `${u} 的專屬課表`;
           }
@@ -1789,40 +1790,37 @@
 
         if (!hasMember) return;
 
-        // ✅ V8.8 修正：全月統計邏輯與日曆渲染完全同步 (排他性識別)
         const days = new Date(tY, tM + 1, 0).getDate();
-        let memberAllSess = [];
-        let thisTrainerCount = 0;
         const targetMemData = allMembersData[selectedMemberInTrainerMode] || {};
 
-        // 掃描本月每一天
-        for (let d = 1; d <= days; d++) {
-          const dk = dateKey(tY, tM, d);
-          const memConfirmed = (targetMemData[dk] || []).map(Number);
-          if (memConfirmed.length === 0) continue;
-
-          // 掃描營業時段 (與日曆渲染邏輯完全一致)
-          for (let hr = 6; hr <= 22; hr++) {
-            let bookingCoach = Object.keys(COACH_DATA).find(tr => {
-              if (!trainerConfirmed[tr] || !trainerConfirmed[tr][dk]) return false;
-              return trainerConfirmed[tr][dk].some(s => {
-                if (typeof s === 'string' && s.includes(':')) {
-                  const parts = s.split(':');
-                  return Number(parts[0]) === hr && parts[1] === selectedMemberInTrainerMode;
+        // ✅ V9.0 修正：堂數計算與「教練個人面板 (openPanel)」邏輯完全對齊
+        let coachSummary = {};
+        Object.keys(COACH_DATA).forEach(tn => {
+          let count = 0;
+          if (trainerConfirmed[tn]) {
+            Object.keys(trainerConfirmed[tn]).forEach(dk => {
+              if (dk.startsWith(tY + '-' + String(tM + 1).padStart(2, '0'))) {
+                const trSess = trainerConfirmed[tn][dk];
+                const memSess = (targetMemData[dk] || []).map(Number);
+                
+                // 1. 先抓標籤時段
+                const tagged = trSess.filter(s => typeof s === 'string' && s.split(':')[1] === selectedMemberInTrainerMode);
+                if (tagged.length > 0) {
+                  count += tagged.length;
+                } else {
+                  // 2. 只有在當天「完全無此學員標籤」時，才退回舊格式交叉比對 (面板邏輯複製)
+                  const legacyCount = trSess.filter(s => typeof s !== 'string' && memSess.includes(Number(s))).length;
+                  count += legacyCount;
                 }
-                // 舊格式交叉比對 (Paul 特規處理與通案)
-                return (Number(s) === hr && memConfirmed.includes(hr));
-              });
+              }
             });
-
-            if (bookingCoach) {
-              memberAllSess.push({ date: dk, hr: hr, coach: bookingCoach });
-              if (bookingCoach === selectedTrainer) thisTrainerCount++;
-            }
           }
-        }
-        memberAllSess.sort((a,b) => a.date.localeCompare(b.date) || Number(a.hr) - Number(b.hr));
-        const allTrainersCount = memberAllSess.length;
+          coachSummary[tn] = count;
+        });
+
+        const allTrainersCount = Object.values(coachSummary).reduce((a, b) => a + b, 0);
+        // 保留 thisTrainerCount 供後續或其他 UI 使用 (如果有需要)
+        const thisTrainerCount = coachSummary[selectedTrainer] || 0;
 
         document.getElementById('trainer-month-label').textContent = tY + '年 ' + String(tM + 1).padStart(2, '0') + '月';
         const grid = document.getElementById('trainer-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
@@ -1953,9 +1951,6 @@
         const statsArea = document.getElementById('trainer-stats-area');
         if (selectedMemberInTrainerMode && statsArea) {
            statsArea.style.display = 'block';
-           let coachSummary = {};
-           Object.keys(COACH_DATA).forEach(tn => coachSummary[tn] = 0);
-           memberAllSess.forEach(s => { if (coachSummary[s.coach] !== undefined) coachSummary[s.coach]++; });
 
            let cardsHtml = Object.keys(COACH_DATA).map(tn => {
              const count = coachSummary[tn];
