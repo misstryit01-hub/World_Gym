@@ -1177,11 +1177,15 @@
     }
 
     function getDiffMessage(oldArr = [], newArr = []) {
-      const added = newArr.filter(x => !oldArr.includes(x)).sort((a, b) => a - b);
-      const removed = oldArr.filter(x => !newArr.includes(x)).sort((a, b) => a - b);
+      const added = newArr.filter(x => !oldArr.includes(x)).sort((a,b)=>a-b);
+      const removed = oldArr.filter(x => !newArr.includes(x)).sort((a,b)=>a-b);
       let msg = "";
-      if (added.length > 0) msg += `\n✅ 新增預約：${added.map(h => formatTimeRange(h)).join(', ')}`;
-      if (removed.length > 0) msg += `\n❌ 取消預約：${removed.map(h => formatTimeRange(h)).join(', ')}`;
+      if (added.length > 0) {
+        msg += `\n\n✅ 新增預約時段：\n${added.map(h => formatTimeRange(h)).join('\n')}`;
+      }
+      if (removed.length > 0) {
+        msg += `\n\n❌ 取消預約時段：\n${removed.map(h => formatTimeRange(h)).join('\n')}`;
+      }
       return msg;
     }
 
@@ -1553,7 +1557,7 @@
       renderTrainerCal();
       initCoachPicker();
       showToast('更新成功！', 2);
-      sendLineNotify(`🔔 教練預約異動通知\n教練：${selectedTrainer}\n日期：${panelKey}${diffText}`);
+      sendLineNotify(`🔔 教練預約異動通知\n日期：${panelKey} (${selectedTrainer})${diffText}`);
       closePanel();
     }
     function confirmMember() {
@@ -1610,11 +1614,11 @@
       showToast('修改成功提交！', 3);
 
       // 發送學員異動通知
-      let msg = `🔔 會員預約異動通知\n您好，您本月份的預約異動已提交成功！`;
+      let msg = `🔔 會員預約異動提交成功！`;
       if (removedInfo.length > 0) {
         msg += `\n\n⚠️ 已主動取消教練課程：`;
         removedInfo.forEach(item => {
-          msg += `\n日期：${item.date} (${item.trainer})\n時段：${item.times.map(h => formatTimeRange(h)).join(', ')}`;
+          msg += `\n日期：${item.date} (${item.trainer})\n時段：\n${item.times.map(h => formatTimeRange(h)).join('\n')}`;
         });
       }
       sendLineNotify(msg);
