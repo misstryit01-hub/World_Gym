@@ -1117,8 +1117,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.5"; // 核心版號
-    const VERSION_TAG = "V8.5 - 2026/04/13"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.7"; // 核心版號
+    const VERSION_TAG = "V8.7 - 2026/04/13"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1790,7 +1790,7 @@
 
         if (!hasMember) return;
 
-        // ✅ 修正：教練中心化掃描
+        // ✅ 學員中心化：全局掃描本月課量
         let memberAllSess = [];
         let thisTrainerCount = 0;
         Object.keys(COACH_DATA).forEach(tn => {
@@ -1807,7 +1807,7 @@
             });
           }
         });
-        memberAllSess.sort((a, b) => a.date.localeCompare(b.date) || Number(a.hr) - Number(b.hr));
+        memberAllSess.sort((a,b) => a.date.localeCompare(b.date) || Number(a.hr) - Number(b.hr));
         const allTrainersCount = memberAllSess.length;
 
         document.getElementById('trainer-month-label').textContent = tY + '年 ' + String(tM + 1).padStart(2, '0') + '月';
@@ -1821,7 +1821,7 @@
         for (let d = 1; d <= days; d++) {
           let k = dateKey(tY, tM, d), isPast = new Date(tY, tM, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
           const el = document.createElement('div');
-          let memAvail = memberData[k] || [], sess = trainerSession[k], isChg = sess !== undefined;
+          let memAvail = memberData[k] || [];
           const memConfirmed = (memberData[k] || []).map(Number);
 
           const trFullBusy = (t && trainerConfirmed[t] && trainerConfirmed[t][k]) ? trainerConfirmed[t][k].map(s => {
@@ -1829,7 +1829,6 @@
             return Number(s);
           }) : [];
 
-          // ✅ 找到「任何教練」在當天約了「這位學員」的所有時段
           let allCoachesBookingsForThisMember = [];
           Object.keys(COACH_DATA).forEach(trName => {
             if (trainerConfirmed[trName] && trainerConfirmed[trName][k]) {
@@ -1843,14 +1842,11 @@
           });
 
           const trBusyRelevant = Array.from(new Set(trFullBusy.filter(hr => memAvail.map(Number).includes(hr))));
-
-          // ✅ 聯集範圍擴張：學員空檔 + 學員原定案 + 教練衝堂 + 「任何教練約該學員的事實」
           const unionSlots = new Set([...memAvail.map(Number), ...memConfirmed, ...trBusyRelevant, ...allCoachesBookingsForThisMember]);
 
           let allS = [];
           if (unionSlots.size > 0) {
             Array.from(unionSlots).forEach(hr => {
-              // ✅ 1. 最高優先級：是否有「任何教練」約了這位學員？
               let bookingCoach = Object.keys(COACH_DATA).find(tr => {
                 if (!trainerConfirmed[tr] || !trainerConfirmed[tr][k]) return false;
                 return trainerConfirmed[tr][k].some(s => {
@@ -1862,7 +1858,9 @@
               });
 
               if (bookingCoach) {
-                if (t && bookingCoach === t && isChg && sess.indexOf(hr) < 0) {
+                // 檢查是否為 trainerSession 的暫存變更
+                const isChg = trainerSession[k] !== undefined;
+                if (t && bookingCoach === t && isChg && trainerSession[k].indexOf(hr) < 0) {
                   allS.push({ h: hr, type: 'rem', tr: t });
                 } else {
                   allS.push({ h: hr, type: 'act', tr: bookingCoach });
@@ -1870,7 +1868,6 @@
                 return;
               }
 
-              // ✅ 2. 衝堂衝突檢核
               if (t) {
                 const isConflict = trainerConfirmed[t] && trainerConfirmed[t][k] && trainerConfirmed[t][k].find(st => {
                   const c_hr = (typeof st === 'string' && st.includes(':')) ? Number(st.split(':')[0]) : Number(st);
@@ -1883,35 +1880,33 @@
                 }
               }
 
-              // ✅ 3. 空檔判定
               if (memAvail.map(Number).includes(hr)) {
-                if (t && isChg && sess.indexOf(hr) >= 0) allS.push({ h: hr, type: 'add', tr: t });
+                const isChg = trainerSession[k] !== undefined;
+                if (t && isChg && trainerSession[k].indexOf(hr) >= 0) allS.push({ h: hr, type: 'add', tr: t });
                 else {
                   const loc = (consecutiveLocking === true || consecutiveLocking === 'true') &&
-                    memAvail.map(Number).includes(hr - 1) &&
-                    !isForThisMemberAtHour(k, hr - 1);
+                              memAvail.map(Number).includes(hr - 1) &&
+                              !isForThisMemberAtHour(k, hr - 1);
                   allS.push({ h: hr, type: 'avl', loc });
                 }
               }
             });
           }
 
-          const hasInteractable = !!t && memAvail.length > 0 && allS.some(s => s.type === 'act' || s.type === 'add' || (s.type === 'avl' && !s.loc));
+          const hasInteractable = !!t && memAvail.length > 0;
           const isGridVisible = (memAvail.length > 0 || memConfirmed.length > 0 || trFullBusy.length > 0);
 
-          el.className = 'cal-cell' + (isPast ? ' past' : '') + (isGridVisible ? ' clickable-view' : ' is-grey-out') + (isChg ? ' is-changed' : '');
+          el.className = 'cal-cell' + (isPast ? ' past' : '') + (isGridVisible ? ' clickable-view' : ' is-grey-out') + (trainerSession[k] ? ' is-changed' : '');
           el.style.pointerEvents = isGridVisible ? 'auto' : 'none';
           el.innerHTML = `<span class="cal-cell-num">${d}</span>`;
           const list = document.createElement('div'); list.className = 'mini-slot-list';
 
-          allS.sort((a, b) => a.h - b.h).forEach(s => {
+          allS.sort((a,b) => a.h - b.h).forEach(s => {
             const slot = document.createElement('div');
             let clsName = 'mini-slot';
             const baseTr = s.c || (s.tr || "").split('-')[0];
             const isMe = (t && baseTr === t);
-
-            const shouldEmboss = (!t && (s.type === 'act')) || (isMe && (s.type === 'act' || s.type === 'add'));
-            if (shouldEmboss) clsName += ' slot-embossed-focus';
+            if ((!t && (s.type === 'act')) || (isMe && (s.type === 'act' || s.type === 'add'))) clsName += ' slot-embossed-focus';
             slot.className = clsName;
 
             if (s.type === 'act') { slot.style.background = COACH_DATA[baseTr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
@@ -1923,74 +1918,57 @@
               else { slot.className += ' slot-avail-member'; slot.innerHTML = `<span>${s.h}:00</span><span>可預約</span>`; }
             }
 
-            // ✅ 反灰邏輯 (業務對焦)：
-            // 1. 沒選身分 -> 不反灰。
-            // 2. 選身分後：
-            //    - 只有「自己的預約 (act/add)」與「可預約空檔 (avl)」保持全亮。
-            //    - 其餘（別人的預約、衝堂衝突）一律反灰。
             const isMyMission = isMe && (s.type === 'act' || s.type === 'add');
-            const isAvailable = (s.type === 'avl');
-            const shouldDim = (t && !isMyMission && !isAvailable);
-
+            const shouldDim = (t && !isMyMission && (s.type !== 'avl'));
             if (shouldDim) {
-              slot.style.opacity = 0.8;
-              slot.style.filter = 'grayscale(0.6)';
-              if (s.type === 'oth') {
-                slot.style.color = '#fff';
-                slot.style.fontWeight = '900';
-              }
-            } else {
-              slot.style.opacity = 1.0; slot.style.filter = 'none';
-            }
+              slot.style.opacity = 0.8; slot.style.filter = 'grayscale(0.6)';
+              if (s.type === 'oth') { slot.style.color = '#fff'; slot.style.fontWeight = '900'; }
+            } else { slot.style.opacity = 1.0; slot.style.filter = 'none'; }
             list.appendChild(slot);
           });
           el.appendChild(list);
           if (!isPast) el.onclick = () => {
-            if (!t) { showToast('請先選取您的教練身分', 2, true); return; }
-            if (!selectedMemberInTrainerMode) { showToast('請先選取會員', 2, true); return; }
-
-            if (hasInteractable) {
-              openPanel('trainer', k);
-              initCoachPicker();
-            } else if (memAvail.length > 0) {
-              // 雖然學員有開需求，但對目前教練來說可能是衝堂或被鎖定
-              showToast('該日可選時段已遭佔用或受連排鎖定', 2, true);
-            } else {
-              showToast('該學員當日無預約空檔', 1, true);
-            }
+            if (!t || !selectedMemberInTrainerMode) { showToast('請先選取身分與學員', 2, true); return; }
+            if (hasInteractable || allS.length > 0) { openPanel('trainer', k); initCoachPicker(); }
+            else showToast('當日無預約空檔', 1, true);
           };
           grid.appendChild(el);
         }
 
-        // --- 恢復：學員專屬明細面板渲染 (V8.5 最終版) ---
+        // --- V8.7 統計區重構：各教練分佈圖 ---
         const statsArea = document.getElementById('trainer-stats-area');
         if (selectedMemberInTrainerMode && statsArea) {
-          statsArea.style.display = 'block';
-          let detailHtml = memberAllSess.map(s => `
-             <div style="font-size:11px; padding:8px 12px; background:#fdfdfd; border-radius:10px; display:flex; justify-content:space-between; margin-top:5px; border:1px solid #f0f0f0; box-shadow:0 2px 4px rgba(0,0,0,0.02);">
-               <div>
-                  <span style="font-weight:900; color:#555; margin-right:5px;">${s.date.split('-')[1]}/${s.date.split('-')[2]}</span>
-                  <span style="font-weight:800; color:#888;">${s.hr}:00</span>
-               </div>
-               <span style="color:var(--wg-green); font-weight:900;">${s.coach}</span>
-             </div>
-           `).join('');
+           statsArea.style.display = 'block';
+           let coachSummary = {};
+           Object.keys(COACH_DATA).forEach(tn => coachSummary[tn] = 0);
+           memberAllSess.forEach(s => { if (coachSummary[s.coach] !== undefined) coachSummary[s.coach]++; });
 
-          statsArea.innerHTML = `
-             <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom:1.5px solid #eee; padding-bottom:12px; margin-bottom:12px;">
-               <div>
-                 <div style="font-size:10px; font-weight:800; color:#bbb; letter-spacing:1.5px; margin-bottom:3px; text-transform:uppercase;">Monthly Attendance</div>
-                 <div style="font-size:20px; font-weight:900; color:#37474F;">${selectedMemberInTrainerMode} <span style="font-size:13px; color:#999; font-weight:700;">的本月彙整</span></div>
-               </div>
-               <div style="text-align:right;">
-                 <span style="font-size:32px; font-weight:900; color:var(--wg-green); line-height:1;">${finalCount}</span>
-                 <span style="font-size:13px; font-weight:800; color:#555;">堂</span>
-               </div>
-             </div>
-             <div style="max-height:180px; overflow-y:auto; padding-right:6px; scrollbar-width: thin;">
-               ${detailHtml || '<div style="text-align:center; color:#ccc; font-size:12px; padding:20px;">本月尚無任何預約紀錄</div>'}
-             </div>
-           `;
+           let cardsHtml = Object.keys(COACH_DATA).map(tn => {
+             const count = coachSummary[tn];
+             if (count === 0 && tn !== selectedTrainer) return '';
+             const isTarget = (tn === selectedTrainer);
+             const coachColor = COACH_DATA[tn];
+             const isDimmed = !!selectedTrainer && !isTarget;
+
+             return `
+               <div style="flex:1; min-width:85px; padding:12px 6px; border-radius:15px; text-align:center; transition:0.3s; 
+                           border:2px solid ${isTarget ? coachColor : '#eee'}; 
+                           background:${isTarget ? coachColor : '#fff'}; 
+                           color:${isTarget ? '#fff' : '#444'}; 
+                           opacity:${isDimmed ? 0.3 : 1}; 
+                           filter:${isDimmed ? 'grayscale(1)' : 'none'}; 
+                           box-shadow:${isTarget ? '0 4px 10px rgba(0,0,0,0.1)' : 'none'};">
+                 <div style="font-size:10px; font-weight:800; opacity:0.7; margin-bottom:4px;">${tn}</div>
+                 <div style="font-size:22px; font-weight:900; line-height:1;">${count}<span style="font-size:11px; font-weight:700; margin-left:2px;">堂</span></div>
+               </div>`;
+           }).join('');
+
+           statsArea.innerHTML = `
+             <div style="padding:10px 0;">
+               <div style="font-size:10px; font-weight:800; color:#bbb; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:4px;">Coaching Distribution</div>
+               <div style="font-size:18px; font-weight:900; color:#333; margin-bottom:12px;">${selectedMemberInTrainerMode} <span style="font-size:13px; color:#999; font-weight:700;">的本月教練分布</span></div>
+               <div style="display:flex; flex-wrap:wrap; gap:10px;">${cardsHtml || '<div style="color:#ccc; font-size:12px; width:100%; text-align:center;">目前無授課紀錄</div>'}</div>
+             </div>`;
         } else if (statsArea) statsArea.style.display = 'none';
       } catch (err) { console.error("渲染錯誤:", err); }
     }
