@@ -889,7 +889,7 @@
           </div>
         </div>
       </div>
-      <div class="version-tag">V6.13</div>
+      <div class="version-tag">V6.14</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -929,7 +929,7 @@
               style="flex:2;">提交全部修改</button>
           </div>
         </div>
-        <div class="version-tag">V6.13</div>
+        <div class="version-tag">V6.14</div>
       </div>
     </div>
 
@@ -963,7 +963,7 @@
           <div class="cal-day-label">六</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V6.13</div>
+        <div class="version-tag">V6.14</div>
       </div>
     </div>
   </div>
@@ -1000,7 +1000,7 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = '6.13';
+    const APP_VERSION = '6.14';
     (function() {
       const stored = localStorage.getItem('wg_app_version');
       if (stored !== APP_VERSION) {
@@ -1143,6 +1143,14 @@
           });
         }
       }).catch(err => { console.error("LIFF Init Error:", err); });
+    }
+
+    function sendLineNotify(msg) {
+      if (typeof liff !== 'undefined' && liff.isInClient()) {
+        liff.sendMessages([{ type: 'text', text: msg }])
+          .then(() => { console.log("LINE Message Sent"); })
+          .catch(err => { console.error("LINE Send Error:", err); });
+      }
     }
 
     function initCoachPicker() {
@@ -1493,6 +1501,7 @@
         renderTrainerCal();
         initCoachPicker();
         showToast('更新成功！', 2);
+        sendLineNotify(`🔔 教練通知：\n${selectedTrainer} 老師已更新 ${panelKey} 的排班紀錄！`);
       }
       closePanel();
     }
@@ -1540,6 +1549,7 @@
       saveData(batch); 
       renderMemberCal(); 
       showToast('修改成功提交！', 3);
+      sendLineNotify(`🔔 預約更新：\n會員已完成本月份預約異動提交！`);
     }
     function resetTrainerSession() { }
     function closePanel() { document.getElementById('time-panel').style.display = 'none'; }
