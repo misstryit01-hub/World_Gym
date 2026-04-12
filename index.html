@@ -889,7 +889,7 @@
           </div>
         </div>
       </div>
-      <div class="version-tag">V6.11</div>
+      <div class="version-tag">V6.12</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -929,7 +929,7 @@
               style="flex:2;">提交全部修改</button>
           </div>
         </div>
-        <div class="version-tag">V6.11</div>
+        <div class="version-tag">V6.12</div>
       </div>
     </div>
 
@@ -963,7 +963,7 @@
           <div class="cal-day-label">六</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V6.11</div>
+        <div class="version-tag">V6.12</div>
       </div>
     </div>
   </div>
@@ -999,7 +999,7 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = '6.4';
+    const APP_VERSION = '6.12';
     (function() {
       const stored = localStorage.getItem('wg_app_version');
       if (stored !== APP_VERSION) {
@@ -1036,13 +1036,14 @@
     var panelMode = '', panelKey = '', panelTempSlots = [], isBatchMode = false, batchTemplate = null, isOnlyMy = false, consecutiveLocking = false;
     var isDataLoaded = false;
 
-    // --- 背景靜默存檔 (修正版：增量合併模式) ---
-    function saveData() {
+    // --- 背景靜默存檔 (進化版：支援欄位級更新，防止互蓋) ---
+    function saveData(customUpdates = null) {
       if (!isDataLoaded) { showToast("連線載入中，請稍候...", 2, true); return; }
       
-      // 核心修正：改用 update 而非 set(merge:true)，確保被刪除的 Key 能在雲端真正消失
-      DATA_DOC.update({ memberConfirmed, trainerConfirmed, consecutiveLocking })
-        .then(() => { showToast("✅ 資料已同步至雲端", 2); })
+      const updatePayload = customUpdates || { memberConfirmed, trainerConfirmed, consecutiveLocking };
+      
+      DATA_DOC.update(updatePayload)
+        .then(() => { if (!customUpdates) showToast("✅ 資料已同步至雲端", 2); })
         .catch((err) => { 
           showToast("❌ 儲存失敗", 2, true);
           console.error("Save Error:", err); 
@@ -1165,7 +1166,6 @@
       if (elM) { elM.classList.toggle('active', consecutiveLocking); document.getElementById('lock-status').textContent = consecutiveLocking ? 'ON' : 'OFF'; }
     }
     function toggleLockMode() { 
-      // 防呆：若會員已有選取中的項目 (尚未提交)，禁止切換模式以免產生邏輯混亂
       const hasUnsaved = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
       if (hasUnsaved) {
         showToast('請先「提交全部修改」或「取消選取」後，再切換此模式', 4, true);
@@ -1177,7 +1177,7 @@
           () => {
             consecutiveLocking = true; 
             updateLockUI(); 
-            saveData();
+            saveData({ consecutiveLocking: true });
             showToast('防爆鎖定已啟用', 3);
           },
           "🔒 強制連續排課：功能說明",
@@ -1187,7 +1187,7 @@
       } else {
         consecutiveLocking = false; 
         updateLockUI(); 
-        saveData(); 
+        saveData({ consecutiveLocking: false });
         showToast('已關閉強制連續排課', 2, true);
       }
     }
@@ -1220,33 +1220,49 @@
     }
     function toggleBatchMode() { isBatchMode = !isBatchMode; document.getElementById('batch-toggle').classList.toggle('active', isBatchMode); document.getElementById('batch-status').textContent = isBatchMode ? 'ON' : 'OFF'; }
     function isBooked(k, h) { if (pendingCoachRemovals[k] && pendingCoachRemovals[k].indexOf(h) >= 0) return false; return Object.keys(COACH_DATA).some(tr => trainerConfirmed[tr] && trainerConfirmed[tr][k] && trainerConfirmed[tr][k].indexOf(h) >= 0); }
-    function isBookedLocally(h) { if (panelTempSlots.indexOf(h) >= 0) return true; return isBooked(panelKey, h); }
+    function isBookedLocally(h) { 
+      if (panelTempSlots.indexOf(h) >= 0) return true; 
+      // ⚠️ 修正：在教練面板模式下，判斷「是否有約」應排除「自己」的雲端舊資料
+      // 否則取消時會因為雲端還有舊紀錄而誤判
+      return Object.keys(COACH_DATA).some(tr => {
+        if (panelMode === 'trainer' && tr === selectedTrainer) return false;
+        if (pendingCoachRemovals[panelKey] && pendingCoachRemovals[panelKey].indexOf(h) >= 0) return false;
+        return trainerConfirmed[tr] && trainerConfirmed[tr][panelKey] && trainerConfirmed[tr][panelKey].indexOf(h) >= 0;
+      });
+    }
 
     function clearMonthData() {
       const prefix = mY + '-' + String(mM + 1).padStart(2, '0');
+      let batch = {};
       let hasCleared = false;
 
+      // 清除會員確認位
       Object.keys(memberConfirmed).forEach(k => {
-        if (k.startsWith(prefix)) { delete memberConfirmed[k]; hasCleared = true; }
+        if (k.startsWith(prefix)) { 
+          batch[`memberConfirmed.${k}`] = firebase.firestore.FieldValue.delete();
+          hasCleared = true; 
+        }
       });
-      Object.keys(memberSession).forEach(k => {
-        if (k.startsWith(prefix)) { delete memberSession[k]; }
-      });
-      Object.keys(pendingCoachRemovals).forEach(k => {
-        if (k.startsWith(prefix)) { delete pendingCoachRemovals[k]; }
-      });
+      // 清除本地暫存
+      Object.keys(memberSession).forEach(k => { if (k.startsWith(prefix)) delete memberSession[k]; });
+      Object.keys(pendingCoachRemovals).forEach(k => { if (k.startsWith(prefix)) delete pendingCoachRemovals[k]; });
+
+      // 清除所有教練的確認位
       Object.keys(trainerConfirmed).forEach(coach => {
         Object.keys(trainerConfirmed[coach]).forEach(k => {
-          if (k.startsWith(prefix)) { delete trainerConfirmed[coach][k]; hasCleared = true; }
+          if (k.startsWith(prefix)) { 
+            batch[`trainerConfirmed.${coach}.${k}`] = firebase.firestore.FieldValue.delete();
+            hasCleared = true; 
+          }
         });
       });
 
       if (hasCleared) {
-        saveData();
+        saveData(batch);
         renderMemberCal();
-        showToast("本月份所有排課與教練紀錄已全數淨空！", 4);
+        showToast("本月份所有紀錄已從雲端淨空！", 4);
       } else {
-        showToast("本月份暫無任何排課可供清除", 2, true);
+        showToast("本月份暫無資料可供清除", 2, true);
       }
     }
 
@@ -1426,8 +1442,11 @@
             showToast(`請先預約 ${hPrev}:00`, 3, true); return;
           }
         } else {
+          // ⚠️ 修正：取消時只看 panelTempSlots（面板暫存），
+          // 不可用 isBookedLocally，因為它還會查 trainerConfirmed 舊資料，
+          // 導致「下一格在面板已取消但舊存檔還在」時錯誤卡住。
           const hNext = Number(h) + 1;
-          if (memAvail.includes(hNext) && isBookedLocally(hNext)) {
+          if (memAvail.includes(hNext) && panelTempSlots.indexOf(hNext) >= 0) {
             showToast(`${hNext}:00 已有預約，請先取消`, 4, true); return;
           }
         }
@@ -1441,10 +1460,15 @@
         batchTemplate = [...panelTempSlots];
         renderMemberCal();
       } else {
-        if (!trainerConfirmed[selectedTrainer]) trainerConfirmed[selectedTrainer] = {};
-        trainerConfirmed[selectedTrainer][panelKey] = [...panelTempSlots];
-        if (trainerConfirmed[selectedTrainer][panelKey].length === 0) delete trainerConfirmed[selectedTrainer][panelKey];
-        saveData();
+        const slots = [...panelTempSlots];
+        const updateKey = `trainerConfirmed.${selectedTrainer}.${panelKey}`;
+        
+        if (slots.length === 0) {
+          saveData({ [updateKey]: firebase.firestore.FieldValue.delete() });
+        } else {
+          saveData({ [updateKey]: slots });
+        }
+
         renderTrainerCal();
         initCoachPicker();
         showToast('更新成功！', 2);
@@ -1452,9 +1476,49 @@
       closePanel();
     }
     function confirmMember() {
-      Object.keys(memberSession).forEach(k => { memberConfirmed[k] = [...memberSession[k]]; if (memberConfirmed[k].length === 0) delete memberConfirmed[k]; });
-      Object.keys(pendingCoachRemovals).forEach(k => { Object.keys(COACH_DATA).forEach(tr => { if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) { trainerConfirmed[tr][k] = trainerConfirmed[tr][k].filter(h => pendingCoachRemovals[k].indexOf(h) < 0 && (memberConfirmed[k] || []).indexOf(h) >= 0); if (trainerConfirmed[tr][k].length === 0) delete trainerConfirmed[tr][k]; } }); });
-      memberSession = {}; pendingCoachRemovals = {}; isBatchMode = false; updateLockUI(); document.getElementById('batch-toggle').classList.remove('active'); document.getElementById('batch-status').textContent = 'OFF'; saveData(); renderMemberCal(); showToast('修改成功提交！', 3);
+      let batch = {};
+      
+      // 處理會員選取的時段
+      Object.keys(memberSession).forEach(k => {
+        const slots = [...memberSession[k]];
+        if (slots.length === 0) {
+          batch[`memberConfirmed.${k}`] = firebase.firestore.FieldValue.delete();
+          delete memberConfirmed[k];
+        } else {
+          batch[`memberConfirmed.${k}`] = slots;
+          memberConfirmed[k] = slots;
+        }
+      });
+
+      // 處理被標記取消的教練預約
+      Object.keys(pendingCoachRemovals).forEach(k => {
+        Object.keys(COACH_DATA).forEach(tr => {
+          if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
+            const newSlots = trainerConfirmed[tr][k].filter(h => 
+              pendingCoachRemovals[k].indexOf(h) < 0 && (memberConfirmed[k] || memberSession[k] || []).indexOf(h) >= 0
+            );
+            const updateKey = `trainerConfirmed.${tr}.${k}`;
+            if (newSlots.length === 0) {
+              batch[updateKey] = firebase.firestore.FieldValue.delete();
+              delete trainerConfirmed[tr][k];
+            } else {
+              batch[updateKey] = newSlots;
+              trainerConfirmed[tr][k] = newSlots;
+            }
+          }
+        });
+      });
+
+      memberSession = {}; 
+      pendingCoachRemovals = {}; 
+      isBatchMode = false; 
+      updateLockUI(); 
+      document.getElementById('batch-toggle').classList.remove('active'); 
+      document.getElementById('batch-status').textContent = 'OFF'; 
+      
+      saveData(batch); 
+      renderMemberCal(); 
+      showToast('修改成功提交！', 3);
     }
     function resetTrainerSession() { }
     function closePanel() { document.getElementById('time-panel').style.display = 'none'; }
