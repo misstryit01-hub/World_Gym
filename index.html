@@ -1117,8 +1117,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.7"; // 核心版號
-    const VERSION_TAG = "V8.7 - 2026/04/13"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.8"; // 核心版號
+    const VERSION_TAG = "V8.8 - 2026/04/13"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1282,7 +1282,6 @@
           }
 
           // 更新個人化標題
-          const titleEl = document.getElementById('member-title');
           if (titleEl) {
             titleEl.textContent = (currentLogonRole === 'superuser') ? "管理員控制台" : `${u} 的專屬課表`;
           }
@@ -1790,29 +1789,44 @@
 
         if (!hasMember) return;
 
-        // ✅ 學員中心化：全局掃描本月課量
+        // ✅ V8.8 修正：全月統計邏輯與日曆渲染完全同步 (排他性識別)
+        const days = new Date(tY, tM + 1, 0).getDate();
         let memberAllSess = [];
         let thisTrainerCount = 0;
-        Object.keys(COACH_DATA).forEach(tn => {
-          if (trainerConfirmed[tn]) {
-            Object.keys(trainerConfirmed[tn]).forEach(dk => {
-              if (dk.startsWith(tY + '-' + String(tM + 1).padStart(2, '0'))) {
-                trainerConfirmed[tn][dk].forEach(s => {
-                  if (typeof s === 'string' && s.includes(':') && s.split(':')[1] === selectedMemberInTrainerMode) {
-                    memberAllSess.push({ date: dk, hr: s.split(':')[0], coach: tn });
-                    if (tn === selectedTrainer) thisTrainerCount++;
-                  }
-                });
-              }
+        const targetMemData = allMembersData[selectedMemberInTrainerMode] || {};
+
+        // 掃描本月每一天
+        for (let d = 1; d <= days; d++) {
+          const dk = dateKey(tY, tM, d);
+          const memConfirmed = (targetMemData[dk] || []).map(Number);
+          if (memConfirmed.length === 0) continue;
+
+          // 掃描營業時段 (與日曆渲染邏輯完全一致)
+          for (let hr = 6; hr <= 22; hr++) {
+            let bookingCoach = Object.keys(COACH_DATA).find(tr => {
+              if (!trainerConfirmed[tr] || !trainerConfirmed[tr][dk]) return false;
+              return trainerConfirmed[tr][dk].some(s => {
+                if (typeof s === 'string' && s.includes(':')) {
+                  const parts = s.split(':');
+                  return Number(parts[0]) === hr && parts[1] === selectedMemberInTrainerMode;
+                }
+                // 舊格式交叉比對 (Paul 特規處理與通案)
+                return (Number(s) === hr && memConfirmed.includes(hr));
+              });
             });
+
+            if (bookingCoach) {
+              memberAllSess.push({ date: dk, hr: hr, coach: bookingCoach });
+              if (bookingCoach === selectedTrainer) thisTrainerCount++;
+            }
           }
-        });
+        }
         memberAllSess.sort((a,b) => a.date.localeCompare(b.date) || Number(a.hr) - Number(b.hr));
         const allTrainersCount = memberAllSess.length;
 
         document.getElementById('trainer-month-label').textContent = tY + '年 ' + String(tM + 1).padStart(2, '0') + '月';
         const grid = document.getElementById('trainer-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
-        const first = new Date(tY, tM, 1).getDay(), days = new Date(tY, tM + 1, 0).getDate();
+        const first = new Date(tY, tM, 1).getDay();
         for (let i = 0; i < first; i++) grid.appendChild(Object.assign(document.createElement('div'), { className: 'cal-cell empty' }));
 
         const t = selectedTrainer;
