@@ -1538,10 +1538,10 @@
 
         const cc = document.getElementById('custom-confirm');
         const isApp = (typeof liff !== 'undefined' && liff.isInClient());
-        const envNote = isApp ? "" : "<br><span style='color:#E57373; font-size:11px;'>⚠️ 偵測到您未使用 LINE App 開啟，<br>套用後將「不會」發送 LINE 通知。</span>";
+        const envNote = isApp ? "並發送通知至 LINE 群組。" : "<br><span style='color:#E57373; font-size:11px;'>⚠️ 注意：目前偵測到您未使用 LINE App，<br>套用後將「不會」發送通知。</span>";
         
         document.getElementById('cc-title').textContent = "確認發送預訂？";
-        document.getElementById('confirm-msg').innerHTML = `您即將更新 ${panelKey} 的排班，<br>並同步至雲端系統。${envNote}`;
+        document.getElementById('confirm-msg').innerHTML = `您即將更新 ${panelKey} 的排班，<br>${envNote}`;
         document.getElementById('confirm-ok-btn').onclick = () => {
           doActualApply(slots, diffText);
           closeCustomConfirm();
