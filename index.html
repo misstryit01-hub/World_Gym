@@ -889,7 +889,7 @@
           </div>
         </div>
       </div>
-      <div class="version-tag">V6.12</div>
+      <div class="version-tag">V6.13</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -929,7 +929,7 @@
               style="flex:2;">提交全部修改</button>
           </div>
         </div>
-        <div class="version-tag">V6.12</div>
+        <div class="version-tag">V6.13</div>
       </div>
     </div>
 
@@ -963,7 +963,7 @@
           <div class="cal-day-label">六</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V6.12</div>
+        <div class="version-tag">V6.13</div>
       </div>
     </div>
   </div>
@@ -996,10 +996,11 @@
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = '6.12';
+    const APP_VERSION = '6.13';
     (function() {
       const stored = localStorage.getItem('wg_app_version');
       if (stored !== APP_VERSION) {
@@ -1122,7 +1123,27 @@
     }
     function closeCustomConfirm() { document.getElementById('custom-confirm').style.display = 'none'; }
 
-    window.onload = () => { initRealtimeSync(); };
+    window.onload = () => { 
+      initRealtimeSync(); 
+      initLiff('2009775588-tjfF8qqB');
+    };
+
+    function initLiff(liffId) {
+      liff.init({ liffId }).then(() => {
+        if (!liff.isLoggedIn()) {
+          // 若沒登入 LINE，則不強制但保持功能
+          console.log("LIFF Not Logged In");
+        } else {
+          liff.getProfile().then(profile => {
+            console.log("LIFF Profile:", profile);
+            // 自動帶入 LINE 名稱到登入欄位 (若是空的話)
+            const u = document.getElementById('login-user');
+            if (u && !u.value) u.value = profile.displayName;
+            showToast(`歡迎回來 ${profile.displayName}！`, 3);
+          });
+        }
+      }).catch(err => { console.error("LIFF Init Error:", err); });
+    }
 
     function initCoachPicker() {
       const rt = document.getElementById('coach-picker'), l = document.getElementById('coach-legend');

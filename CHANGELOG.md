@@ -1,5 +1,10 @@
 # 專案版本更新紀錄 (CHANGELOG)
 
+## [V6.13] - 2026-04-12
+### 🚀 LINE 生態系深度整合 (LINE Ecosystem Integration)
+- **實裝 LINE LIFF SDK**：正式串接 LINE Front-end Framework。當使用者在 LINE 內開啟網頁時，系統將自動偵測並抓取使用者顯示名稱，優化登入體驗。
+- **預約系統行動化**：準備迎接 LINE 選單與自動訊息通知功能，大幅提升教練與學員的操作便利性。
+
 ## [V6.12] - 2026-04-12
 ### 🛡️ 併發衝突與卡控邏輯修復 (Concurrency & Logic Fix)
 - **實裝欄位級更新 (Field-level Updates)**：將 Firestore 存檔邏輯優化為針對特定路徑（如 `trainerConfirmed.教練.日期`）進行更新，徹底解決多位教練同時操作時資料互相覆蓋（Cover）的問題。
