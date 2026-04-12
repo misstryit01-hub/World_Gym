@@ -1117,8 +1117,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.2"; // 核心版本號
-    const VERSION_TAG = "V8.2 - 2026/04/12"; // UI顯示標籤 上的版號標籤
+    const APP_VERSION = "V8.3"; // 核心版號
+    const VERSION_TAG = "V8.3 - 2026/04/13"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1725,47 +1725,44 @@
         let k = dateKey(mY, mM, d), isPast = new Date(mY, mM, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
         const el = document.createElement('div'); const list = document.createElement('div'); list.className = 'mini-slot-list';
         let allS = [];
+        // 1. 已確定的教練預約 (分身分標籤感測)
         Object.keys(COACH_DATA).forEach(tr => {
           if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
             trainerConfirmed[tr][k].forEach(s => {
               let hr, isMine = false;
               if (typeof s === 'string' && s.includes(':')) {
-                const parts = s.split(':');
-                hr = Number(parts[0]);
-                isMine = (parts[1] === targetUser);
+                const parts = s.split(':'); hr = Number(parts[0]); isMine = (parts[1] === targetUser);
               } else {
-                hr = Number(s);
-                // 舊資料相容邏輯
-                isMine = (memberData[k] && memberData[k].map(Number).indexOf(hr) >= 0);
+                hr = Number(s); isMine = (memberData[k] && memberData[k].map(Number).indexOf(hr) >= 0);
               }
-
-              if ((memberSession[k] && memberSession[k].map(Number).indexOf(hr) < 0) || (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0)) return;
-              if (isMine) allS.push({ h: hr, tr, type: 'conf' });
+              // 排除掉正在申請取消的時段
+              if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return;
+              if (isMine) allS.push({ h: hr, tr, type: 'booked' });
             });
           }
         });
 
-        if (memberSession[k]) {
-          memberSession[k].forEach(h => {
-            const hr = Number(h);
-            if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return;
-            if (!isBooked(k, hr)) allS.push({ h: hr, tr: 'M', type: 'sess' })
-          });
-        }
-        else if (memberData[k]) {
-          memberData[k].forEach(h => {
-            const hr = Number(h);
-            if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return;
-            if (!isBooked(k, hr)) allS.push({ h: hr, tr: 'M', type: 'conf' })
-          });
-        }
+        // 2. 處理「可預約時段」(聯集資料庫與暫存緩衝)
+        const dbAvail = (memberData[k] || []).map(Number);
+        const tempAvail = (memberSession[k] || []);
+        // 如果正在編輯該日，則以 tempAvail 為準，否則以 dbAvail 為準
+        let effectiveAvail = memberSession[k] ? tempAvail : dbAvail;
+
+        effectiveAvail.forEach(h => {
+          const hr = Number(h);
+          // 如果該時段還沒被教練約走，則顯示為綠色可預約
+          const alreadyBooked = allS.some(s => s.h === hr && s.type === 'booked');
+          if (!alreadyBooked) {
+             allS.push({ h: hr, tr: 'M', type: 'avail' });
+          }
+        });
 
         allS.sort((a, b) => a.h - b.h).forEach(s => {
           const slot = document.createElement('div');
-          if (s.tr === 'M') {
+          if (s.type === 'avail') {
             slot.className = 'mini-slot slot-avail-member';
             slot.innerHTML = `<span>${s.h}:00</span><span>可預約</span>`;
-          } else {
+          } else if (s.type === 'booked') {
             slot.className = 'mini-slot slot-embossed-focus';
             slot.style.background = COACH_DATA[s.tr];
             slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`;
@@ -1791,30 +1788,35 @@
         if (mainView) mainView.style.display = hasMember ? 'block' : 'none';
         if (emptyState) emptyState.style.display = hasMember ? 'none' : 'block';
 
-        if (!hasMember) return; // 未選會員則不繼續渲染日曆細節
+        if (!hasMember) return; 
 
         document.getElementById('trainer-month-label').textContent = tY + '年 ' + String(tM + 1).padStart(2, '0') + '月';
         const grid = document.getElementById('trainer-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
         const first = new Date(tY, tM, 1).getDay(), days = new Date(tY, tM + 1, 0).getDate();
         for (let i = 0; i < first; i++) grid.appendChild(Object.assign(document.createElement('div'), { className: 'cal-cell empty' }));
+        
+        const t = selectedTrainer;
+        const memberData = allMembersData[selectedMemberInTrainerMode] || {};
+
         for (let d = 1; d <= days; d++) {
           let k = dateKey(tY, tM, d), isPast = new Date(tY, tM, d) < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-          const el = document.createElement('div'); const t = selectedTrainer;
-          let memberDataInTrainer = allMembersData[selectedMemberInTrainerMode] || {};
-          let memAvail = memberDataInTrainer[k] || [], sess = trainerSession[k], isChg = sess !== undefined;
-          el.className = 'cal-cell' + (isPast ? ' past' : '') + (memAvail.length > 0 ? ' clickable has-avail-day' : ' is-grey-out') + (isChg ? ' is-changed' : '');
-          el.innerHTML = `<span class="cal-cell-num">${d}</span>`;
-          const list = document.createElement('div'); list.className = 'mini-slot-list';
-          let allS = [];
-
-          // ✅ 精量化視角：僅顯示「此學員已約」或「與此學員空檔衝堂」的時段
-          const memberData = allMembersData[selectedMemberInTrainerMode] || {};
+          const el = document.createElement('div');
+          let memAvail = memberData[k] || [], sess = trainerSession[k], isChg = sess !== undefined;
           const memConfirmed = (memberData[k] || []).map(Number);
-          const unionSlots = new Set([...memAvail.map(Number), ...memConfirmed]);
-
+          
+          const trFullBusy = (t && trainerConfirmed[t] && trainerConfirmed[t][k]) ? trainerConfirmed[t][k].map(s => {
+              if (typeof s === 'string' && s.includes(':')) return Number(s.split(':')[0]);
+              return Number(s);
+          }) : [];
+          
+          // ✅ 精簡視角修正：僅當教練繁忙時段與學員空檔 (memAvail) 重疊時，才視為需呈現的衝堂障礙
+          const trBusyRelevant = Array.from(new Set(trFullBusy.filter(hr => memAvail.map(Number).includes(hr))));
+          
+          const unionSlots = t ? new Set([...memAvail.map(Number), ...memConfirmed, ...trBusyRelevant]) : new Set([...memConfirmed]);
+          
+          let allS = [];
           if (unionSlots.size > 0) {
             Array.from(unionSlots).forEach(hr => {
-              // 尋找在此時段排班的教練 (不論是誰)
               let cn = Object.keys(COACH_DATA).find(tr => {
                 if (!trainerConfirmed[tr] || !trainerConfirmed[tr][k]) return false;
                 return trainerConfirmed[tr][k].some(s => {
@@ -1823,7 +1825,6 @@
                 });
               });
 
-              // 判斷該排班是否屬於「目前選取的會員」
               let isForThisMember = false;
               if (cn) {
                 isForThisMember = trainerConfirmed[cn][k].some(s => {
@@ -1832,84 +1833,72 @@
                 });
               }
 
-              if (isOnlyMy && cn && cn !== t && (!isChg || sess.indexOf(hr) < 0)) return;
+              if (!t) {
+                if (cn && isForThisMember) allS.push({ h: hr, type: 'act', tr: cn });
+                return;
+              }
 
-              // ✅ 修正邏輯：只要是此學員已確定的預約，不論是否選取教練身分，都應該顯示
               if (cn && isForThisMember) {
-                const isMyConfirmed = (selectedTrainer && cn === selectedTrainer);
-                if (isMyConfirmed && isChg && sess.indexOf(hr) < 0) {
-                  allS.push({ h: hr, type: 'rem', tr: cn });
+                if (cn === t) {
+                  if (isChg && sess.indexOf(hr) < 0) allS.push({ h: hr, type: 'rem', tr: t });
+                  else allS.push({ h: hr, type: 'act', tr: t });
                 } else {
-                  allS.push({ h: hr, type: 'act', tr: cn });
+                  allS.push({ h: hr, type: 'act', tr: cn }); 
                 }
+              } 
+              else if (cn === t && !isForThisMember) {
+                let memberName = "";
+                const foundSlot = trainerConfirmed[cn][k].find(st => typeof st === 'string' && Number(st.split(':')[0]) === hr);
+                if (foundSlot) memberName = "-" + foundSlot.split(':')[1];
+                allS.push({ h: hr, type: 'oth', tr: cn + memberName }); 
               }
-              else if (cn) {
-                // 此時段已被佔用（但不是跟此學員約）
-                const isMe = (selectedTrainer && cn === selectedTrainer);
-                if (isMe && memAvail.map(Number).includes(hr)) {
-                  // 是目前選定的教練自己衝堂：顯示具名衝突
-                  let memberName = "";
-                  const foundSlot = trainerConfirmed[cn][k].find(st => typeof st === 'string' && Number(st.split(':')[0]) === hr);
-                  if (foundSlot) memberName = "-" + foundSlot.split(':')[1];
-                  allS.push({ h: hr, type: 'oth', tr: cn + memberName });
-                } else if (!selectedTrainer && memAvail.map(Number).includes(hr)) {
-                  // 教練身分未明，且學員想約：顯示為可預約，隱藏衝堂噪音
-                  const loc = (consecutiveLocking === true || consecutiveLocking === 'true') &&
-                    memAvail.map(Number).includes(hr - 1) &&
-                    !isForThisMemberAtHour(k, hr - 1);
-                  allS.push({ h: hr, type: 'avl', loc });
-                } else {
-                  // 其他教練的預約，或非衝堂的一般忙碌：顯示教練名
-                  allS.push({ h: hr, type: 'oth', tr: cn });
-                }
-              }
-              else {
-                // 完全沒人約的地方
+              else if (memAvail.map(Number).includes(hr)) {
                 if (isChg && sess.indexOf(hr) >= 0) allS.push({ h: hr, type: 'add', tr: t });
                 else {
-                  if (memAvail.map(Number).includes(hr)) {
-                    const loc = (consecutiveLocking === true || consecutiveLocking === 'true') &&
-                      memAvail.map(Number).includes(hr - 1) &&
-                      !isForThisMemberAtHour(k, hr - 1);
-                    allS.push({ h: hr, type: 'avl', loc });
-                  }
+                  const loc = (consecutiveLocking === true || consecutiveLocking === 'true') && 
+                              memAvail.map(Number).includes(hr - 1) && 
+                              !isForThisMemberAtHour(k, hr - 1);
+                  allS.push({ h: hr, type: 'avl', loc });
                 }
               }
             });
           }
 
-          const hasInteractable = !!t && memAvail.length > 0 && allS.some(s => s.type !== 'oth');
-          // ✅ 視覺邏輯大解鎖：只要當天有學員可約時段，就不要 total hide，讓標籤呈現出來
-          const isGridVisible = (memAvail.length > 0);
+          const hasInteractable = !!t && memAvail.length > 0 && allS.some(s => s.type === 'act' || s.type === 'add' || (s.type === 'avl' && !s.loc));
+          const isGridVisible = (t ? (memAvail.length > 0 || memConfirmed.length > 0 || trFullBusy.length > 0) : (memConfirmed.length > 0));
+          
           el.className = 'cal-cell' + (isPast ? ' past' : '') + (isGridVisible ? ' clickable-view' : ' is-grey-out') + (isChg ? ' is-changed' : '');
-          if (!isGridVisible) el.style.pointerEvents = 'none'; else el.style.pointerEvents = 'auto';
+          el.style.pointerEvents = isGridVisible ? 'auto' : 'none';
+          el.innerHTML = `<span class="cal-cell-num">${d}</span>`;
+          const list = document.createElement('div'); list.className = 'mini-slot-list';
 
           allS.sort((a, b) => a.h - b.h).forEach(s => {
             const slot = document.createElement('div');
             let clsName = 'mini-slot';
             const baseTr = (s.tr || "").split('-')[0];
-            // ✅ 聚焦邏輯：僅「自己」且「已定案/新增」的時段才顯示凸版質感
-            const isMe = (selectedTrainer && baseTr === selectedTrainer);
-            if (isMe && (s.type === 'act' || s.type === 'add')) clsName += ' slot-embossed-focus';
+            const isMe = (t && baseTr === t);
+            
+            const shouldEmboss = (!t && (s.type === 'act')) || (isMe && (s.type === 'act' || s.type === 'add'));
+            if (shouldEmboss) clsName += ' slot-embossed-focus';
             slot.className = clsName;
 
-            // 基本內容填充
             if (s.type === 'act') { slot.style.background = COACH_DATA[baseTr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
             else if (s.type === 'add') { slot.style.background = COACH_DATA[baseTr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}(+)</span>`; }
-            else if (s.type === 'rem') { slot.innerHTML = `<span>${s.h}:00</span><span>${selectedTrainer}</span>`; }
+            else if (s.type === 'rem') { slot.innerHTML = `<span>${s.h}:00</span><span>${t}</span>`; }
             else if (s.type === 'oth') { slot.style.background = COACH_DATA[baseTr] || '#ccc'; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
             else if (s.type === 'avl') {
               if (s.loc) { slot.className += ' slot-avail-locked'; slot.innerHTML = `<span>${s.h}:00</span><span>鎖定</span>`; }
               else { slot.className += ' slot-avail-member'; slot.innerHTML = `<span>${s.h}:00</span><span>可預約</span>`; }
             }
 
-            // ✅ 全局視覺過濾：選身分後，「非自己」的時段一律反灰透明化
-            if (selectedTrainer && !isMe) {
-              slot.style.opacity = 0.4;
-              slot.style.filter = 'grayscale(0.6)';
+            const isMyDirectImpact = (isMe && (s.type === 'act' || s.type === 'add'));
+            const isFactOfMember = (s.type === 'act' || s.type === 'add');
+            const shouldDim = (t && s.type === 'oth');
+            
+            if (shouldDim) {
+              slot.style.opacity = 0.4; slot.style.filter = 'grayscale(0.6)';
             } else {
-              slot.style.opacity = 1.0;
-              slot.style.filter = 'none';
+              slot.style.opacity = 1.0; slot.style.filter = 'none';
             }
             list.appendChild(slot);
           });
@@ -1922,15 +1911,15 @@
               openPanel('trainer', k);
               initCoachPicker();
             } else if (memAvail.length > 0) {
-              // 此情況為衝堂（雖然有時段但全被占走）
-              showToast('該日可選時段已遭其他預約佔用', 2, true);
+              // 雖然學員有開需求，但對目前教練來說可能是衝堂或被鎖定
+              showToast('該日可選時段已遭佔用或受連排鎖定', 2, true);
             } else {
-              showToast('該會員當日無預約需求', 1, true);
+              showToast('該學員當日無預約空檔', 1, true);
             }
           };
           grid.appendChild(el);
         }
-      } catch (e) { console.error("日曆渲染出錯:", e); }
+      } catch (err) { console.error("渲染錯誤:", err); }
     }
 
     function openPanel(mode, k) {
