@@ -956,6 +956,12 @@
           <div class="coach-hint">請點選您的教練身分以開始預約</div>
           <div class="coach-row" id="coach-picker"></div>
         </div>
+        <div class="trainer-ctrl-row px-main">
+          <div class="cal-nav-compact">
+            <button type="button" class="nav-btn" onclick="changeMonth('t',-1)"><span class="arrow arrow-left"></span></button>
+            <span class="month-label" id="trainer-month-label"></span>
+            <button type="button" class="nav-btn" onclick="changeMonth('t',1)"><span class="arrow arrow-right"></span></button>
+          </div>
           <button type="button" class="view-toggle-btn" id="only-my-btn" onclick="toggleOnlyMy()">
             <div class="checkbox-box">
               <div class="check-mark"></div>
@@ -1087,12 +1093,24 @@
         const selector = document.getElementById('trainer-member-selector');
         const oldVal = selector.value;
         selector.innerHTML = "";
+        
+        // 優先置入 Paul (確保初始化階段不為空)
+        if (!snap.docs.find(d => d.id === 'Paul')) {
+           memberList.push("Paul");
+           const opt = document.createElement('option');
+           opt.value = "Paul"; opt.textContent = "Paul";
+           selector.appendChild(opt);
+        }
+
         snap.forEach(doc => {
-          memberList.push(doc.id);
-          const opt = document.createElement('option');
-          opt.value = doc.id; opt.textContent = doc.id;
-          selector.appendChild(opt);
+          if (!memberList.includes(doc.id)) {
+            memberList.push(doc.id);
+            const opt = document.createElement('option');
+            opt.value = doc.id; opt.textContent = doc.id;
+            selector.appendChild(opt);
+          }
         });
+        
         if (memberList.includes(oldVal)) selector.value = oldVal;
         else if (memberList.length > 0) {
           selectedMemberInTrainerMode = memberList[0];
