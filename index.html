@@ -889,7 +889,7 @@
           </div>
         </div>
       </div>
-      <div class="version-tag">V6.15</div>
+      <div class="version-tag">V7.0</div>
     </div>
 
     <div id="screen-member" class="screen">
@@ -929,7 +929,7 @@
               style="flex:2;">提交全部修改</button>
           </div>
         </div>
-        <div class="version-tag">V6.15</div>
+        <div class="version-tag">V7.0</div>
       </div>
     </div>
 
@@ -963,7 +963,7 @@
           <div class="cal-day-label">六</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V6.15</div>
+        <div class="version-tag">V7.0</div>
       </div>
     </div>
   </div>
@@ -1000,7 +1000,7 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = '6.15';
+    const APP_VERSION = '7.0';
     (function() {
       const stored = localStorage.getItem('wg_app_version');
       if (stored !== APP_VERSION) {
@@ -1154,6 +1154,21 @@
             showToast("⚠️ LINE 通知發送失敗，請確認是否已授權「傳送訊息」權限", 4, true);
           });
       }
+    }
+
+    function formatTimeRange(h) {
+      const start = String(h).padStart(2, '0') + ':00';
+      const end = String(Number(h) + 1).padStart(2, '0') + ':00';
+      return `${start} ~ ${end}`;
+    }
+
+    function getDiffMessage(oldArr = [], newArr = []) {
+      const added = newArr.filter(x => !oldArr.includes(x)).sort((a,b)=>a-b);
+      const removed = oldArr.filter(x => !newArr.includes(x)).sort((a,b)=>a-b);
+      let msg = "";
+      if (added.length > 0) msg += `\n✅ 新增預約：\n${added.map(h => "- " + formatTimeRange(h)).join('\n')}`;
+      if (removed.length > 0) msg += `\n❌ 取消預約：\n${removed.map(h => "- " + formatTimeRange(h)).join('\n')}`;
+      return msg;
     }
 
     function initCoachPicker() {
@@ -1492,9 +1507,9 @@
         batchTemplate = [...panelTempSlots];
         renderMemberCal();
       } else {
-        const slots = [...panelTempSlots];
-        const updateKey = `trainerConfirmed.${selectedTrainer}.${panelKey}`;
-        
+        const oldSlots = (trainerConfirmed[selectedTrainer] && trainerConfirmed[selectedTrainer][panelKey]) ? [...trainerConfirmed[selectedTrainer][panelKey]] : [];
+        const diffText = getDiffMessage(oldSlots, slots);
+
         if (slots.length === 0) {
           saveData({ [updateKey]: firebase.firestore.FieldValue.delete() });
         } else {
@@ -1504,7 +1519,10 @@
         renderTrainerCal();
         initCoachPicker();
         showToast('更新成功！', 2);
-        sendLineNotify(`🔔 教練通知：\n${selectedTrainer} 老師已更新 ${panelKey} 的排班紀錄！`);
+        
+        if (diffText) {
+          sendLineNotify(`🔔 教練預約異動通知\n教練：${selectedTrainer}\n日期：${panelKey}${diffText}`);
+        }
       }
       closePanel();
     }
@@ -1552,7 +1570,7 @@
       saveData(batch); 
       renderMemberCal(); 
       showToast('修改成功提交！', 3);
-      sendLineNotify(`🔔 預約更新：\n會員已完成本月份預約異動提交！`);
+      sendLineNotify(`🔔 會員預約異動通知\n您好，您本月份的預約異動已提交成功！\n(請至行事曆查看最新詳情)`);
     }
     function resetTrainerSession() { }
     function closePanel() { document.getElementById('time-panel').style.display = 'none'; }
