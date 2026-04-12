@@ -929,7 +929,7 @@
               style="flex:2;">提交全部修改</button>
           </div>
         </div>
-        <div class="version-tag">V7.0</div>
+        <div class="version-tag">V7.1</div>
       </div>
     </div>
 
@@ -963,7 +963,7 @@
           <div class="cal-day-label">六</div>
         </div>
         <div class="legend" id="coach-legend"></div>
-        <div class="version-tag">V7.0</div>
+        <div class="version-tag">V7.1</div>
       </div>
     </div>
   </div>
@@ -1000,7 +1000,7 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = '7.0';
+    const APP_VERSION = '7.1';
     (function() {
       const stored = localStorage.getItem('wg_app_version');
       if (stored !== APP_VERSION) {
@@ -1506,24 +1506,40 @@
         memberSession[panelKey] = [...panelTempSlots];
         batchTemplate = [...panelTempSlots];
         renderMemberCal();
+        closePanel();
       } else {
+        // 教練模式：先跳確認框
+        const slots = [...panelTempSlots];
         const oldSlots = (trainerConfirmed[selectedTrainer] && trainerConfirmed[selectedTrainer][panelKey]) ? [...trainerConfirmed[selectedTrainer][panelKey]] : [];
         const diffText = getDiffMessage(oldSlots, slots);
 
-        if (slots.length === 0) {
-          saveData({ [updateKey]: firebase.firestore.FieldValue.delete() });
-        } else {
-          saveData({ [updateKey]: slots });
+        if (!diffText) {
+          closePanel(); // 若沒異動則直接關閉
+          return;
         }
 
-        renderTrainerCal();
-        initCoachPicker();
-        showToast('更新成功！', 2);
-        
-        if (diffText) {
-          sendLineNotify(`🔔 教練預約異動通知\n教練：${selectedTrainer}\n日期：${panelKey}${diffText}`);
-        }
+        const cc = document.getElementById('custom-confirm');
+        document.getElementById('cc-title').textContent = "確認發送預訂？";
+        document.getElementById('confirm-msg').innerHTML = `您即將更新 ${panelKey} 的排班，<br>並發送通知至 LINE 群組。`;
+        document.getElementById('confirm-ok-btn').onclick = () => {
+          doActualApply(slots, diffText);
+          closeCustomConfirm();
+        };
+        cc.style.display = 'flex';
       }
+    }
+
+    function doActualApply(slots, diffText) {
+      const updateKey = `trainerConfirmed.${selectedTrainer}.${panelKey}`;
+      if (slots.length === 0) {
+        saveData({ [updateKey]: firebase.firestore.FieldValue.delete() });
+      } else {
+        saveData({ [updateKey]: slots });
+      }
+      renderTrainerCal();
+      initCoachPicker();
+      showToast('更新成功！', 2);
+      sendLineNotify(`🔔 教練預約異動通知\n教練：${selectedTrainer}\n日期：${panelKey}${diffText}`);
       closePanel();
     }
     function confirmMember() {
