@@ -1811,7 +1811,7 @@
         renderMemberCal();
         showToast("本月份所有紀錄已從雲端淨空！", 4);
 
-        // ✅ V8.12：清空月份通知 (詳盡明細版)
+        // ✅ V8.11：清空月份通知 (詳盡明細版)
         const memberDisplayName = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
         const dispName = (currentLogonRole === 'superuser') ? "管理員" : `${memberDisplayName}會員`;
         const actionText = (currentLogonRole === 'superuser') ? "管理員已執行批量清空" : "您已成功清空本月份所有預約項目";
@@ -2415,7 +2415,7 @@
       initCoachPicker();
       showToast('更新成功！', 2);
 
-      // ✅ V8.12：動態標題與顏色球通知 (教練/管理員端)
+      // ✅ V8.11：動態標題與顏色球通知 (教練/管理員端)
       let typeText = "異動", ball = "🟡";
       if (added.length > 0 && removed.length === 0) { typeText = "新增"; ball = "🟢"; }
       if (added.length === 0 && removed.length > 0) { typeText = "取消"; ball = "🔴"; }
@@ -2521,7 +2521,7 @@
       renderMemberCal();
       showToast('修改成功提交！', 3);
 
-      // ✅ V8.12：動態標題與顏色球通知 (學員/管理員端)
+      // ✅ V8.11：動態標題與顏色球通知 (學員/管理員端)
       const memberDisplayName = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
       let typeText = (removedInfo.length > 0) ? "取消" : "更新", ball = (removedInfo.length > 0) ? "🔴" : "🟢";
       const dispName = (currentLogonRole === 'superuser') ? "管理員" : `${memberDisplayName}會員`;
