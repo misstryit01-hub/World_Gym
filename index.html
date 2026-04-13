@@ -1814,7 +1814,7 @@
         // ✅ V8.11：清空月份通知 (詳盡明細版)
         const memberDisplayName = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
         const dispName = (currentLogonRole === 'superuser') ? "管理員" : `${memberDisplayName}會員`;
-        const actionText = (currentLogonRole === 'superuser') ? "管理員已執行批量清空" : "您已成功清空本月份所有預約項目";
+        const actionText = (currentLogonRole === 'superuser') ? `管理員已對【${memberDisplayName}】執行批量清空` : "您已成功清空本月份所有預約項目";
         
         if (clearedDetails.length > 0) {
           let msg = `⚪ 【${dispName}】課表【清空】通知\n━━━━━━━━━━━━━━━━\n📅 月份：${mY}年${String(mM + 1).padStart(2, '0')}月\n🗑️ ${actionText}。`;
@@ -2420,11 +2420,11 @@
       if (added.length > 0 && removed.length === 0) { typeText = "新增"; ball = "🟢"; }
       if (added.length === 0 && removed.length > 0) { typeText = "取消"; ball = "🔴"; }
 
-      const dispName = (currentLogonRole === 'superuser') ? "管理員" : `${selectedTrainer}教練`;
+      const dispName = `${selectedTrainer}教練`;
       let msg = `${ball} 【${dispName}】課表【${typeText}】通知\n━━━━━━━━━━━━━━━━\n📅 日期：${panelKey}`;
       
       if (currentLogonRole === 'superuser') {
-        msg += `\n👤 會員：${selectedMemberInTrainerMode}\n🏋️ 教練：${selectedTrainer}`;
+        msg += `\n👤 會員：${selectedMemberInTrainerMode}\n🏋️ 教練：${selectedTrainer} [管理員代操作]`;
       } else {
         msg += `\n👤 會員：${selectedMemberInTrainerMode}`;
       }
@@ -2535,7 +2535,11 @@
         }
         msg += `\n🏋️ 教練：${removedInfo[0].trainer}\n❌ 已主動取消教練課表：\n${removedInfo[0].times.map(h => "• " + formatTimeRange(h)).join('\n')}`;
       } else {
-        msg += `\n✅ 您已成功更新個人課表\n✨ 請點擊連結查看最新狀況`;
+        if (currentLogonRole === 'superuser') {
+          msg += `\n✅ 已成功更新【${memberDisplayName}】的個人課表\n✨ 請點擊連結查看最新狀況`;
+        } else {
+          msg += `\n✅ 您已成功更新個人課表\n✨ 請點擊連結查看最新狀況`;
+        }
       }
       
       sendLineNotify(msg);
