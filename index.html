@@ -1576,7 +1576,9 @@
     }
 
     function formatTimeRange(h) {
-      const hh = parseInt(h, 10);
+      // ✅ 終極防震：確保 h 無論是數字、標籤字串還是陣列，都只取第一個數字
+      const rawHour = String(h).match(/\d+/); 
+      const hh = rawHour ? parseInt(rawHour[0], 10) : 0;
       const start = String(hh).padStart(2, '0') + ':00';
       const end = String(hh + 1).padStart(2, '0') + ':00';
       return `${start} ~ ${end}`;
