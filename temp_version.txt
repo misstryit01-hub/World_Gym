@@ -1,2 +1,0 @@
-    const APP_VERSION = "V8.5"; // 核心版號
-    const VERSION_TAG = "V8.5 - 2026/04/13"; // UI顯示標籤上的版號標籤

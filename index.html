@@ -946,7 +946,7 @@
         <div id="admin-selector-row" class="px-main" style="display:none; margin-bottom:10px;">
           <div
             style="display:flex; align-items:center; gap:8px; background:#f0f7ff; padding:8px 12px; border-radius:8px; border:1px solid #d0e3ff;">
-            <span style="font-size:12px; font-weight:800; color:#1976D2; white-space:nowrap;">切換學員帳號:</span>
+            <span style="font-size:12px; font-weight:800; color:#1976D2; white-space:nowrap;">目前查看會員：</span>
             <select id="admin-member-selector"
               style="flex:1; padding:4px 8px; border-radius:6px; border:1.5px solid #BBDEFB; font-weight:700;"
               onchange="onAdminSelectMember(this.value)">
@@ -954,75 +954,91 @@
             </select>
           </div>
         </div>
-        <div class="member-toggles-row px-main">
-          <div id="batch-toggle" class="toggle-item green" onclick="toggleBatchMode()"><span>複製套用模式</span><span
-              id="batch-status" style="font-size:10px; color:#aaa;">OFF</span></div>
-          <div id="lock-toggle" class="toggle-item" onclick="toggleLockMode()"><span>強制連續排課</span><span id="lock-status"
-              style="font-size:10px; color:#aaa;">OFF</span></div>
-        </div>
-        <div class="cal-nav px-main">
-          <button type="button" class="nav-btn" onclick="changeMonth('m',-1)"><span
-              class="arrow arrow-left"></span></button>
-          <span class="month-label" id="member-month-label"></span>
-          <button type="button" class="nav-btn" onclick="changeMonth('m',1)"><span
-              class="arrow arrow-right"></span></button>
-        </div>
-        <div class="cal-grid" id="member-cal">
-          <div class="cal-day-label">日</div>
-          <div class="cal-day-label">一</div>
-          <div class="cal-day-label">二</div>
-          <div class="cal-day-label">三</div>
-          <div class="cal-day-label">四</div>
-          <div class="cal-day-label">五</div>
-          <div class="cal-day-label">六</div>
-        </div>
-        <div class="px-main">
-          <div style="display:flex; gap:10px; margin-top:1.5rem;">
-            <button type="button" class="btn-ui btn-ui-secondary" id="member-reset-btn" onclick="resetMemberSession()"
-              style="flex:1; display:none;">取消選取</button>
-            <button type="button" class="btn-ui btn-ui-green" id="member-confirm-btn" onclick="confirmMember()" disabled
-              style="flex:2;">提交全部修改</button>
+        <!-- 管理員模式主內容區 (選取後顯示，若為普通會員則始終顯示) -->
+        <div id="member-main-view">
+          <div class="member-toggles-row px-main">
+            <div id="batch-toggle" class="toggle-item green" onclick="toggleBatchMode()"><span>複製套用模式</span><span
+                id="batch-status" style="font-size:10px; color:#aaa;">OFF</span></div>
+            <div id="lock-toggle" class="toggle-item" onclick="toggleLockMode()"><span>強制連續排課</span><span
+                id="lock-status" style="font-size:10px; color:#aaa;">OFF</span></div>
+          </div>
+          <div class="cal-nav px-main">
+            <button type="button" class="nav-btn" onclick="changeMonth('m',-1)"><span
+                class="arrow arrow-left"></span></button>
+            <span class="month-label" id="member-month-label"></span>
+            <button type="button" class="nav-btn" onclick="changeMonth('m',1)"><span
+                class="arrow arrow-right"></span></button>
+          </div>
+          <div class="cal-grid" id="member-cal">
+            <div class="cal-day-label">日</div>
+            <div class="cal-day-label">一</div>
+            <div class="cal-day-label">二</div>
+            <div class="cal-day-label">三</div>
+            <div class="cal-day-label">四</div>
+            <div class="cal-day-label">五</div>
+            <div class="cal-day-label">六</div>
+          </div>
+          <div class="px-main">
+            <div style="display:flex; gap:10px; margin-top:1.5rem;">
+              <button type="button" class="btn-ui btn-ui-secondary" id="member-reset-btn" onclick="resetMemberSession()"
+                style="flex:1; display:none;">取消選取</button>
+              <button type="button" class="btn-ui btn-ui-green" id="member-confirm-btn" onclick="confirmMember()"
+                disabled style="flex:2;">提交全部修改</button>
+            </div>
           </div>
         </div>
+
+        <!-- 管理員空狀態提示 -->
+        <div id="member-empty-state"
+          style="display:none; padding: 60px 20px; text-align: center; background: #fbfcfe; margin: 15px; border-radius: 20px; border: 2.5px dashed #d0e3ff;">
+          <div style="font-size: 48px; margin-bottom: 15px; opacity: 0.6;">👤</div>
+          <h3 style="color: #1976D2; font-weight: 900; font-size: 18px;">請選取欲管理的會員</h3>
+          <p style="font-size: 13px; color: #90A4AE; margin-top: 8px; font-weight: 800;">選取上方清單後，即可代為操作該會員課表</p>
+        </div>
+
         <div class="version-tag"></div>
       </div>
     </div>
 
     <div id="screen-trainer" class="screen">
       <div class="card">
-        <div class="header-area px-main">
-          <h3>教練排班管理後台</h3><button type="button" class="btn-logout" onclick="logout()">登出</button>
+        <div class="header-area px-main" style="display:flex; align-items:center; gap:10px;">
+          <h3 id="trainer-title" style="margin:0; flex:1;">教練排班管理後台</h3>
+          <button type="button" class="view-toggle-btn" id="only-my-btn" onclick="toggleOnlyMy()" style="margin:0;">
+            <div class="checkbox-box">
+              <div class="check-mark"></div>
+            </div><span id="filter-text" style="font-size:11px;">只顯示您的課程</span>
+          </button>
+          <button type="button" class="btn-logout" onclick="logout()">登出</button>
         </div>
         <div class="coach-picker-container px-main">
           <div class="coach-hint">請點選您的教練身分以開始預約</div>
           <div class="coach-row" id="coach-picker"></div>
         </div>
-        <div class="trainer-ctrl-row px-main">
-          <div class="cal-nav-compact">
+        <!-- 1. 會員選擇選單 (對齊 Admin 視覺層級) -->
+        <div class="px-main" style="margin-bottom:15px;">
+          <div
+            style="display:flex; align-items:center; gap:8px; background:#f0f7ff; padding:8px 12px; border-radius:8px; border:1px solid #d0e3ff;">
+            <span style="font-size:12px; font-weight:800; color:#1976D2; white-space:nowrap;">目前查看會員：</span>
+            <select id="trainer-member-selector"
+              style="flex:1; padding:4px 8px; border-radius:6px; border:1.5px solid #BBDEFB; font-weight:700;"
+              onchange="onTrainerSelectMember(this.value)">
+            </select>
+          </div>
+        </div>
+
+        <!-- 2. 年月導航 (全寬對齊) -->
+        <div class="px-main" style="margin-top:5px;">
+          <div class="cal-nav">
             <button type="button" class="nav-btn" onclick="changeMonth('t',-1)"><span
                 class="arrow arrow-left"></span></button>
             <span class="month-label" id="trainer-month-label"></span>
             <button type="button" class="nav-btn" onclick="changeMonth('t',1)"><span
                 class="arrow arrow-right"></span></button>
           </div>
-          <button type="button" class="view-toggle-btn" id="only-my-btn" onclick="toggleOnlyMy()">
-            <div class="checkbox-box">
-              <div class="check-mark"></div>
-            </div><span id="filter-text">只顯示您的課程</span>
-          </button>
         </div>
-        <!-- V8.0 新增學員篩選選單 -->
-        <div class="px-main" style="margin-bottom:10px;">
-          <div
-            style="display:flex; align-items:center; gap:8px; background:#f9f9f9; padding:8px 12px; border-radius:8px; border:1px solid #eee;">
-            <span style="font-size:12px; font-weight:800; color:#666; white-space:nowrap;">目前查看會員：</span>
-            <select id="trainer-member-selector"
-              style="flex:1; padding:4px 8px; border-radius:6px; border:1.5px solid #ddd; font-weight:700;"
-              onchange="onTrainerSelectMember(this.value)">
-              <option value="Paul">Paul</option>
-            </select>
-          </div>
-        </div>
+
+
         <!-- 教練模式主內容區 (選取會員後顯示) -->
         <div id="trainer-main-view" style="display:none;">
           <div class="cal-grid" id="trainer-cal">
@@ -1034,7 +1050,11 @@
             <div class="cal-day-label">五</div>
             <div class="cal-day-label">六</div>
           </div>
-          <div class="legend" id="coach-legend"></div>
+          <div class="px-main" style="margin-top:10px; border-top:1px solid #eee; padding-top:8px; display:flex; flex-direction:column; gap:5px;">
+            <!-- 教練堂數標籤 (極簡版) -->
+            <div class="legend" id="coach-legend" style="margin:0; padding:0; background:none; border:none; border-radius:0; justify-content:center; gap:8px;"></div>
+          </div>
+          <div id="trainer-stats-area" class="px-main" style="display:none;"></div>
         </div>
 
         <!-- 空狀態提示 (未選取會員時顯示) -->
@@ -1174,40 +1194,12 @@
       // 1. 同步所有學員名單 (從 users 集合)
       db.collection('users').where('role', '==', 'member').onSnapshot((snap) => {
         memberList = [];
-        const selector = document.getElementById('trainer-member-selector');
-        const adminSelector = document.getElementById('admin-member-selector');
-        const oldVal = selector.value;
-        if (selector) selector.innerHTML = '<option value="">-- 請選取會員 --</option>';
-        if (adminSelector) adminSelector.innerHTML = "";
-
-        if (currentLogonRole === 'superuser' && adminSelector) {
-          const opt = document.createElement('option');
-          opt.value = "admin"; opt.textContent = "管理員";
-          adminSelector.appendChild(opt);
-        }
-
         snap.forEach(doc => {
           if (!memberList.includes(doc.id)) {
             memberList.push(doc.id);
-            const opt = document.createElement('option');
-            opt.value = doc.id; opt.textContent = doc.id;
-            if (selector) selector.appendChild(opt);
-            if (adminSelector) adminSelector.appendChild(opt.cloneNode(true));
           }
         });
-
-        if (selector) {
-          if (memberList.includes(oldVal)) {
-            selector.value = oldVal;
-          } else {
-            selector.value = "";
-            selectedMemberInTrainerMode = "";
-          }
-        }
-
-        if (adminSelector) {
-          adminSelector.value = adminViewingTarget || 'admin';
-        }
+        updateMemberSelectors();
       });
 
       // 2. 同步預約資料
@@ -1216,18 +1208,48 @@
           const d = doc.data();
           allMembersData = d.members || {};
 
-          // ✅ 數據遷移：若存在舊格式 memberConfirmed 且 Paul 尚無資料，則搬移
-          if (d.memberConfirmed && (!allMembersData.Paul)) {
-            allMembersData.Paul = d.memberConfirmed;
-          }
-
           trainerConfirmed = d.trainerConfirmed || {};
-          if (typeof d.consecutiveLocking !== 'undefined') consecutiveLocking = d.consecutiveLocking;
         }
         isDataLoaded = true;
-        updateLockUI();
+        updateLockUI(); // 數據更新時同步 UI
         doFreshRender();
       });
+    }
+
+    function updateMemberSelectors() {
+      const selector = document.getElementById('trainer-member-selector');
+      const adminSelector = document.getElementById('admin-member-selector');
+      if (!selector && !adminSelector) return;
+
+      const oldTrainerVal = selector ? selector.value : "";
+
+      // 教練區選單
+      if (selector) {
+        selector.innerHTML = '<option value="">-- 請選取會員 --</option>';
+        memberList.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name; opt.textContent = name;
+          selector.appendChild(opt);
+        });
+        if (memberList.includes(oldTrainerVal)) selector.value = oldTrainerVal;
+        else { selector.value = ""; selectedMemberInTrainerMode = ""; }
+      }
+
+      // 管理員區選單
+      if (adminSelector) {
+        adminSelector.innerHTML = "";
+        if (currentLogonRole === 'superuser') {
+          const head = document.createElement('option');
+          head.value = ""; head.textContent = "-- 請選取會員 --";
+          adminSelector.appendChild(head);
+        }
+        memberList.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name; opt.textContent = name;
+          adminSelector.appendChild(opt);
+        });
+        adminSelector.value = adminViewingTarget;
+      }
     }
 
     function saveData(payload) {
@@ -1272,7 +1294,7 @@
         const processLogin = (userData) => {
           currentLogonMember = u;
           currentLogonRole = userData.role || 'member';
-          adminViewingTarget = (currentLogonRole === 'superuser') ? 'admin' : u;
+          adminViewingTarget = (currentLogonRole === 'superuser') ? "" : u; // 管理員登入預設空值
           const adminBtn = document.getElementById('btn-admin-panel');
           const adminSelector = document.getElementById('admin-selector-row');
           if (adminBtn) adminBtn.style.display = (currentLogonRole === 'superuser') ? 'block' : 'none';
@@ -1287,6 +1309,7 @@
             titleEl.textContent = (currentLogonRole === 'superuser') ? "管理員控制台" : `${u} 的專屬課表`;
           }
 
+          updateMemberSelectors(); // 登入後立即刷新選單選項
           showScreen('member');
           renderMemberCal();
         };
@@ -1383,15 +1406,35 @@
     }
 
     function onAdminSelectMember(name) {
-      adminViewingTarget = name;
-      const isSelf = (name === 'admin');
+      // ✅ 強力防呆：檢查是否有未提交的數據或正在批量操作
+      const hasUnsaved = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
+      if (isBatchMode || hasUnsaved) {
+        showToast('請先「提交全部修改」或關閉「複製套用」後，再切換學員', 4, true);
+        // 還原下拉選單的值
+        document.getElementById('admin-member-selector').value = adminViewingTarget;
+        return;
+      }
 
-      if (isSelf) {
-        document.getElementById('member-title').textContent = `管理員控制台`;
-        showToast('已切換至管理員模式', 2);
+      adminViewingTarget = name;
+      const titleEl = document.getElementById('member-title');
+
+      if (!name || name === 'admin') {
+        titleEl.textContent = `管理員控制台`;
+        if (name === 'admin') showToast('已切換至管理員模式', 2);
       } else {
-        document.getElementById('member-title').textContent = `${name} 的個人課表`;
+        titleEl.innerHTML = `<span style="color:var(--wg-red); font-weight:900;">${name}</span> 的個人課表`;
         showToast(`⚠️ 注意：您正在操作 [ ${name} ] 的課表`, 3, true);
+      }
+
+      updateLockUI(); // 切換會員時立即刷新鎖定開關狀態
+
+      // ✅ 操作安全：切換會員時自動關閉並歸零「複製套用模式」
+      isBatchMode = false;
+      batchTemplate = null;
+      const bTgl = document.getElementById('batch-toggle');
+      if (bTgl) {
+        bTgl.classList.remove('active');
+        document.getElementById('batch-status').textContent = 'OFF';
       }
 
       renderMemberCal();
@@ -1411,11 +1454,34 @@
 
 
     function onTrainerSelectMember(name) {
-      selectedMemberInTrainerMode = name;
-      if (name) {
-        showToast(`⚠️ 注意：您正在管理 [ ${name} ] 的排班`, 3, true);
+      // ✅ 強力防呆：檢查是否有未提交的數據或正在批量操作
+      const hasUnsaved = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
+      if (isBatchMode || hasUnsaved) {
+        showToast('請先「提交全部修改」或關閉「複製套用」後，再切換學員', 4, true);
+        // 還原下拉選單的值
+        document.getElementById('trainer-member-selector').value = selectedMemberInTrainerMode;
+        return;
       }
+
+      selectedMemberInTrainerMode = name;
+      const titleEl = document.getElementById('trainer-title');
+      if (name) {
+        titleEl.innerHTML = `正在管理：<span style="color:var(--wg-red); font-weight:900;">${name}</span>`;
+        showToast(`⚠️ 注意：您正在管理 [ ${name} ] 的排班`, 3, true);
+      } else {
+        titleEl.textContent = "教練排班管理後台";
+      }
+
+      // ✅ 教練端切換會員時也同步歸零 (如果教練端未來擴充此功能)
+      isBatchMode = false;
+      const bTgl = document.getElementById('batch-toggle');
+      if (bTgl) {
+        bTgl.classList.remove('active');
+        document.getElementById('batch-status').textContent = 'OFF';
+      }
+
       renderTrainerCal();
+      initCoachPicker(); // ✅ 確保切換會員時，同步刷新下方的統計數據與標題
     }
 
     // --- 會員註冊功能 ---
@@ -1524,6 +1590,7 @@
     function initCoachPicker() {
       const rt = document.getElementById('coach-picker'), l = document.getElementById('coach-legend');
       if (!rt || !l) return; rt.innerHTML = ''; l.innerHTML = '';
+      
       const names = Object.keys(COACH_DATA), hasU = Object.keys(trainerSession).length > 0;
       names.forEach((n, i) => {
         const chip = document.createElement('div');
@@ -1532,26 +1599,36 @@
         chip.onclick = () => {
           if (isOnlyMy && selectedTrainer === n) { isOnlyMy = false; document.getElementById('only-my-btn').classList.remove('active'); }
           if (hasU && selectedTrainer !== n) { showToast('請先確認修改', 2, true); return; }
-
-          // --- 核心修改：再次點擊則取消選取 ---
-          if (selectedTrainer === n) selectedTrainer = "";
-          else selectedTrainer = n;
-
+          if (selectedTrainer === n) selectedTrainer = ""; else selectedTrainer = n;
           updateFilterText(); initCoachPicker(); renderTrainerCal();
         };
         rt.appendChild(chip);
-        let count = 0; const prefix = tY + '-' + String(tM + 1).padStart(2, '0');
-        if (trainerConfirmed[n]) { Object.keys(trainerConfirmed[n]).forEach(k => { if (k.startsWith(prefix)) count += trainerConfirmed[n][k].length; }); }
+
+        // ✅ 強健統計邏輯：轉型為數字比對，解決 dateKey 補零不一的問題
+        let count = 0; 
+        const targetYear = Number(tY), targetMonth = Number(tM + 1);
+        if (selectedMemberInTrainerMode && trainerConfirmed[n]) { 
+          Object.keys(trainerConfirmed[n]).forEach(dk => { 
+            const parts = dk.split('-');
+            if (Number(parts[0]) === targetYear && Number(parts[1]) === targetMonth) {
+               count += trainerConfirmed[n][dk].filter(s => typeof s === 'string' && s.split(':')[1] === selectedMemberInTrainerMode).length;
+            }
+          }); 
+        }
 
         const isDimmed = selectedTrainer && selectedTrainer !== n;
         const item = document.createElement('div');
         item.className = 'legend-item' + (isDimmed ? ' dimmed' : '');
+        item.style.minWidth = "65px";
+        item.style.background = "#ffffff"; // ✅ 背景恢復為純白
+        item.style.border = "1px solid #eee";
+        item.style.boxShadow = "0 3px 6px rgba(0,0,0,0.03)";
         item.innerHTML = `
-          <div style="display:flex; align-items:center; gap:3px;">
+          <div style="display:flex; align-items:center; gap:5px;">
             <div class="legend-dot" style="background:${COACH_DATA[n]}"></div>
             <span>${n}</span>
           </div>
-          <span class="legend-count">${count}堂</span>
+          <span class="legend-count" style="color:#777; font-size:10px; font-weight:800;">${count}堂</span>
         `;
         l.appendChild(item);
       });
@@ -1559,33 +1636,52 @@
     }
     function updateFilterText() { const txt = document.getElementById('filter-text'); if (txt) txt.textContent = selectedTrainer ? `只顯示 ${selectedTrainer} 的課程` : '只顯示您的課程'; }
     function updateLockUI() {
+      const isTrainerMode = document.getElementById('screen-trainer').classList.contains('active');
+      const targetUser = isTrainerMode ? selectedMemberInTrainerMode : ((currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember);
+
+      if (!targetUser) {
+        consecutiveLocking = false;
+      } else {
+        const memberData = allMembersData[targetUser] || {};
+        consecutiveLocking = (memberData.consecutiveLocking === true);
+      }
+
+      // 僅在 UI 元件存在時才更新 CSS
       const elM = document.getElementById('lock-toggle');
-      if (elM) { elM.classList.toggle('active', consecutiveLocking); document.getElementById('lock-status').textContent = consecutiveLocking ? 'ON' : 'OFF'; }
+      const statusEl = document.getElementById('lock-status');
+      if (elM && statusEl) {
+        elM.classList.toggle('active', consecutiveLocking);
+        statusEl.textContent = consecutiveLocking ? 'ON' : 'OFF';
+      }
     }
+
     function toggleLockMode() {
+      const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
+      if (!targetUser) { showToast('請先選取會員', 2, true); return; }
+
       const hasUnsaved = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
       if (hasUnsaved) {
         showToast('請先「提交全部修改」或「取消選取」後，再切換此模式', 4, true);
         return;
       }
-      if (!consecutiveLocking) {
+
+      const nextState = !consecutiveLocking;
+      const updateFn = () => {
+        consecutiveLocking = nextState;
+        updateLockUI();
+        const payload = {};
+        payload[`members.${targetUser}.consecutiveLocking`] = nextState;
+        saveData(payload);
+        showToast(nextState ? '防爆鎖定已啟用' : '已關閉強制連續排課', 3);
+      };
+
+      if (nextState) {
         openCustomConfirm(
-          "教練在您的「連續空堂」內\n必須依照順序排課，不可跳空！\n\n( 註：分開的獨立時段不受影響 )\n\n確定要啟用嗎？",
-          () => {
-            consecutiveLocking = true;
-            updateLockUI();
-            saveData({ consecutiveLocking: true });
-            showToast('防爆鎖定已啟用', 3);
-          },
-          "🔒 強制連續排課：功能說明",
-          "暫不啟用",
-          "了解並啟用"
+          "教練在您的「連續空堂」內\n必須依照順序排課，不可跳空！\n\n確定要為此會員啟用嗎？",
+          updateFn, "🔒 強制連續排課：功能說明", "暫不啟用", "了解並啟用"
         );
       } else {
-        consecutiveLocking = false;
-        updateLockUI();
-        saveData({ consecutiveLocking: false });
-        showToast('已關閉強制連續排課', 2, true);
+        updateFn();
       }
     }
     function toggleOnlyMy() { if (!selectedTrainer) { showToast('請先選擇您的身份', 2, true); return; } isOnlyMy = !isOnlyMy; document.getElementById('only-my-btn').classList.toggle('active', isOnlyMy); initCoachPicker(); renderTrainerCal(); }
@@ -1631,21 +1727,18 @@
       if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return false;
       return Object.keys(COACH_DATA).some(tr => {
         if (!trainerConfirmed[tr] || !trainerConfirmed[tr][k]) return false;
-        // 支援新格式 ["16:Paul"] 或舊格式 [16]
-        return trainerConfirmed[tr][k].some(s => {
-          if (typeof s === 'string' && s.includes(':')) return Number(s.split(':')[0]) === hr;
-          return Number(s) === hr;
-        });
+        // V10.0 已清空舊資料：僅需解析標籤格式 "Hour:Member"
+        return trainerConfirmed[tr][k].some(s => typeof s === 'string' && s.includes(':') && Number(s.split(':')[0]) === hr);
       });
     }
     function isBookedLocally(h) {
       if (panelTempSlots.indexOf(h) >= 0) return true;
-      // ⚠️ 修正：在教練面板模式下，判斷「是否有約」應排除「自己」的雲端舊資料
-      // 否則取消時會因為雲端還有舊紀錄而誤判
       return Object.keys(COACH_DATA).some(tr => {
         if (panelMode === 'trainer' && tr === selectedTrainer) return false;
         if (pendingCoachRemovals[panelKey] && pendingCoachRemovals[panelKey].indexOf(h) >= 0) return false;
-        return trainerConfirmed[tr] && trainerConfirmed[tr][panelKey] && trainerConfirmed[tr][panelKey].indexOf(h) >= 0;
+        if (!trainerConfirmed[tr] || !trainerConfirmed[tr][panelKey]) return false;
+        // V10.0 僅偵測標籤格式
+        return trainerConfirmed[tr][panelKey].some(s => typeof s === 'string' && s.includes(':') && Number(s.split(':')[0]) === h);
       });
     }
 
@@ -1714,6 +1807,19 @@
 
     function renderMemberCal() {
       const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
+
+      // Admin 模式且未選取會員時顯示空狀態
+      const mainView = document.getElementById('member-main-view');
+      const emptyState = document.getElementById('member-empty-state');
+      const isAdmin = (currentLogonRole === 'superuser');
+      const showMain = !isAdmin || !!targetUser;
+
+      if (mainView) mainView.style.display = showMain ? 'block' : 'none';
+      if (emptyState) emptyState.style.display = (isAdmin && !targetUser) ? 'block' : 'none';
+
+      if (!showMain) return;
+
+      updateLockUI(); // ✅ 確保每次渲染均根據當前學員資料重新判定開關狀態
       document.getElementById('member-month-label').textContent = mY + '年 ' + String(mM + 1).padStart(2, '0') + '月';
       const grid = document.getElementById('member-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
       const first = new Date(mY, mM, 1).getDay(), days = new Date(mY, mM + 1, 0).getDate();
@@ -1729,15 +1835,16 @@
         Object.keys(COACH_DATA).forEach(tr => {
           if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
             trainerConfirmed[tr][k].forEach(s => {
-              let hr, isMine = false;
+              // V10.0：直接依靠標籤識別
               if (typeof s === 'string' && s.includes(':')) {
-                const parts = s.split(':'); hr = Number(parts[0]); isMine = (parts[1] === targetUser);
-              } else {
-                hr = Number(s); isMine = (memberData[k] && memberData[k].map(Number).indexOf(hr) >= 0);
+                const parts = s.split(':');
+                const hr = Number(parts[0]);
+                if (parts[1] === targetUser) {
+                  // 排除掉正在申請取消的時段
+                  if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return;
+                  allS.push({ h: hr, tr, type: 'booked' });
+                }
               }
-              // 排除掉正在申請取消的時段
-              if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return;
-              if (isMine) allS.push({ h: hr, tr, type: 'booked' });
             });
           }
         });
@@ -1802,16 +1909,9 @@
               if (dk.startsWith(tY + '-' + String(tM + 1).padStart(2, '0'))) {
                 const trSess = trainerConfirmed[tn][dk];
                 const memSess = (targetMemData[dk] || []).map(Number);
-                
-                // 1. 先抓標籤時段
-                const tagged = trSess.filter(s => typeof s === 'string' && s.split(':')[1] === selectedMemberInTrainerMode);
-                if (tagged.length > 0) {
-                  count += tagged.length;
-                } else {
-                  // 2. 只有在當天「完全無此學員標籤」時，才退回舊格式交叉比對 (面板邏輯複製)
-                  const legacyCount = trSess.filter(s => typeof s !== 'string' && memSess.includes(Number(s))).length;
-                  count += legacyCount;
-                }
+
+                // V10.0 精簡化統計：僅抓取標籤符合該學員的時段
+                count += trSess.filter(s => typeof s === 'string' && s.split(':')[1] === selectedMemberInTrainerMode).length;
               }
             });
           }
@@ -1823,6 +1923,7 @@
         const thisTrainerCount = coachSummary[selectedTrainer] || 0;
 
         document.getElementById('trainer-month-label').textContent = tY + '年 ' + String(tM + 1).padStart(2, '0') + '月';
+        updateLockUI(); // ✅ 強制刷新變數狀態
         const grid = document.getElementById('trainer-cal'); while (grid.children.length > 7) grid.removeChild(grid.lastChild);
         const first = new Date(tY, tM, 1).getDay();
         for (let i = 0; i < first; i++) grid.appendChild(Object.assign(document.createElement('div'), { className: 'cal-cell empty' }));
@@ -1861,12 +1962,10 @@
             Array.from(unionSlots).forEach(hr => {
               let bookingCoach = Object.keys(COACH_DATA).find(tr => {
                 if (!trainerConfirmed[tr] || !trainerConfirmed[tr][k]) return false;
-                return trainerConfirmed[tr][k].some(s => {
-                  if (typeof s === 'string' && s.includes(':')) {
-                    return Number(s.split(':')[0]) === hr && s.split(':')[1] === selectedMemberInTrainerMode;
-                  }
-                  return (Number(s) === hr && selectedMemberInTrainerMode === 'Paul' && memConfirmed.includes(hr));
-                });
+                return trainerConfirmed[tr][k].some(s =>
+                  typeof s === 'string' && s.includes(':') &&
+                  Number(s.split(':')[0]) === hr && s.split(':')[1] === selectedMemberInTrainerMode
+                );
               });
 
               if (bookingCoach) {
@@ -1897,8 +1996,8 @@
                 if (t && isChg && trainerSession[k].indexOf(hr) >= 0) allS.push({ h: hr, type: 'add', tr: t });
                 else {
                   const loc = (consecutiveLocking === true || consecutiveLocking === 'true') &&
-                              memAvail.map(Number).includes(hr - 1) &&
-                              !isForThisMemberAtHour(k, hr - 1);
+                    memAvail.map(Number).includes(hr - 1) &&
+                    !isForThisMemberAtHour(k, hr - 1);
                   allS.push({ h: hr, type: 'avl', loc });
                 }
               }
@@ -1913,72 +2012,41 @@
           el.innerHTML = `<span class="cal-cell-num">${d}</span>`;
           const list = document.createElement('div'); list.className = 'mini-slot-list';
 
-          allS.sort((a,b) => a.h - b.h).forEach(s => {
+          allS.sort((a, b) => a.h - b.h).forEach(s => {
             const slot = document.createElement('div');
             let clsName = 'mini-slot';
             const baseTr = s.c || (s.tr || "").split('-')[0];
             const isMe = (t && baseTr === t);
-            if ((!t && (s.type === 'act')) || (isMe && (s.type === 'act' || s.type === 'add'))) clsName += ' slot-embossed-focus';
-            slot.className = clsName;
 
-            if (s.type === 'act') { slot.style.background = COACH_DATA[baseTr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
-            else if (s.type === 'add') { slot.style.background = COACH_DATA[baseTr]; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}(+)</span>`; }
-            else if (s.type === 'rem') { slot.innerHTML = `<span>${s.h}:00</span><span>${t}</span>`; }
-            else if (s.type === 'oth') { slot.style.background = COACH_DATA[baseTr] || '#ccc'; slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`; }
-            else if (s.type === 'avl') {
-              if (s.loc) { slot.className += ' slot-avail-locked'; slot.innerHTML = `<span>${s.h}:00</span><span>鎖定</span>`; }
-              else { slot.className += ' slot-avail-member'; slot.innerHTML = `<span>${s.h}:00</span><span>可預約</span>`; }
+            // 1. 決定樣式類別
+            if ((!t && s.type === 'act') || (isMe && (s.type === 'act' || s.type === 'add'))) {
+              clsName += ' slot-embossed-focus';
             }
 
-            const isMyMission = isMe && (s.type === 'act' || s.type === 'add');
-            const shouldDim = (t && !isMyMission && (s.type !== 'avl'));
-            if (shouldDim) {
-              slot.style.opacity = 0.8; slot.style.filter = 'grayscale(0.6)';
-              if (s.type === 'oth') { slot.style.color = '#fff'; slot.style.fontWeight = '900'; }
-            } else { slot.style.opacity = 1.0; slot.style.filter = 'none'; }
+            // 2. 決定顯示內容與顏色
+            if (s.type === 'act' || s.type === 'add') {
+              slot.style.background = COACH_DATA[baseTr];
+              slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}${s.type === 'add' ? '(+)' : ''}</span>`;
+            } else if (s.type === 'rem') {
+              slot.innerHTML = `<span>${s.h}:00</span><span>${t}</span>`;
+            } else if (s.type === 'oth') {
+              slot.style.background = COACH_DATA[baseTr] || '#ccc';
+              slot.style.opacity = '0.3'; // ✅ 非選取教練的課程顯示為反灰/透明
+              slot.innerHTML = `<span>${s.h}:00</span><span>${s.tr}</span>`;
+            } else if (s.type === 'avl') {
+              clsName += ' slot-avail-member';
+              slot.innerHTML = `<span>${s.h}:00</span><span>可預約</span>`;
+            }
+
+            slot.className = clsName;
             list.appendChild(slot);
           });
           el.appendChild(list);
-          if (!isPast) el.onclick = () => {
-            if (!t || !selectedMemberInTrainerMode) { showToast('請先選取身分與學員', 2, true); return; }
-            if (hasInteractable || allS.length > 0) { openPanel('trainer', k); initCoachPicker(); }
-            else showToast('當日無預約空檔', 1, true);
-          };
+          if (!isPast) el.onclick = () => { if (!t) return; openPanel('trainer', k); initCoachPicker(); };
           grid.appendChild(el);
         }
 
-        // --- V8.7 統計區重構：各教練分佈圖 ---
-        const statsArea = document.getElementById('trainer-stats-area');
-        if (selectedMemberInTrainerMode && statsArea) {
-           statsArea.style.display = 'block';
 
-           let cardsHtml = Object.keys(COACH_DATA).map(tn => {
-             const count = coachSummary[tn];
-             if (count === 0 && tn !== selectedTrainer) return '';
-             const isTarget = (tn === selectedTrainer);
-             const coachColor = COACH_DATA[tn];
-             const isDimmed = !!selectedTrainer && !isTarget;
-
-             return `
-               <div style="flex:1; min-width:85px; padding:12px 6px; border-radius:15px; text-align:center; transition:0.3s; 
-                           border:2px solid ${isTarget ? coachColor : '#eee'}; 
-                           background:${isTarget ? coachColor : '#fff'}; 
-                           color:${isTarget ? '#fff' : '#444'}; 
-                           opacity:${isDimmed ? 0.3 : 1}; 
-                           filter:${isDimmed ? 'grayscale(1)' : 'none'}; 
-                           box-shadow:${isTarget ? '0 4px 10px rgba(0,0,0,0.1)' : 'none'};">
-                 <div style="font-size:10px; font-weight:800; opacity:0.7; margin-bottom:4px;">${tn}</div>
-                 <div style="font-size:22px; font-weight:900; line-height:1;">${count}<span style="font-size:11px; font-weight:700; margin-left:2px;">堂</span></div>
-               </div>`;
-           }).join('');
-
-           statsArea.innerHTML = `
-             <div style="padding:10px 0;">
-               <div style="font-size:10px; font-weight:800; color:#bbb; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:4px;">Coaching Distribution</div>
-               <div style="font-size:18px; font-weight:900; color:#333; margin-bottom:12px;">${selectedMemberInTrainerMode} <span style="font-size:13px; color:#999; font-weight:700;">的本月教練分布</span></div>
-               <div style="display:flex; flex-wrap:wrap; gap:10px;">${cardsHtml || '<div style="color:#ccc; font-size:12px; width:100%; text-align:center;">目前無授課紀錄</div>'}</div>
-             </div>`;
-        } else if (statsArea) statsArea.style.display = 'none';
       } catch (err) { console.error("渲染錯誤:", err); }
     }
 
@@ -2021,14 +2089,10 @@
           // ✅ 身分標籤感測識別：尋找誰約了這個學員
           let coach = Object.keys(COACH_DATA).find(tr => {
             if (!trainerConfirmed[tr] || !trainerConfirmed[tr][panelKey]) return false;
-            return trainerConfirmed[tr][panelKey].some(s => {
-              if (typeof s === 'string' && s.includes(':')) {
-                const parts = s.split(':');
-                return Number(parts[0]) === hr && parts[1] === targetUser;
-              }
-              // 兼容舊格式
-              return Number(s) === hr && (targetData[panelKey] || []).map(Number).includes(hr);
-            });
+            return trainerConfirmed[tr][panelKey].some(s =>
+              typeof s === 'string' && s.includes(':') &&
+              Number(s.split(':')[0]) === hr && s.split(':')[1] === targetUser
+            );
           });
 
           let isRefCancelled = pendingCoachRemovals[panelKey] && pendingCoachRemovals[panelKey].map(Number).indexOf(hr) >= 0;
@@ -2096,11 +2160,13 @@
           }
           else if (bookedByOtherCoachForMe) {
             slot.className = 'time-slot booked-by-other';
+            slot.style.opacity = '0.4'; // ✅ 彈窗內他人課程反灰
             slot.innerHTML = `${h}:00<br><span style="font-size:9px; color:var(--wg-red); font-weight:900;">${bookedByOtherCoachForMe}已約</span>`;
           }
           else if (myOwnConflictFound) {
             const otherMem = myOwnConflictFound.split(':')[1] || "他人";
             slot.className = 'time-slot booked-by-other';
+            slot.style.opacity = '0.4'; // ✅ 教練自己衝堂的時段也反灰
             slot.innerHTML = `${h}:00<br><span style="font-size:9px; color:var(--wg-red); font-weight:900;">與 ${otherMem} 有約</span>`;
           }
           else {
@@ -2130,7 +2196,13 @@
     function toggleSlot(h) {
       h = Number(h);
       let i = panelTempSlots.indexOf(h); const isPicked = i >= 0;
-      if (panelMode === 'trainer' && (consecutiveLocking === true || consecutiveLocking === 'true')) {
+
+      const isTrainerMode = (document.getElementById('screen-trainer').classList.contains('active'));
+      const targetM = isTrainerMode ? selectedMemberInTrainerMode : ((currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember);
+      const memberData = allMembersData[targetM] || {};
+      const actualLockState = (memberData.consecutiveLocking === true);
+
+      if (panelMode === 'trainer' && actualLockState) {
         const memberDataForTrainer = allMembersData[selectedMemberInTrainerMode] || {};
         const memAvail = (memberDataForTrainer[panelKey] || []).map(Number);
         if (!isPicked) {
@@ -2159,6 +2231,10 @@
       const targetM = isTrainerMode ? selectedMemberInTrainerMode : ((currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember);
 
       if (!targetM) return false;
+
+      // ✅ 抓取該學員專屬的連續鎖定狀態進行判定
+      const memberData = allMembersData[targetM] || {};
+      const actualLockState = (memberData.consecutiveLocking === true);
 
       // ✅ 狀態感知：如果該時段已經在本地「標記取消」名單中，則視為「無約」
       if (pendingCoachRemovals[dateK] && pendingCoachRemovals[dateK].map(Number).includes(hourH)) return false;
@@ -2218,12 +2294,9 @@
 
       const rawOldSlots = (trainerConfirmed[selectedTrainer] && trainerConfirmed[selectedTrainer][panelKey]) ? trainerConfirmed[selectedTrainer][panelKey] : [];
       // 提取屬於目前學員的舊時段 (支援新舊格式)
-      const myOldSlotsWithThisMember = rawOldSlots.filter(s => {
-        if (typeof s === 'string' && s.includes(':')) return s.split(':')[1] === selectedMemberInTrainerMode;
-        // 舊格式則需比對會員資料
-        const memData = allMembersData[selectedMemberInTrainerMode] || {};
-        return (memData[panelKey] || []).map(Number).includes(Number(s));
-      }).map(s => (typeof s === 'string' ? Number(s.split(':')[0]) : Number(s)));
+      const myOldSlotsWithThisMember = rawOldSlots
+        .filter(s => typeof s === 'string' && s.includes(':') && s.split(':')[1] === selectedMemberInTrainerMode)
+        .map(s => Number(s.split(':')[0]));
 
       const added = slots.filter(h => !myOldSlotsWithThisMember.includes(h));
       const removed = myOldSlotsWithThisMember.filter(h => !slots.includes(h));
@@ -2234,10 +2307,8 @@
         batch[memberKey] = firebase.firestore.FieldValue.arrayUnion(...added);
       }
       if (removed.length > 0) {
-        // 移除時需考慮新舊兩種可能格式以確保乾淨
         const removedWithTags = removed.map(h => h + ":" + selectedMemberInTrainerMode);
-        batch[trainerKey] = firebase.firestore.FieldValue.arrayRemove(...removedWithTags, ...removed);
-        // ✅ 修正：不應在此處刪除學員端的原始需求 (memberKey)，保留其綠色空檔
+        batch[trainerKey] = firebase.firestore.FieldValue.arrayRemove(...removedWithTags);
       }
 
       saveData(batch);
@@ -2277,8 +2348,9 @@
         Object.keys(COACH_DATA).forEach(tr => {
           if (trainerConfirmed[tr] && trainerConfirmed[tr][k]) {
             const oldSlots = [...trainerConfirmed[tr][k]];
-            const newSlots = oldSlots.filter(h =>
-              pendingCoachRemovals[k].indexOf(h) < 0 && (targetData[k] || memberSession[k] || []).indexOf(h) >= 0
+            const newSlots = oldSlots.filter(s =>
+              typeof s === 'string' && s.includes(':') &&
+              pendingCoachRemovals[k].indexOf(Number(s.split(':')[0])) < 0 && s.split(':')[1] === targetUser
             );
             if (oldSlots.length !== newSlots.length) {
               const removed = oldSlots.filter(h => !newSlots.includes(h)).sort((a, b) => a - b);
