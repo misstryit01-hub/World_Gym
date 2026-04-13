@@ -940,7 +940,7 @@
             <button type="button" class="btn-clear-month" onclick="promptClearMonth()">📅 清空整月預約</button>
             <button type="button" id="btn-admin-panel" class="btn-clear-month" onclick="openAdminPanel()"
               style="display:none; cursor:pointer;">👥 會員管理</button>
-            <button type="button" id="btn-coach-admin-panel" class="btn-clear-month" onclick="openCoachAdminPanel()"
+            <button type="button" id="btn-coach-admin-panel" class="btn-clear-month" onclick="showToast('功能新增中...', 2)"
               style="display:none; cursor:pointer;">🏋️ 教練管理</button>
           </div>
           <button type="button" class="btn-logout" onclick="logout()">登出</button>
@@ -954,17 +954,6 @@
               onchange="onAdminSelectMember(this.value)">
               <!-- 動態置入 -->
             </select>
-            <button type="button" class="btn-ui-green" onclick="openAddCoachModal()" style="padding:6px 12px; font-size:12px; white-space:nowrap; border-radius:8px;">🔗 綁定教練</button>
-          </div>
-          <div
-            style="display:flex; align-items:center; gap:8px; background:#f0f7ff; padding:8px 12px; border-radius:8px; border:1px solid #d0e3ff; margin-top:5px;">
-            <span style="font-size:12px; font-weight:800; color:#1976D2; white-space:nowrap;">切換教練視角：</span>
-            <select id="admin-coach-selector"
-              style="flex:1; padding:4px 8px; border-radius:6px; border:1.5px solid #BBDEFB; font-weight:700;"
-              onchange="onAdminSelectCoach(this.value)">
-              <!-- 動態置入 -->
-            </select>
-            <button type="button" class="btn-ui-red" onclick="removeCoachLink()" style="padding:6px 12px; font-size:12px; white-space:nowrap; border-radius:8px;">➖ 移除</button>
           </div>
         </div>
         <!-- 管理員模式主內容區 (選取後顯示，若為普通會員則始終顯示) -->
@@ -1150,8 +1139,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.10"; // 核心版號
-    const VERSION_TAG = "V8.10 - 2026/04/13"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.12"; // 質感通知與精確清空版號
+    const VERSION_TAG = "V8.12 - 2026/04/14"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1267,24 +1256,29 @@
 
     function saveData(payload) {
       if (!isDataLoaded) { showToast("連線載入中，請稍候...", 2, true); return; }
-      const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
+      const targetUser = ((currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember) || "";
       const isMemScreen = document.getElementById('screen-member').classList.contains('active');
 
-      // 若是學員模式存檔，需要加上路徑前綴
-      if (isMemScreen && targetUser) {
-        const memberPayload = {};
-        Object.keys(payload).forEach(k => {
-          if (k.startsWith('memberConfirmed.')) {
-            const date = k.split('.')[1];
-            memberPayload[`members.${targetUser}.${date}`] = payload[k];
+      // 為了確保 set(merge:true) 在 Firestore 中正確處理嵌套，必須建立實體物件結構
+      let finalPayload = {};
+      
+      Object.keys(payload).forEach(key => {
+        const value = payload[key];
+        // 拆解路徑 (例如 members.Paul.2026-04-14)
+        const parts = key.split('.');
+        let current = finalPayload;
+        for (let i = 0; i < parts.length; i++) {
+          const part = parts[i];
+          if (i === parts.length - 1) {
+            current[part] = value;
           } else {
-            memberPayload[k] = payload[k];
+            if (!current[part]) current[part] = {};
+            current = current[part];
           }
-        });
-        DATA_DOC.update(memberPayload);
-      } else {
-        DATA_DOC.update(payload);
-      }
+        }
+      });
+
+      DATA_DOC.set(finalPayload, { merge: true });
     }
 
     function doFreshRender() {
@@ -1375,53 +1369,7 @@
       document.getElementById('admin-overlay').style.display = 'flex';
     }
 
-    // --- V9.3 教練管理重建 2.0 (兼顧 V8.10 邏輯) ---
-    function openCoachAdminPanel() { document.getElementById('coach-admin-panel').style.display = 'flex'; renderCoachAdminList(); }
-    function closeCoachAdminPanel() { document.getElementById('coach-admin-panel').style.display = 'none'; }
-    function renderCoachAdminList() {
-      const list = document.getElementById('coach-admin-list'); if (!list) return; list.innerHTML = '';
-      Object.keys(coachPool || {}).sort().forEach(n => {
-        const item = document.createElement('div');
-        item.style = "display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;";
-        item.innerHTML = `<span style="font-weight:700;">${n}</span>
-          <button type="button" class="btn-ui-red" onclick="doDeleteGlobalCoach('${n}')" style="padding:4px 10px; font-size:11px;">永久刪除</button>`;
-        list.appendChild(item);
-      });
-    }
-    async function doAddGlobalCoach() {
-      const name = document.getElementById('new-global-coach-name').value.trim();
-      if (!name || (coachPool && coachPool[name])) return;
-      try {
-        await DATA_DOC.set({ coachPool: { [name]: { members: [] } } }, { merge: true });
-        showToast(`教練 ${name} 已同步`, 2); document.getElementById('new-global-coach-name').value = ''; renderCoachAdminList();
-      } catch (e) { showToast('新增失敗', 2, true); }
-    }
-    async function doDeleteGlobalCoach(n) {
-      if (!confirm(`警告：將教練 ${n} 從全域系統中移除嗎？`)) return;
-      try {
-        await DATA_DOC.update({ [`coachPool.${n}`]: firebase.firestore.FieldValue.delete() });
-        showToast('已移除', 2); renderCoachAdminList();
-      } catch (e) { showToast('失敗', 2, true); }
-    }
-    function openAddCoachModal() {
-      const m = selectedMemberInTrainerMode || adminViewingTarget;
-      if (!m || m === 'admin') return showToast('請先選取學員對象', 2, true);
-      const s = document.getElementById('select-global-coach'); s.innerHTML = '<option value="">請選取教練</option>';
-      Object.keys(coachPool || {}).sort().forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; s.appendChild(o); });
-      document.getElementById('add-coach-modal').style.display = 'flex';
-    }
-    function closeAddCoachModal() { document.getElementById('add-coach-modal').style.display = 'none'; }
-    async function doAddCoach() {
-      const n = document.getElementById('select-global-coach').value, m = adminViewingTarget || selectedMemberInTrainerMode;
-      if (!n || !m) return;
-      const mD = allMembersData[m] || {}; let cL = mD.coachList || [];
-      if (cL.includes(n)) return showToast('已綁定', 2, true);
-      cL.push(n); let pM = (coachPool[n] && coachPool[n].members) || []; if (!pM.includes(m)) pM.push(m);
-      try {
-        await DATA_DOC.set({ members: { [m]: { coachList: cL } }, coachPool: { [n]: { members: pM } } }, { merge: true });
-        showToast('綁定成功', 2); closeAddCoachModal(); updateCoachSelectors();
-      } catch (e) { showToast('失敗', 2, true); }
-    }
+    // --- 教練管理 2.0 函數端已移除 ---
 
     function closeAdminPanel() {
       document.getElementById('admin-overlay').style.display = 'none';
@@ -1448,53 +1396,22 @@
         await db.collection('users').doc(name).delete();
         const payload = {};
         payload[`members.${name}`] = firebase.firestore.FieldValue.delete();
-        await DATA_DOC.update(payload);
+        saveData(payload);
 
         showToast(`學員 ${name} 已成功移除`, 3);
 
         // 防呆：若刪除的是目前正在觀看的學員，跳回空白視角
         if (adminViewingTarget === name) {
           adminViewingTarget = 'admin';
-          document.getElementById('admin-member-selector').value = 'admin';
+          const sel = document.getElementById('admin-member-selector');
+          if (sel) sel.value = 'admin';
           onAdminSelectMember('admin');
         }
-
-        document.getElementById('admin-overlay').style.zIndex = '2100';
-        closeCustomConfirm();
-        openAdminPanel(); // 刷新清單
       } catch (e) {
-        document.getElementById('admin-overlay').style.zIndex = '2100';
         alert("刪除失敗: " + e.message);
       }
     }
 
-    function updateCoachSelectors() {
-      const aS = document.getElementById('admin-coach-selector'), tS = document.getElementById('trainer-coach-selector'), m = adminViewingTarget || selectedMemberInTrainerMode;
-      let list = (m && allMembersData[m]) ? (allMembersData[m].coachList || []) : Object.keys(coachPool || {});
-      [aS, tS].forEach(s => {
-        if (!s) return; const cur = s.value; s.innerHTML = '<option value="">請選取教練</option>';
-        list.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; s.appendChild(o); });
-        if (list.includes(cur)) s.value = cur;
-      });
-    }
-    function removeCoachLink() {
-      const m = adminViewingTarget || selectedMemberInTrainerMode, c = document.getElementById('admin-coach-selector').value;
-      if (!m || m === 'admin') return showToast('請先選取學員對象', 2, true);
-      if (!c) return showToast('請選取要移除的教練', 2, true);
-      document.getElementById('confirm-remove-text').innerHTML = `確定解除 <span style="color:var(--wg-red);">${m}</span> 與教練 <span style="color:var(--wg-red);">${c}</span> 的綁定？`;
-      document.getElementById('remove-coach-modal').style.display = 'flex';
-    }
-    function closeRemoveCoachModal() { document.getElementById('remove-coach-modal').style.display = 'none'; }
-    async function doRemoveCoach() {
-      const m = adminViewingTarget || selectedMemberInTrainerMode, c = document.getElementById('admin-coach-selector').value;
-      let cL = (allMembersData[m].coachList || []).filter(x => x !== c);
-      let pL = (coachPool[c] && coachPool[c].members || []).filter(u => u !== m);
-      try {
-        await DATA_DOC.set({ members: { [m]: { coachList: cL } }, coachPool: { [c]: { members: pL } } }, { merge: true });
-        showToast('已解綁', 2); selectedTrainer = ""; closeRemoveCoachModal(); updateCoachSelectors();
-      } catch (e) { showToast('失敗', 2, true); }
-    }
-    function onAdminSelectCoach(v) { selectedTrainer = v; updateAdminMemberSelector(); renderTrainerCal(); }
     function onAdminSelectMember(name) {
       // ✅ 強力防呆：檢查是否有未提交的數據或正在批量操作
       const hasUnsaved = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
@@ -1781,6 +1698,8 @@
       isOnlyMy = false;
       const sel = document.getElementById('trainer-member-selector');
       if (sel) sel.value = "";
+      // ✅ V8.11：切換視角時強制關閉所有開發中彈窗
+      const stats = document.getElementById('trainer-stats-area'); if (stats) stats.style.display = 'none';
       document.getElementById('only-my-btn').classList.remove('active');
       showScreen('trainer');
       initCoachPicker();
@@ -1838,32 +1757,77 @@
       let hasCleared = false;
       const targetUser = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
       const memberData = allMembersData[targetUser] || {};
+      
+      // 統計細節用
+      let clearedDetails = []; // [{ coach, items: [{ date, hr }] }]
 
-      // 清除會員確認位
+      // 1. 清除會員自己記錄 (僅限該學員身分)
       Object.keys(memberData).forEach(k => {
         if (k.startsWith(prefix)) {
           batch[`members.${targetUser}.${k}`] = firebase.firestore.FieldValue.delete();
           hasCleared = true;
         }
       });
-      // 清除本地暫存
-      Object.keys(memberSession).forEach(k => { if (k.startsWith(prefix)) delete memberSession[k]; });
-      Object.keys(pendingCoachRemovals).forEach(k => { if (k.startsWith(prefix)) delete pendingCoachRemovals[k]; });
 
-      // 清除所有教練的確認位
+      // 2. 精確清除教練端記錄 (不影響他人)
       Object.keys(trainerConfirmed).forEach(coach => {
+        let coachItems = [];
         Object.keys(trainerConfirmed[coach]).forEach(k => {
           if (k.startsWith(prefix)) {
-            batch[`trainerConfirmed.${coach}.${k}`] = firebase.firestore.FieldValue.delete();
-            hasCleared = true;
+            // 找出屬於該學員的標籤
+            const myTags = trainerConfirmed[coach][k].filter(s => 
+              typeof s === 'string' && s.includes(':') && s.split(':')[1] === targetUser
+            );
+            if (myTags.length > 0) {
+              const updateKey = `trainerConfirmed.${coach}.${k}`;
+              // 獲取該天所有標籤，並過濾掉我的
+              const remainingTags = trainerConfirmed[coach][k].filter(s => {
+                const isString = (typeof s === 'string' && s.includes(':'));
+                return !isString || s.split(':')[1] !== targetUser;
+              });
+              
+              if (remainingTags.length === 0) {
+                 batch[updateKey] = firebase.firestore.FieldValue.delete();
+              } else {
+                 batch[updateKey] = remainingTags;
+              }
+              
+              myTags.forEach(t => coachItems.push({ date: k, hr: Number(t.split(':')[0]) }));
+              hasCleared = true;
+            }
           }
         });
+        if (coachItems.length > 0) {
+          clearedDetails.push({ coach, items: coachItems.sort((a,b)=>a.date.localeCompare(b.date) || a.hr - b.hr) });
+        }
       });
+
+      // 3. 清理暫存
+      Object.keys(memberSession).forEach(k => { if (k.startsWith(prefix)) delete memberSession[k]; });
+      Object.keys(pendingCoachRemovals).forEach(k => { if (k.startsWith(prefix)) delete pendingCoachRemovals[k]; });
 
       if (hasCleared) {
         saveData(batch);
         renderMemberCal();
         showToast("本月份所有紀錄已從雲端淨空！", 4);
+
+        // ✅ V8.12：清空月份通知 (詳盡明細版)
+        const memberDisplayName = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
+        const dispName = (currentLogonRole === 'superuser') ? "管理員" : `${memberDisplayName}會員`;
+        const actionText = (currentLogonRole === 'superuser') ? "管理員已執行批量清空" : "您已成功清空本月份所有預約項目";
+        
+        if (clearedDetails.length > 0) {
+          let msg = `⚪ 【${dispName}】課表【清空】通知\n━━━━━━━━━━━━━━━━\n📅 月份：${mY}年${String(mM + 1).padStart(2, '0')}月\n🗑️ ${actionText}。`;
+          msg += `\n\n⚠️ 以下教練預定同步取消：`;
+          clearedDetails.forEach(cd => {
+             msg += `\n\n🏋️ ${cd.coach} 教練：`;
+             cd.items.forEach(it => {
+                const dateShort = it.date.slice(5); // 04-16
+                msg += `\n• ${dateShort} ${formatTimeRange(it.hr)}`;
+             });
+          });
+          sendLineNotify(msg);
+        }
       } else {
         showToast("本月份暫無資料可供清除", 2, true);
       }
@@ -2059,7 +2023,7 @@
           let allS = [];
           if (unionSlots.size > 0) {
             Array.from(unionSlots).forEach(hr => {
-              // 找出這一個時段是哪個教練約了這名學員
+              // A. 偵測是否有這名學員與任何教練的預約
               let bookingCoach = Object.keys(COACH_DATA).find(tr => {
                 if (!trainerConfirmed[tr] || !trainerConfirmed[tr][k]) return false;
                 return trainerConfirmed[tr][k].some(s =>
@@ -2068,35 +2032,53 @@
                 );
               });
 
-            if (bookingCoach) {
-              const isChg = trainerSession[k] !== undefined;
+              // B. 偵測目前選取的教練 (t) 是否衝堂
+              let myConflict = null;
               if (t) {
-                if (bookingCoach === t) {
-                  // 本人課程
-                  if (isChg && trainerSession[k].indexOf(hr) < 0) allS.push({ h: hr, type: 'rem', tr: t });
-                  else allS.push({ h: hr, type: 'act', tr: t });
-                } else {
-                  // 他教練課程：V8.10 標誌性的「反灰」視角
-                  allS.push({ h: hr, type: 'oth', tr: bookingCoach });
-                }
-              } else {
-                allS.push({ h: hr, type: 'act', tr: bookingCoach });
+                myConflict = trainerConfirmed[t]?.[k]?.find(st => {
+                  const c_hr = (typeof st === 'string' && st.includes(':')) ? Number(st.split(':')[0]) : Number(st);
+                  return c_hr === hr;
+                });
               }
-              return;
-            }
 
-            if (t) {
-              const isConflict = trainerConfirmed[t]?.[k]?.find(st => {
-                const c_hr = (typeof st === 'string' && st.includes(':')) ? Number(st.split(':')[0]) : Number(st);
-                return c_hr === hr;
-              });
-              if (isConflict) {
-                const mName = (typeof isConflict === 'string' && isConflict.includes(':')) ? isConflict.split(':')[1] : "他人";
+              // --- 決定顯示類型 (根據 isOnlyMy 模式分流) ---
+
+              // 1. 如果有成交預約
+              if (bookingCoach) {
+                if (t) {
+                  if (bookingCoach === t) {
+                    // 本人教練課程：恆顯示
+                    const isChg = trainerSession[k] !== undefined;
+                    if (isChg && trainerSession[k].indexOf(hr) < 0) allS.push({ h: hr, type: 'rem', tr: t });
+                    else allS.push({ h: hr, type: 'act', tr: t });
+                  } else {
+                    // 他教練課程
+                    if (isOnlyMy) {
+                       if (myConflict) {
+                          const mName = (typeof myConflict === 'string' && myConflict.includes(':')) ? myConflict.split(':')[1] : "他人";
+                          allS.push({ h: hr, type: 'conflict', tr: "衝堂(" + mName + ")", c: t });
+                          return;
+                       }
+                       return; 
+                    }
+                    // ✅ 一般模式 (有選教練，看他人)：反灰標籤
+                    allS.push({ h: hr, type: 'oth', tr: bookingCoach });
+                  }
+                } else {
+                  // ✅ 全局模式 (沒選教練)：全部顯示為彩色預約，不反灰
+                  allS.push({ h: hr, type: 'act', tr: bookingCoach });
+                }
+                return;
+              }
+
+              // 2. 教練個人衝堂 (在學員沒課的情況下)
+              if (myConflict) {
+                const mName = (typeof myConflict === 'string' && myConflict.includes(':')) ? myConflict.split(':')[1] : "他人";
                 allS.push({ h: hr, type: 'conflict', tr: "衝堂(" + mName + ")", c: t });
                 return;
               }
-            }
 
+              // 3. 學員自選時段 (可預約狀態)
               if (memAvail.map(Number).includes(hr)) {
                 const isChg = trainerSession[k] !== undefined;
                 if (t && isChg && trainerSession[k].indexOf(hr) >= 0) allS.push({ h: hr, type: 'add', tr: t });
@@ -2165,17 +2147,8 @@
         grid.appendChild(el);
       }
 
-      // ✅ V8.10 標籤式統計 UI 注入
+      // ✅ V8.10 統計 UI 已移除
       const oldStats = document.getElementById('trainer-stats-purity'); if (oldStats) oldStats.remove();
-      const statsDiv = document.createElement('div');
-      statsDiv.id = 'trainer-stats-purity';
-      statsDiv.style = "display:flex; justify-content:center; gap:12px; margin-top:15px; flex-wrap:wrap; padding:10px;";
-      statsDiv.innerHTML = `
-        <div class="legend-item" style="border:1.5px solid var(--wg-red); padding:5px 12px; border-radius:30px; background:rgba(211,47,47,0.05); color:var(--wg-red); font-weight:800; font-size:12px; display:flex; align-items:center; gap:5px;">
-           📅 本月累計成交：<span style="font-size:18px;">${allTrainersCount}</span> 堂
-        </div>
-      `;
-      document.getElementById('screen-trainer').appendChild(statsDiv);
 
     } catch (err) { console.error("渲染錯誤:", err); }
   }
@@ -2441,7 +2414,29 @@
       renderTrainerCal();
       initCoachPicker();
       showToast('更新成功！', 2);
-      sendLineNotify(`🔔 教練預約異動通知\n日期：${panelKey} (${selectedTrainer})${diffText}`);
+
+      // ✅ V8.12：動態標題與顏色球通知 (教練/管理員端)
+      let typeText = "異動", ball = "🟡";
+      if (added.length > 0 && removed.length === 0) { typeText = "新增"; ball = "🟢"; }
+      if (added.length === 0 && removed.length > 0) { typeText = "取消"; ball = "🔴"; }
+
+      const dispName = (currentLogonRole === 'superuser') ? "管理員" : `${selectedTrainer}教練`;
+      let msg = `${ball} 【${dispName}】課表【${typeText}】通知\n━━━━━━━━━━━━━━━━\n📅 日期：${panelKey}`;
+      
+      if (currentLogonRole === 'superuser') {
+        msg += `\n👤 會員：${selectedMemberInTrainerMode}\n🏋️ 教練：${selectedTrainer}`;
+      } else {
+        msg += `\n👤 會員：${selectedMemberInTrainerMode}`;
+      }
+
+      if (added.length > 0) {
+        msg += `\n✅ 新增預約時段：\n${added.sort((a, b) => a - b).map(h => "• " + formatTimeRange(h)).join('\n')}`;
+      }
+      if (removed.length > 0) {
+        msg += `\n❌ 取消預約時段：\n${removed.sort((a, b) => a - b).map(h => "• " + formatTimeRange(h)).join('\n')}`;
+      }
+      sendLineNotify(msg);
+
       closePanel();
     }
     function confirmMember() {
@@ -2452,21 +2447,20 @@
       const batch = {};
       // 1. 處理新申請的時段 (memberSession)
       Object.keys(memberSession).forEach(k => {
-        const slots = [...memberSession[k]];
+        const slots = [...memberSession[k]].map(Number);
         const updateKey = `members.${targetUser}.${k}`;
-
-        const oldMemSlots = (targetData[k] || []).map(Number);
-        const added = slots.filter(h => !oldMemSlots.includes(h));
-        const removed = oldMemSlots.filter(h => !slots.includes(h));
-
-        if (added.length > 0) batch[updateKey] = firebase.firestore.FieldValue.arrayUnion(...added);
-        if (removed.length > 0) batch[updateKey] = firebase.firestore.FieldValue.arrayRemove(...removed);
+        // ✅ 終極修復：直接全量覆蓋，避免 arrayUnion 與 arrayRemove 互吃
+        batch[updateKey] = slots;
       });
-      // 2. 處理「取消」的時段 (pendingCoachRemovals)
+      // 2. 處理「取消」的時段 (pendingCoachRemovals) - 若該日無新增但有取消，則需確保欄位更新
       Object.keys(pendingCoachRemovals).forEach(k => {
         const updateKey = `members.${targetUser}.${k}`;
-        const removed = [...pendingCoachRemovals[k]].map(Number);
-        if (removed.length > 0) batch[updateKey] = firebase.firestore.FieldValue.arrayRemove(...removed);
+        if (!batch[updateKey]) {
+            // 如果這一天沒有在 memberSession 裡（即純取消），則從 targetData 扣除
+            const oldSlots = (targetData[k] || []).map(Number);
+            const toRemove = [...pendingCoachRemovals[k]].map(Number);
+            batch[updateKey] = oldSlots.filter(h => !toRemove.includes(h));
+        }
       });
 
       let removedInfo = [];
@@ -2527,14 +2521,23 @@
       renderMemberCal();
       showToast('修改成功提交！', 3);
 
-      // 發送學員異動通知
-      let msg = `🔔 會員預約異動提交成功！`;
+      // ✅ V8.12：動態標題與顏色球通知 (學員/管理員端)
+      const memberDisplayName = (currentLogonRole === 'superuser') ? adminViewingTarget : currentLogonMember;
+      let typeText = (removedInfo.length > 0) ? "取消" : "更新", ball = (removedInfo.length > 0) ? "🔴" : "🟢";
+      const dispName = (currentLogonRole === 'superuser') ? "管理員" : `${memberDisplayName}會員`;
+      
+      let msg = `${ball} 【${dispName}】課表【${typeText}】通知\n━━━━━━━━━━━━━━━━`;
+      
       if (removedInfo.length > 0) {
-        msg += `\n\n⚠️ 已主動取消教練課程：`;
-        removedInfo.forEach(item => {
-          msg += `\n日期：${item.date} (${item.trainer})\n時段：\n${item.times.map(h => formatTimeRange(h)).join('\n')}`;
-        });
+        msg += `\n📅 日期：${removedInfo[0].date}`;
+        if (currentLogonRole === 'superuser') {
+           msg += `\n👤 會員：${memberDisplayName}`;
+        }
+        msg += `\n🏋️ 教練：${removedInfo[0].trainer}\n❌ 已主動取消教練課表：\n${removedInfo[0].times.map(h => "• " + formatTimeRange(h)).join('\n')}`;
+      } else {
+        msg += `\n✅ 您已成功更新個人課表\n✨ 請點擊連結查看最新狀況`;
       }
+      
       sendLineNotify(msg);
     }
     function resetTrainerSession() { }
@@ -2543,48 +2546,6 @@
     function resetMemberSession() { memberSession = {}; pendingCoachRemovals = {}; renderMemberCal(); }
 
   </script>
-  <!-- 教練管理面板 (2.0 重建) -->
-  <div id="coach-admin-panel" class="custom-confirm-overlay" style="z-index: 2200; display:none;">
-    <div class="custom-confirm-card" style="width: 90%; max-width: 400px;">
-      <h3 style="text-align:center; padding-bottom:10px; border-bottom:1.5px solid #eee;">🏋️ 教練管理</h3>
-      <div style="margin:15px 0; background:#f9f9f9; padding:15px; border-radius:12px;">
-        <input type="text" id="new-global-coach-name" placeholder="輸入教練姓名" 
-               style="text-align:center; width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; margin-bottom:10px;">
-        <button type="button" class="btn-ui btn-ui-green" onclick="doAddGlobalCoach()" style="width:100%;">＋ 新增同步到系統</button>
-      </div>
-      <div id="coach-admin-list" style="max-height:250px; overflow-y:auto; background:#fff; border:1px solid #eee; border-radius:12px;">
-        <!-- 動態置入清單 -->
-      </div>
-      <button class="btn-ui btn-ui-secondary" onclick="closeCoachAdminPanel()" style="width:100%; margin-top:20px;">關閉管理視窗</button>
-    </div>
-  </div>
-
-  <!-- 綁定教練彈窗 (2.0 重建) -->
-  <div id="add-coach-modal" class="custom-confirm-overlay" style="z-index: 2200; display:none;">
-    <div class="custom-confirm-card" style="width: 90%; max-width: 380px;">
-      <h3 style="text-align:center; padding-bottom:10px; border-bottom:1.5px solid #eee;">🔗 綁定系統教練</h3>
-      <div class="field" style="margin:20px 0;">
-        <select id="select-global-coach" style="width:100%; padding:12px; border-radius:12px; border:2px solid #eee; font-weight:800; text-align:center;">
-          <option value="">請選取教練</option>
-        </select>
-      </div>
-      <div style="display:flex; gap:10px;">
-        <button type="button" class="btn-ui btn-ui-secondary" onclick="closeAddCoachModal()" style="flex:1;">取消</button>
-        <button type="button" class="btn-ui btn-ui-green" onclick="doAddCoach()" style="flex:1;">確認綁定</button>
-      </div>
-    </div>
-  </div>
-  <!-- 移除教練確認彈窗 -->
-  <div id="remove-coach-modal" class="custom-confirm-overlay" style="z-index: 2200; display:none;">
-    <div class="custom-confirm-card" style="width: 90%; max-width: 380px;">
-      <div style="font-size:40px; margin-bottom:10px;">⚠️</div>
-      <h3 style="margin-top:0; color:var(--wg-red);">解除教練綁定</h3>
-      <p id="confirm-remove-text" style="font-size:13px; color:#555; line-height:1.6;"></p>
-      <div style="display:flex; gap:10px; margin-top:25px;">
-        <button type="button" class="btn-ui btn-ui-secondary" onclick="closeRemoveCoachModal()" style="flex:1;">取消</button>
-        <button type="button" class="btn-ui btn-ui-red" onclick="doRemoveCoach()" style="flex:1;">確認移除</button>
-      </div>
-    </div>
-  </div>
+  <!-- 教練管理面板已移除 -->
 </body>
 </html>
