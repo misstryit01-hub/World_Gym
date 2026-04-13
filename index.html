@@ -1576,8 +1576,9 @@
     }
 
     function formatTimeRange(h) {
-      const start = String(h).padStart(2, '0') + ':00';
-      const end = String(Number(h) + 1).padStart(2, '0') + ':00';
+      const hh = parseInt(h, 10);
+      const start = String(hh).padStart(2, '0') + ':00';
+      const end = String(hh + 1).padStart(2, '0') + ':00';
       return `${start} ~ ${end}`;
     }
 
