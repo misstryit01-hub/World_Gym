@@ -918,13 +918,17 @@
           <div style="border-top: 2.5px dashed #eee; padding-top: 1.5rem;">
             <div class="field"><label>Account 帳號</label><input type="text" id="login-user" placeholder="帳號"
                 autocomplete="off"></div>
-            <div class="field"><label>Password 密碼</label><input type="password" id="login-pass" placeholder="密碼"
-                autocomplete="off"></div>
+            <div class="field"><label>Password 登入密碼</label><input type="password" id="login-pass" placeholder="請輸入密碼"
+              autocomplete="off"></div>
             <button type="button" class="btn-member-login" onclick="doMemberLogin()">會員登入</button>
-            <div style="text-align:center; margin-top: 1.2rem;">
-              <span style="font-size:12px; color:#999; font-weight:800;">尚未擁有帳號？</span>
-              <a href="javascript:void(0)" onclick="openRegisterPanel()"
-                style="font-size:12px; color:var(--wg-red); font-weight:900; text-decoration:none; margin-left:4px; border-bottom:1.5px solid var(--wg-red);">立即申請</a>
+            <div style="text-align:center; margin-top: 1.2rem; display:flex; flex-direction:column; gap:2px;">
+              <div>
+                <span style="font-size:14px; color:#999; font-weight:800;">尚未擁有帳號？</span>
+                <a href="javascript:void(0)" onclick="openRegisterPanel()" style="font-size:14px; color:var(--wg-red); font-weight:900; text-decoration:none; margin-left:4px; border-bottom:1.5px solid var(--wg-red);">立即申請</a>
+              </div>
+              <div>
+                <a href="javascript:void(0)" onclick="forgotPassword()" style="font-size:11px; color:var(--wg-red); font-weight:900; text-decoration:none; border-bottom:1px solid var(--wg-red);">忘記密碼？</a>
+              </div>
             </div>
           </div>
         </div>
@@ -1022,7 +1026,7 @@
           <button type="button" class="btn-logout" onclick="logout()">登出</button>
         </div>
         <div class="coach-picker-container px-main">
-          <div class="coach-hint">請點選您的教練身分以開始預約</div>
+          <div class="coach-hint" style="font-size:13px; color:#333; font-weight:900; margin-bottom:12px; text-align:center;">🏋️ 請點選您的教練身分以開始預約</div>
           <div class="coach-row" id="coach-picker"></div>
         </div>
         <!-- 1. 會員選擇選單 (對齊 Admin 視覺層級) -->
@@ -1048,10 +1052,9 @@
                <span class="month-label" id="trainer-month-label" style="font-size:16px; font-weight:900; pointer-events:auto;"></span>
             </div>
 
-            <!-- 右側：標籤 (向左靠右箭頭) -->
-            <div style="flex:1; display:flex; justify-content:flex-end; align-items:center; padding-right:10px;">
+            <div style="flex:1; display:flex; justify-content:flex-end; align-items:center; padding-right:5px;">
               <div id="trainer-lock-indicator" style="display:none; flex-shrink:0;">
-                <div id="t-lock-badge" style="display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:30px; font-size:10px; font-weight:900; white-space:nowrap;">
+                <div id="t-lock-badge" style="display:inline-flex; align-items:center; gap:2px; padding:2px 6px; border-radius:30px; font-size:10px; font-weight:900; white-space:nowrap;">
                   <span id="t-lock-icon"></span>
                   <span id="t-lock-text"></span>
                 </div>
@@ -1162,8 +1165,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.15"; // 教練控制列整合與模式視覺動態優化
-    const VERSION_TAG = "V8.15 - 2026/04/14 (教練控制列整合與模式視覺動態優化)"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.16"; // 忘記密碼引導與移動端佈局精煉
+    const VERSION_TAG = "V8.16 - 2026/04/14 (忘記密碼引導與移動端佈局精煉)"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1312,6 +1315,17 @@
       }
     }
 
+    function forgotPassword() {
+      const u = document.getElementById('login-user').value.trim();
+      openCustomConfirm(
+        u ? `系統帳號：${u}<br><br>請聯繫「系統管理員」以進行密碼重置。` : "請聯繫「系統管理員」進行密碼重置。",
+        () => { closeCustomConfirm(); },
+        "🔒 忘記密碼？",
+        "取消",
+        "確定"
+      );
+    }
+    
     async function doMemberLogin() {
       const u = document.getElementById('login-user').value.trim(), p = document.getElementById('login-pass').value.trim();
       if (!u || !p) return showToast('請輸入帳號密碼', 2, true);
@@ -1712,13 +1726,13 @@
             tBadge.style.color = 'var(--wg-red)';
             tBadge.style.border = '1px solid #FFEBEE';
             tIcon.textContent = '🔒';
-            tText.textContent = '已啟用強制連續排課';
+            tText.textContent = '連排中';
           } else {
             tBadge.style.background = '#F5F5F5';
             tBadge.style.color = '#999';
             tBadge.style.border = '1px solid #EEE';
             tIcon.textContent = '🔓';
-            tText.textContent = '未啟用連續排課卡控';
+            tText.textContent = '無卡控';
           }
         } else {
           tIndicator.style.display = 'none';
