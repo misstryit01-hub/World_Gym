@@ -936,7 +936,7 @@
       <div class="card">
         <div class="header-area px-main">
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <h3 id="member-title" style="margin-right:auto;">會員個人專屬課表</h3>
+            <h3 id="member-title" style="width:100%; margin-bottom:10px;">會員個人專屬課表</h3>
             <button type="button" class="btn-clear-month" onclick="promptClearMonth()">📅 清空整月預約</button>
             <button type="button" id="btn-admin-panel" class="btn-clear-month" onclick="openAdminPanel()"
               style="display:none; cursor:pointer;">👥 會員管理</button>
@@ -959,10 +959,18 @@
         <!-- 管理員模式主內容區 (選取後顯示，若為普通會員則始終顯示) -->
         <div id="member-main-view">
           <div class="member-toggles-row px-main">
-            <div id="batch-toggle" class="toggle-item green" onclick="toggleBatchMode()"><span>複製套用模式</span><span
-                id="batch-status" style="font-size:10px; color:#aaa;">OFF</span></div>
-            <div id="lock-toggle" class="toggle-item" onclick="toggleLockMode()"><span>強制連續排課</span><span
-                id="lock-status" style="font-size:10px; color:#aaa;">OFF</span></div>
+            <div id="batch-toggle" class="toggle-item green" onclick="toggleBatchMode()">
+              <span id="batch-icon" style="display:flex; align-items:center;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+              </span>
+              <span style="margin-left:4px;">快速複製模式</span>
+              <span id="batch-status" style="font-size:10px; color:#aaa;">OFF</span>
+            </div>
+            <div id="lock-toggle" class="toggle-item" onclick="toggleLockMode()">
+              <span id="lock-icon">🔓</span>
+              <span>強制連續排課</span>
+              <span id="lock-status" style="font-size:10px; color:#aaa;">OFF</span>
+            </div>
           </div>
           <div class="cal-nav px-main">
             <button type="button" class="nav-btn" onclick="changeMonth('m',-1)"><span
@@ -1005,7 +1013,7 @@
     <div id="screen-trainer" class="screen">
       <div class="card">
         <div class="header-area px-main" style="display:flex; align-items:center; gap:10px;">
-          <h3 id="trainer-title" style="margin:0; flex:1;">教練排班管理後台</h3>
+          <h3 id="trainer-title" style="margin:0; flex:1;">教練排班</h3>
           <button type="button" class="view-toggle-btn" id="only-my-btn" onclick="toggleOnlyMy()" style="margin:0;">
             <div class="checkbox-box">
               <div class="check-mark"></div>
@@ -1028,15 +1036,30 @@
             </select>
           </div>
         </div>
+        
+        <!-- V8.15：整合導航列 - 年月絕對置中版 -->
+        <div class="px-main" style="margin-bottom:12px;">
+          <div class="cal-nav" style="margin:0; width:100%; display:flex; align-items:center; justify-content:space-between; position:relative;">
+            <!-- 左箭頭 -->
+            <button type="button" class="nav-btn" onclick="changeMonth('t',-1)" style="z-index:2;"><span class="arrow arrow-left"></span></button>
+            
+            <!-- 中間內容區：年月固定置中 -->
+            <div style="position:absolute; width:100%; left:0; pointer-events:none; display:flex; justify-content:center; align-items:center; gap:20px;">
+               <span class="month-label" id="trainer-month-label" style="font-size:16px; font-weight:900; pointer-events:auto;"></span>
+            </div>
 
-        <!-- 2. 年月導航 (全寬對齊) -->
-        <div class="px-main" style="margin-top:5px;">
-          <div class="cal-nav">
-            <button type="button" class="nav-btn" onclick="changeMonth('t',-1)"><span
-                class="arrow arrow-left"></span></button>
-            <span class="month-label" id="trainer-month-label"></span>
-            <button type="button" class="nav-btn" onclick="changeMonth('t',1)"><span
-                class="arrow arrow-right"></span></button>
+            <!-- 右側：標籤 (向左靠右箭頭) -->
+            <div style="flex:1; display:flex; justify-content:flex-end; align-items:center; padding-right:10px;">
+              <div id="trainer-lock-indicator" style="display:none; flex-shrink:0;">
+                <div id="t-lock-badge" style="display:inline-flex; align-items:center; gap:3px; padding:2px 7px; border-radius:30px; font-size:10px; font-weight:900; white-space:nowrap;">
+                  <span id="t-lock-icon"></span>
+                  <span id="t-lock-text"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 右箭頭 -->
+            <button type="button" class="nav-btn" onclick="changeMonth('t',1)" style="z-index:2;"><span class="arrow arrow-right"></span></button>
           </div>
         </div>
 
@@ -1139,8 +1162,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.14"; // 全站確認視窗統一與視覺優化定版
-    const VERSION_TAG = "V8.14 - 2026/04/14 (全站確認視窗統一與視覺優化定版)"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.15"; // 教練控制列整合與模式視覺動態優化
+    const VERSION_TAG = "V8.15 - 2026/04/14 (教練控制列整合與模式視覺動態優化)"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1473,10 +1496,10 @@
       selectedMemberInTrainerMode = name;
       const titleEl = document.getElementById('trainer-title');
       if (name) {
-        titleEl.innerHTML = `正在管理：<span style="color:var(--wg-red); font-weight:900;">${name}</span>`;
+        titleEl.innerHTML = `正在管理：<br><span style="color:var(--wg-red); font-weight:900;">${name}</span>`;
         showToast(`⚠️ 注意：您正在管理 [ ${name} ] 的排班`, 3, true);
       } else {
-        titleEl.textContent = "教練排班管理後台";
+        titleEl.textContent = "教練排班";
       }
 
       // ✅ 教練端切換會員時也同步歸零 (如果教練端未來擴充此功能)
@@ -1550,12 +1573,9 @@
     function initLiff(liffId) {
       liff.init({ liffId }).then(() => {
         if (!liff.isLoggedIn()) {
-          // 若沒登入 LINE，則不強制但保持功能
           console.log("LIFF Not Logged In");
         } else {
           liff.getProfile().then(profile => {
-            console.log("LIFF Profile:", profile);
-            // 自動帶入 LINE 名稱到登入欄位 (若是空的話)
             const u = document.getElementById('login-user');
             if (u && !u.value) u.value = profile.displayName;
             showToast(`歡迎回來 ${profile.displayName}！`, 3);
@@ -1576,7 +1596,6 @@
     }
 
     function formatTimeRange(h) {
-      // ✅ 終極防震：確保 h 無論是數字、標籤字串還是陣列，都只取第一個數字
       const rawHour = String(h).match(/\d+/); 
       const hh = rawHour ? parseInt(rawHour[0], 10) : 0;
       const start = String(hh).padStart(2, '0') + ':00';
@@ -1588,20 +1607,17 @@
       const added = newArr.filter(x => !oldArr.includes(x)).sort((a, b) => a - b);
       const removed = oldArr.filter(x => !newArr.includes(x)).sort((a, b) => a - b);
       let msg = "";
-      if (added.length > 0) {
-        msg += `\n\n✅ 新增預約時段：\n${added.map(h => formatTimeRange(h)).join('\n')}`;
-      }
-      if (removed.length > 0) {
-        msg += `\n\n❌ 取消預約時段：\n${removed.map(h => formatTimeRange(h)).join('\n')}`;
-      }
+      if (added.length > 0) msg += `\n\n✅ 新增預約時段：\n${added.map(h => formatTimeRange(h)).join('\n')}`;
+      if (removed.length > 0) msg += `\n\n❌ 取消預約時段：\n${removed.map(h => formatTimeRange(h)).join('\n')}`;
       return msg;
     }
 
     function initCoachPicker() {
       const rt = document.getElementById('coach-picker'), l = document.getElementById('coach-legend');
       if (!rt || !l) return; rt.innerHTML = ''; l.innerHTML = '';
-      
       const names = Object.keys(COACH_DATA), hasU = Object.keys(trainerSession).length > 0;
+      let allTotalCount = 0;
+
       names.forEach((n, i) => {
         const chip = document.createElement('div');
         chip.className = 'coach-chip' + (hasU && selectedTrainer !== n ? ' locked' : '') + (selectedTrainer === n ? ' active' : '');
@@ -1614,7 +1630,6 @@
         };
         rt.appendChild(chip);
 
-        // ✅ 強健統計邏輯：轉型為數字比對，解決 dateKey 補零不一的問題
         let count = 0; 
         const targetYear = Number(tY), targetMonth = Number(tM + 1);
         if (selectedMemberInTrainerMode && trainerConfirmed[n]) { 
@@ -1625,12 +1640,13 @@
             }
           }); 
         }
+        allTotalCount += count;
 
         const isDimmed = selectedTrainer && selectedTrainer !== n;
         const item = document.createElement('div');
         item.className = 'legend-item' + (isDimmed ? ' dimmed' : '');
         item.style.minWidth = "65px";
-        item.style.background = "#ffffff"; // ✅ 背景恢復為純白
+        item.style.background = "#ffffff";
         item.style.border = "1px solid #eee";
         item.style.boxShadow = "0 3px 6px rgba(0,0,0,0.03)";
         item.innerHTML = `
@@ -1642,6 +1658,22 @@
         `;
         l.appendChild(item);
       });
+
+      // ✅ 新增總計卡片 (動態月份標題)
+      const totalItem = document.createElement('div');
+      totalItem.className = 'legend-item';
+      totalItem.style.minWidth = "75px";
+      totalItem.style.background = "#fff";
+      totalItem.style.border = "1.5px solid #ddd";
+      totalItem.style.boxShadow = "0 4px 10px rgba(0,0,0,0.08)";
+      totalItem.innerHTML = `
+        <div style="display:flex; align-items:center; gap:5px;">
+          <div class="legend-dot" style="background:#333"></div>
+          <span style="font-size:11px; font-weight:900; color:#000;">${tM + 1}月總計</span>
+        </div>
+        <span class="legend-count" style="color:#d32f2f; font-size:12px; font-weight:900;">${allTotalCount}堂</span>
+      `;
+      l.appendChild(totalItem);
       updateFilterText();
     }
     function updateFilterText() { const txt = document.getElementById('filter-text'); if (txt) txt.textContent = selectedTrainer ? `只顯示 ${selectedTrainer} 的課程` : '只顯示您的課程'; }
@@ -1656,12 +1688,41 @@
         consecutiveLocking = (memberData.consecutiveLocking === true);
       }
 
-      // 僅在 UI 元件存在時才更新 CSS
+      // 僅在 UI 元件存在時才更新 CSS (會員端)
       const elM = document.getElementById('lock-toggle');
       const statusEl = document.getElementById('lock-status');
-      if (elM && statusEl) {
+      const iconEl = document.getElementById('lock-icon');
+      if (elM && statusEl && iconEl) {
         elM.classList.toggle('active', consecutiveLocking);
         statusEl.textContent = consecutiveLocking ? 'ON' : 'OFF';
+        iconEl.textContent = consecutiveLocking ? '🔒' : '🔓';
+      }
+
+      // ✅ 更新教練端唯讀標籤 (V8.15 新增)
+      const tIndicator = document.getElementById('trainer-lock-indicator');
+      const tBadge = document.getElementById('t-lock-badge');
+      const tIcon = document.getElementById('t-lock-icon');
+      const tText = document.getElementById('t-lock-text');
+
+      if (tIndicator && tBadge && tIcon && tText) {
+        if (isTrainerMode && targetUser) {
+          tIndicator.style.display = 'flex'; // ✅ 改為 flex 配合新佈局
+          if (consecutiveLocking) {
+            tBadge.style.background = '#FFF5F5';
+            tBadge.style.color = 'var(--wg-red)';
+            tBadge.style.border = '1px solid #FFEBEE';
+            tIcon.textContent = '🔒';
+            tText.textContent = '已啟用強制連續排課';
+          } else {
+            tBadge.style.background = '#F5F5F5';
+            tBadge.style.color = '#999';
+            tBadge.style.border = '1px solid #EEE';
+            tIcon.textContent = '🔓';
+            tText.textContent = '未啟用連續排課卡控';
+          }
+        } else {
+          tIndicator.style.display = 'none';
+        }
       }
     }
 
@@ -1733,7 +1794,24 @@
       if (who === 'm') { mM += f; if (mM > 11) { mM = 0; mY++; } else if (mM < 0) { mM = 11; mY--; } renderMemberCal(); }
       else { tM += f; if (tM > 11) { tM = 0; tY++; } else if (tM < 0) { tM = 11; tY--; } renderTrainerCal(); initCoachPicker(); }
     }
-    function toggleBatchMode() { isBatchMode = !isBatchMode; document.getElementById('batch-toggle').classList.toggle('active', isBatchMode); document.getElementById('batch-status').textContent = isBatchMode ? 'ON' : 'OFF'; }
+    function toggleBatchMode() {
+      isBatchMode = !isBatchMode;
+      const btn = document.getElementById('batch-toggle');
+      const statusText = document.getElementById('batch-status');
+      const iconEl = document.getElementById('batch-icon');
+      
+      btn.classList.toggle('active', isBatchMode);
+      statusText.textContent = isBatchMode ? 'ON' : 'OFF';
+      
+      // ✅ 動態切換單/雙頁圖示 (V8.15 優化)
+      if (isBatchMode) {
+        // 雙頁重疊圖示 (多一張紙)
+        iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"/></svg>`;
+      } else {
+        // 單頁文件圖示
+        iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+      }
+    }
     function isBooked(k, h) {
       const hr = Number(h);
       if (pendingCoachRemovals[k] && pendingCoachRemovals[k].map(Number).indexOf(hr) >= 0) return false;
@@ -2379,7 +2457,7 @@
         const envNote = isApp 
           ? `<div style="margin-top:10px; color:#4CAF50; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;">
                <svg viewBox="0 0 24 24" width="16" height="16" fill="#06C755" style="flex-shrink:0;"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738s-12 4.369-12 9.738c0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.155.381.101.976.049 1.353-.159 1.182-.538 2.87-.68 3.655-.078.411-.36 1.605 1.54 1.002 1.901-.604 10.237-6.035 13.974-10.354l.081-.093c1.511-1.801 2.943-3.955 2.943-7.063z"/></svg>
-               ✅ 提交後將自動發送 LINE 通知
+               提交後將自動發送 LINE 通知
              </div>` 
           : `<br><span style="color:#E57373; font-size:11px; font-weight:800;">⚠️ 注意：目前偵測到您未使用 LINE App，<br>提交後將「不會」發送通知。</span>`;
 
@@ -2501,7 +2579,7 @@
       const envNote = isApp 
         ? `<div style="margin-top:10px; color:#4CAF50; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;">
              <svg viewBox="0 0 24 24" width="16" height="16" fill="#06C755" style="flex-shrink:0;"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738s-12 4.369-12 9.738c0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.155.381.101.976.049 1.353-.159 1.182-.538 2.87-.68 3.655-.078.411-.36 1.605 1.54 1.002 1.901-.604 10.237-6.035 13.974-10.354l.081-.093c1.511-1.801 2.943-3.955 2.943-7.063z"/></svg>
-             ✅ 提交後將自動發送 LINE 通知
+             提交後將自動發送 LINE 通知
            </div>` 
         : `<br><span style="color:#E57373; font-size:11px; font-weight:800;">⚠️ 注意：目前偵測到您未使用 LINE App，<br>提交後將「不會」發送通知。</span>`;
 
@@ -2536,9 +2614,15 @@
       memberSession = {};
       pendingCoachRemovals = {};
       isBatchMode = false;
+      batchTemplate = null;
       updateLockUI();
-      document.getElementById('batch-toggle').classList.remove('active');
-      document.getElementById('batch-status').textContent = 'OFF';
+      const bToggle = document.getElementById('batch-toggle');
+      if (bToggle) {
+        bToggle.classList.remove('active');
+        document.getElementById('batch-status').textContent = 'OFF';
+        const iconEl = document.getElementById('batch-icon');
+        if (iconEl) iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+      }
 
       saveData(batch);
       renderMemberCal();
@@ -2570,7 +2654,20 @@
     function resetTrainerSession() { }
     function closePanel() { document.getElementById('time-panel').style.display = 'none'; }
     function closePanelIfBg(e) { if (e.target.id === 'time-panel') closePanel(); }
-    function resetMemberSession() { memberSession = {}; pendingCoachRemovals = {}; renderMemberCal(); }
+    function resetMemberSession() { 
+      memberSession = {}; 
+      pendingCoachRemovals = {}; 
+      isBatchMode = false;
+      batchTemplate = null;
+      const bToggle = document.getElementById('batch-toggle');
+      if (bToggle) {
+        bToggle.classList.remove('active');
+        document.getElementById('batch-status').textContent = 'OFF';
+        const iconEl = document.getElementById('batch-icon');
+        if (iconEl) iconEl.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`;
+      }
+      renderMemberCal(); 
+    }
 
   </script>
   <!-- 教練管理面板已移除 -->
