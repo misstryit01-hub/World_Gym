@@ -1116,18 +1116,18 @@
         style="text-align:center; padding-bottom:12px; border-bottom:1.5px solid #eee; margin-bottom: 20px; font-weight:900;">
         📝 提交會員申請</h3>
       <div class="px-main">
-        <div class="field" style="text-align:left;"><label>Desired Account 欲申請帳號</label><input type="text" id="reg-user"
-            placeholder="例如:allen" autocomplete="off"></div>
-        <div class="field" style="text-align:left; margin-top:12px;"><label>Secure Password 設定密碼</label><input
-            type="password" id="reg-pass" placeholder="請設定登入密碼" autocomplete="off"></div>
-        <div class="field" style="text-align:left; margin-top:12px;"><label>Confirm Password 再次確認密碼</label><input
+        <div class="field" style="text-align:left;"><label>帳號名稱</label><input type="text" id="reg-user"
+            placeholder="請輸入帳號" autocomplete="off"></div>
+        <div class="field" style="text-align:left; margin-top:12px;"><label>設定密碼</label><input
+            type="password" id="reg-pass" placeholder="請輸入密碼" autocomplete="off"></div>
+        <div class="field" style="text-align:left; margin-top:12px;"><label>再次輸入密碼</label><input
             type="password" id="reg-pass-confirm" placeholder="請再次輸入密碼" autocomplete="off"></div>
-        <div class="field" style="text-align:left; margin-top:12px;"><label>Referral Code 推薦碼</label><input type="text"
+        <div class="field" style="text-align:left; margin-top:12px;"><label>推薦碼</label><input type="text"
             id="reg-code" placeholder="請輸入推薦碼" autocomplete="off"></div>
 
         <div style="margin-top: 2rem; display: flex; gap: 10px;">
-          <button class="btn-ui btn-ui-secondary" style="flex:1" onclick="closeRegisterPanel()">先不申請</button>
-          <button class="btn-ui btn-ui-green" style="flex:2" onclick="doRegister()">送出申請</button>
+          <button class="btn-ui btn-ui-secondary" style="flex:1" onclick="closeRegisterPanel()">取消</button>
+          <button class="btn-ui btn-ui-green" style="flex:2" onclick="doRegister()">申請</button>
         </div>
       </div>
     </div>
@@ -1165,8 +1165,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.16"; // 忘記密碼引導與移動端佈局精煉
-    const VERSION_TAG = "V8.16 - 2026/04/14 (忘記密碼引導與移動端佈局精煉)"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.17"; // 會員註冊視窗純淨化與語意極簡優化
+    const VERSION_TAG = "V8.17 - 2026/04/14 (會員註冊視窗純淨化與語意極簡優化)"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
