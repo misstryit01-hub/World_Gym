@@ -1139,8 +1139,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.13"; // 質感通知與身分識別完美版
-    const VERSION_TAG = "V8.13 - 2026/04/14 (質感通知與身分識別完美版)"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.14"; // 全站確認視窗統一與視覺優化定版
+    const VERSION_TAG = "V8.14 - 2026/04/14 (全站確認視窗統一與視覺優化定版)"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1380,7 +1380,7 @@
       document.getElementById('admin-overlay').style.zIndex = '1000';
       openCustomConfirm(`確定要永久刪除學員 [${name}] 嗎？<br><br><span style="color:red; font-size:11px;">❗注意：該學員的所有紀錄將會同步被清除，且無法還原。</span>`, () => {
         executeDeleteUser(name);
-      }, "危險操作：刪除學員", "放棄", "確定刪除");
+      }, "確認送出嗎？", "取消", "確定");
 
       // 攔截取消按鈕
       const cBtn = document.getElementById('confirm-cancel-btn');
@@ -1456,7 +1456,7 @@
         Pending取消: ${JSON.stringify(pendingCoachRemovals)}<br>
         本地名單: ${JSON.stringify(tData)}
       `;
-      openCustomConfirm(diagStr, () => { }, "🔧 管理員診斷中心", "關閉", "了解");
+      openCustomConfirm(diagStr, () => { }, "確認送出嗎？", "取消", "確定");
     }
 
 
@@ -1708,10 +1708,10 @@
       initCoachPicker();
       renderTrainerCal();
     }
-    function logout() {
-      const m = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
-      if (m) openCustomConfirm("尚未確認提交，登出將遺失資料。確定嗎？", () => { executeLogout(); }, "尚未存檔", "繼續", "確定登出"); else executeLogout();
-    }
+  function logout() {
+    const m = (Object.keys(memberSession).length > 0 || Object.keys(pendingCoachRemovals).length > 0);
+    if (m) openCustomConfirm("尚未確認提交，登出將遺失資料。確定嗎？", () => { executeLogout(); }, "確認送出嗎？", "取消", "確定"); else executeLogout();
+  }
     function executeLogout() {
       showScreen('login');
       memberSession = {};
@@ -1850,15 +1850,15 @@
             openCustomConfirm(
               "【二重確認】 此動作不可逆！\n確定要永久清空整個月的資料嗎？",
               () => { clearMonthData(); },
-              "⚠️ 危險操作",
-              "取消保留",
-              "強硬清空"
+              "確認送出嗎？",
+              "取消",
+              "確定"
             );
           }, 150);
         },
-        "⚠️ 清空整月排課",
+        "確認送出嗎？",
         "取消",
-        "下一步確認"
+        "確定"
       );
     }
 
@@ -2221,7 +2221,7 @@
                 if (sIdx >= 0) panelTempSlots.splice(sIdx, 1);
 
                 renderPanelSlots(); renderMemberCal(); showToast('已標記取消', 2);
-              }, "標記取消預約");
+              }, "確認送出嗎？", "取消", "確定");
             };
           } else {
             slot.className = 'time-slot' + (isMemberIn ? ' selected' : '');
@@ -2375,17 +2375,29 @@
           return;
         }
 
-        const cc = document.getElementById('custom-confirm');
         const isApp = (typeof liff !== 'undefined' && liff.isInClient());
-        const envNote = isApp ? "並發送通知至 LINE 群組。" : "<br><span style='color:#E57373; font-size:11px;'>⚠️ 注意：目前偵測到您未使用 LINE App，<br>套用後將「不會」發送通知。</span>";
+        const envNote = isApp 
+          ? `<div style="margin-top:10px; color:#4CAF50; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;">
+               <svg viewBox="0 0 24 24" width="16" height="16" fill="#06C755" style="flex-shrink:0;"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738s-12 4.369-12 9.738c0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.155.381.101.976.049 1.353-.159 1.182-.538 2.87-.68 3.655-.078.411-.36 1.605 1.54 1.002 1.901-.604 10.237-6.035 13.974-10.354l.081-.093c1.511-1.801 2.943-3.955 2.943-7.063z"/></svg>
+               ✅ 提交後將自動發送 LINE 通知
+             </div>` 
+          : `<br><span style="color:#E57373; font-size:11px; font-weight:800;">⚠️ 注意：目前偵測到您未使用 LINE App，<br>提交後將「不會」發送通知。</span>`;
 
-        document.getElementById('cc-title').textContent = "確認發送預訂？";
-        document.getElementById('confirm-msg').innerHTML = `您即將更新 ${panelKey} 的排班，<br>${envNote}`;
         document.getElementById('confirm-ok-btn').onclick = () => {
           doActualApply(slots, diffText);
           closeCustomConfirm();
         };
-        cc.style.display = 'flex';
+        
+        openCustomConfirm(
+          `您即將提交 ${panelKey} 的預約修改，${envNote}`,
+          () => {
+            doActualApply(slots, diffText);
+            closeCustomConfirm();
+          },
+          "確認送出嗎？",
+          "取消",
+          "確定"
+        );
       }
     }
 
@@ -2485,16 +2497,24 @@
 
       // 檢查環境
       const isApp = (typeof liff !== 'undefined' && liff.isInClient());
-      const envNote = isApp ? "並發送異動通知至 LINE 群組。" : "<br><span style='color:#E57373; font-size:11px;'>⚠️ 注意：目前偵測到您未使用 LINE App，<br>提交後將「不會」發送通知。</span>";
+      const displayMonth = `${mY}年${String(mM + 1).padStart(2, '0')}`;
+      const envNote = isApp 
+        ? `<div style="margin-top:10px; color:#4CAF50; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; gap:6px;">
+             <svg viewBox="0 0 24 24" width="16" height="16" fill="#06C755" style="flex-shrink:0;"><path d="M24 10.304c0-5.369-5.383-9.738-12-9.738s-12 4.369-12 9.738c0 4.814 4.269 8.846 10.036 9.608.391.084.922.258 1.057.592.155.381.101.976.049 1.353-.159 1.182-.538 2.87-.68 3.655-.078.411-.36 1.605 1.54 1.002 1.901-.604 10.237-6.035 13.974-10.354l.081-.093c1.511-1.801 2.943-3.955 2.943-7.063z"/></svg>
+             ✅ 提交後將自動發送 LINE 通知
+           </div>` 
+        : `<br><span style="color:#E57373; font-size:11px; font-weight:800;">⚠️ 注意：目前偵測到您未使用 LINE App，<br>提交後將「不會」發送通知。</span>`;
 
-      const cc = document.getElementById('custom-confirm');
-      document.getElementById('cc-title').textContent = "確認提交異動？";
-      document.getElementById('confirm-msg').innerHTML = `您即將提交本月份的預約修改，<br>${envNote}`;
-      document.getElementById('confirm-ok-btn').onclick = () => {
-        doActualConfirmMember(batch, removedInfo);
-        closeCustomConfirm();
-      };
-      cc.style.display = 'flex';
+      openCustomConfirm(
+        `您即將提交 ${displayMonth} 月份的預約修改，${envNote}`,
+        () => {
+          doActualConfirmMember(batch, removedInfo);
+          closeCustomConfirm();
+        },
+        "確認送出嗎？",
+        "取消",
+        "確定"
+      );
     }
 
     function doActualConfirmMember(batch, removedInfo) {
