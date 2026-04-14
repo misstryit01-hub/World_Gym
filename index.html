@@ -1165,8 +1165,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.17"; // 會員註冊視窗純淨化與語意極簡優化
-    const VERSION_TAG = "V8.17 - 2026/04/14 (會員註冊視窗純淨化與語意極簡優化)"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.18"; // 會員登入自動收起手機鍵盤優化
+    const VERSION_TAG = "V8.18 - 2026/04/14 (會員登入自動收起手機鍵盤優化)"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1327,6 +1327,7 @@
     }
     
     async function doMemberLogin() {
+      if (document.activeElement) document.activeElement.blur(); // ✅ 強制收起手機鍵盤
       const u = document.getElementById('login-user').value.trim(), p = document.getElementById('login-pass').value.trim();
       if (!u || !p) return showToast('請輸入帳號密碼', 2, true);
 
