@@ -1165,8 +1165,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.18"; // 會員登入自動收起手機鍵盤優化
-    const VERSION_TAG = "V8.18 - 2026/04/14 (會員登入自動收起手機鍵盤優化)"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.19"; // 一鍵深度聯動清理與管理清單即時同步優化
+    const VERSION_TAG = "V8.19 - 2026/04/14 (一鍵深度聯動清理與管理清單即時同步優化)"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1429,14 +1429,41 @@
     }
 
     async function executeDeleteUser(name) {
-      showToast(`正在刪除 ${name}...`, 1);
+      showToast(`正在發動深度清理 ${name}...`, 1);
       try {
         await db.collection('users').doc(name).delete();
+        
         const payload = {};
+        // 1. 移除會員意向
         payload[`members.${name}`] = firebase.firestore.FieldValue.delete();
-        saveData(payload);
 
-        showToast(`學員 ${name} 已成功移除`, 3);
+        // 2. 🛡️ 核心：深度聯動清理全站教練課表中的幽靈時段
+        Object.keys(trainerConfirmed).forEach(tr => {
+          const trDocs = trainerConfirmed[tr];
+          Object.keys(trDocs).forEach(dateKey => {
+            const slots = trDocs[dateKey];
+            if (Array.isArray(slots)) {
+              // 精準剔除：保留非此會員的所有時段 (包含純數字格式或他人的標籤格式)
+              const newSlots = slots.filter(s => {
+                if (typeof s === 'string' && s.includes(':')) {
+                  return s.split(':')[1] !== name;
+                }
+                return true;
+              });
+              
+              // 只有當資料確實有變動時，才加入批次更新酬載
+              if (newSlots.length !== slots.length) {
+                payload[`trainerConfirmed.${tr}.${dateKey}`] = newSlots;
+              }
+            }
+          });
+        });
+
+        saveData(payload);
+        showToast(`學員 ${name} 及其全站預約紀錄已徹底移除`, 3);
+
+        // ✅ 修正：立即重新渲染管理清單，確保視覺同步消失
+        openAdminPanel();
 
         // 防呆：若刪除的是目前正在觀看的學員，跳回空白視角
         if (adminViewingTarget === name) {
