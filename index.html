@@ -1019,11 +1019,12 @@
     .food-replace, .food-remove { display: none; min-height: 40px; padding: 0 11px; border-radius: 11px; font-size: 12px; }
     .food-replace { color: #D85B00; background: #FFF0E4; }
     .food-remove { color: #666; background: #F0F1F2; }
-    .food-meal.done .food-capture { display: none; }
-    .food-meal.done .food-replace, .food-meal.done .food-remove { display: inline-block; }
-    .food-preview { position: absolute; right: 14px; bottom: 14px; display: none; width: 65px; height: 65px; overflow: hidden; border: 2px solid #fff; border-radius: 14px; box-shadow: 0 4px 12px rgba(0, 0, 0, .15); }
-    .food-preview img { width: 100%; height: 100%; object-fit: cover; }
-    .food-meal.done .food-preview { display: block; }
+    .food-meal.done .food-capture, .food-meal.done .food-remove { display: inline-block; }
+    .food-meal.done .food-replace { display: none; }
+    .food-preview { position: absolute; right: 14px; bottom: 14px; display: none; width: 72px; height: 72px; overflow: hidden; border: 2px solid #fff; border-radius: 14px; box-shadow: 0 4px 12px rgba(0, 0, 0, .15); grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 1px; background: #eee; }
+    .food-preview img { width: 100%; height: 100%; object-fit: cover; min-width: 0; min-height: 0; }
+    .food-preview .food-photo-more { position: absolute; inset: auto 3px 3px auto; padding: 2px 5px; border-radius: 9px; background: rgba(0,0,0,.72); color: #fff; font-size: 10px; font-weight: 900; }
+    .food-meal.done .food-preview { display: grid; }
     .food-file { display: none; }
     .food-note { margin-top: 12px; padding: 14px; border: 1px solid #E7E7E7; border-radius: 16px; background: #fff; }
     .food-note label { display: block; margin-bottom: 7px; font-size: 12px; font-weight: 900; }
@@ -1041,8 +1042,9 @@
     .food-coach-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px 12px 8px; }
     .food-coach-slot { overflow: hidden; min-height: 132px; border: 1px dashed rgba(255,255,255,.26); border-radius: 12px; background: rgba(255,255,255,.04); }
     .food-coach-slot .food-coach-empty { display: grid; min-height: 132px; place-items: center; padding: 9px; color: #A7AEB7; text-align: center; font-size: 11px; font-weight: 900; line-height: 1.45; }
-    .food-coach-slot img { display: block; width: 100%; height: 91px; object-fit: cover; }
-    .food-coach-slot div:not(.food-coach-empty) { padding: 7px; font-size: 11px; font-weight: 900; }
+    .food-coach-gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; background: rgba(255,255,255,.12); }
+    .food-coach-slot .food-coach-gallery img { display: block; width: 100%; height: 68px; object-fit: cover; }
+    .food-coach-caption { padding: 7px; font-size: 11px; font-weight: 900; }
     .food-coach-slot small { display: block; margin-top: 2px; color: #AEB5BF; font-size: 10px; font-weight: 700; }
     .food-coach-note { margin: 0 12px 12px; padding: 11px; border-radius: 12px; background: rgba(255,255,255,.08); font-size: 12px; font-weight: 700; line-height: 1.55; }
     .food-coach-note b { display: block; margin-bottom: 4px; color: #AEB5BF; font-size: 10px; }
@@ -1050,7 +1052,7 @@
     @media (max-width: 390px) {
       .food-coach-grid { gap: 5px; padding: 9px 9px 6px; }
       .food-coach-slot, .food-coach-slot .food-coach-empty { min-height: 118px; }
-      .food-coach-slot img { height: 78px; }
+      .food-coach-slot .food-coach-gallery img { height: 62px; }
     }
   </style>
 </head>
@@ -1191,18 +1193,18 @@
           <div class="food-meal-list">
             <article class="food-meal breakfast" data-food-member="breakfast">
               <div class="food-meal-main"><div class="food-meal-icon">🍳</div><div><div class="food-meal-title"><strong>早餐</strong><span>建議 06:00–10:30</span></div><p class="food-meal-guide">3 顆蛋；需要時以乳清補蛋白質。</p><span class="food-status">尚未回報</span></div></div>
-              <div class="food-actions"><button type="button" class="food-capture" onclick="chooseFoodPhoto('breakfast')">📷 直接拍早餐</button><button type="button" class="food-replace" onclick="chooseFoodPhoto('breakfast')">重拍</button><button type="button" class="food-remove" onclick="removeFoodPhoto('breakfast')">刪除</button></div>
-              <div class="food-preview"><img alt="早餐預覽"></div><input class="food-file" id="food-file-breakfast" type="file" accept="image/*" capture="environment" onchange="setFoodPhoto(event, 'breakfast')">
+              <div class="food-actions"><button type="button" class="food-capture" onclick="chooseFoodPhoto('breakfast')">📷 新增早餐照片</button><button type="button" class="food-replace" onclick="chooseFoodPhoto('breakfast')">重拍</button><button type="button" class="food-remove" onclick="removeFoodPhoto('breakfast')">清空本餐</button></div>
+              <div class="food-preview"></div><input class="food-file" id="food-file-breakfast" type="file" accept="image/*" capture="environment" multiple onchange="setFoodPhoto(event, 'breakfast')">
             </article>
             <article class="food-meal lunch" data-food-member="lunch">
               <div class="food-meal-main"><div class="food-meal-icon">🍱</div><div><div class="food-meal-title"><strong>午餐</strong><span>建議 11:00–14:30</span></div><p class="food-meal-guide">雞胸／瘦肉 200g；熟白飯 150g。</p><span class="food-status">尚未回報</span></div></div>
-              <div class="food-actions"><button type="button" class="food-capture" onclick="chooseFoodPhoto('lunch')">📷 直接拍午餐</button><button type="button" class="food-replace" onclick="chooseFoodPhoto('lunch')">重拍</button><button type="button" class="food-remove" onclick="removeFoodPhoto('lunch')">刪除</button></div>
-              <div class="food-preview"><img alt="午餐預覽"></div><input class="food-file" id="food-file-lunch" type="file" accept="image/*" capture="environment" onchange="setFoodPhoto(event, 'lunch')">
+              <div class="food-actions"><button type="button" class="food-capture" onclick="chooseFoodPhoto('lunch')">📷 新增午餐照片</button><button type="button" class="food-replace" onclick="chooseFoodPhoto('lunch')">重拍</button><button type="button" class="food-remove" onclick="removeFoodPhoto('lunch')">清空本餐</button></div>
+              <div class="food-preview"></div><input class="food-file" id="food-file-lunch" type="file" accept="image/*" capture="environment" multiple onchange="setFoodPhoto(event, 'lunch')">
             </article>
             <article class="food-meal dinner" data-food-member="dinner">
               <div class="food-meal-main"><div class="food-meal-icon">🥗</div><div><div class="food-meal-title"><strong>晚餐</strong><span>建議 17:00–21:30</span></div><p class="food-meal-guide">雞胸／瘦肉 200g；熟白飯 150g。</p><span class="food-status">尚未回報</span></div></div>
-              <div class="food-actions"><button type="button" class="food-capture" onclick="chooseFoodPhoto('dinner')">📷 直接拍晚餐</button><button type="button" class="food-replace" onclick="chooseFoodPhoto('dinner')">重拍</button><button type="button" class="food-remove" onclick="removeFoodPhoto('dinner')">刪除</button></div>
-              <div class="food-preview"><img alt="晚餐預覽"></div><input class="food-file" id="food-file-dinner" type="file" accept="image/*" capture="environment" onchange="setFoodPhoto(event, 'dinner')">
+              <div class="food-actions"><button type="button" class="food-capture" onclick="chooseFoodPhoto('dinner')">📷 新增晚餐照片</button><button type="button" class="food-replace" onclick="chooseFoodPhoto('dinner')">重拍</button><button type="button" class="food-remove" onclick="removeFoodPhoto('dinner')">清空本餐</button></div>
+              <div class="food-preview"></div><input class="food-file" id="food-file-dinner" type="file" accept="image/*" capture="environment" multiple onchange="setFoodPhoto(event, 'dinner')">
             </article>
           </div>
 
@@ -1385,8 +1387,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.22"; // 單餐即時上傳、智慧壓縮與 Google Drive 回報
-    const VERSION_TAG = "V8.22 - 單餐即時上傳與智慧壓縮"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.23"; // 多張餐點照片、單餐即時上傳與智慧壓縮
+    const VERSION_TAG = "V8.23 - 多張餐點照片與單餐即時上傳"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -2956,17 +2958,21 @@
     }
 
     function getFoodReport(date = foodActiveDate) {
-      if (!foodReports[date]) foodReports[date] = { meals: { breakfast: null, lunch: null, dinner: null }, note: '', sent: false };
+      if (!foodReports[date]) foodReports[date] = { meals: { breakfast: [], lunch: [], dinner: [] }, note: '', sent: false };
       return foodReports[date];
     }
 
     function foodImageUrl(item) { return item && (item.previewUrl || item.url || ''); }
 
+    function foodMealItems(report, meal) {
+      const value = report.meals[meal];
+      return Array.isArray(value) ? value : (value ? [value] : []);
+    }
+
     function foodReportForCloud(report) {
       const meals = {};
       ['breakfast', 'lunch', 'dinner'].forEach(meal => {
-        const item = report.meals[meal];
-        meals[meal] = item && item.url ? { id: item.id, url: item.url, size: item.size || 0, originalSize: item.originalSize || item.size || 0 } : null;
+        meals[meal] = foodMealItems(report, meal).filter(item => item && item.url).map(item => ({ id: item.id, url: item.url, size: item.size || 0, originalSize: item.originalSize || item.size || 0 }));
       });
       return { meals: meals, note: report.note || '', sent: !!report.sent, updatedAt: report.updatedAt || new Date().toISOString() };
     }
@@ -2992,8 +2998,8 @@
       dateInput.value = foodActiveDate;
       document.getElementById('food-member-date-label').textContent = foodDateText(foodActiveDate) + '・已完成';
       document.getElementById('food-member-note').value = report.note || '';
-      const completed = Object.values(report.meals).filter(Boolean).length;
-      const totalBytes = Object.values(report.meals).filter(Boolean).reduce((sum, item) => sum + (item.size || 0), 0);
+      const completed = ['breakfast', 'lunch', 'dinner'].filter(meal => foodMealItems(report, meal).length).length;
+      const totalBytes = ['breakfast', 'lunch', 'dinner'].reduce((sum, meal) => sum + foodMealItems(report, meal).reduce((mealTotal, item) => mealTotal + (item.size || 0), 0), 0);
       document.getElementById('food-member-progress').textContent = completed + ' / 3 餐';
       document.getElementById('food-member-size').textContent = foodMb(totalBytes) + ' MB';
       document.getElementById('food-member-bar').style.width = (completed / 3 * 100) + '%';
@@ -3001,12 +3007,14 @@
       send.classList.toggle('ready', completed === 3);
       send.textContent = completed === 3 ? (report.sent ? '✓ 已回貼今日摘要（可再次回貼）' : '📤 回貼今日三餐摘要到 LINE') : (completed ? '已上傳 ' + completed + ' / 3 餐，繼續拍下一餐' : '先拍任一餐，會立即上傳給教練');
       document.querySelectorAll('[data-food-member]').forEach(card => {
-        const meal = card.dataset.foodMember, item = report.meals[meal];
+        const meal = card.dataset.foodMember, items = foodMealItems(report, meal);
         const uploadKey = foodActiveDate + '-' + meal;
-        card.classList.toggle('done', !!item);
-        card.querySelector('.food-status').textContent = foodUploadingMeals[uploadKey] ? '正在上傳到 Google Drive…' : (item ? (item.file ? '已壓縮・' + foodMb(item.size) + ' MB（等待上傳）' : '✓ 已上傳至 Google Drive') : '尚未回報');
-        const image = card.querySelector('.food-preview img');
-        if (item) image.src = foodImageUrl(item); else image.removeAttribute('src');
+        card.classList.toggle('done', !!items.length);
+        card.querySelector('.food-status').textContent = foodUploadingMeals[uploadKey] ? '正在上傳到 Google Drive…' : (items.length ? '✓ 已上傳 ' + items.length + ' 張・' + foodMb(items.reduce((sum, item) => sum + (item.size || 0), 0)) + ' MB' : '尚未回報');
+        const preview = card.querySelector('.food-preview');
+        preview.innerHTML = '';
+        items.slice(0, 4).forEach(item => { const image = document.createElement('img'); image.src = foodImageUrl(item); image.alt = FOOD_LABELS[meal] + '預覽'; preview.appendChild(image); });
+        if (items.length > 4) { const more = document.createElement('span'); more.className = 'food-photo-more'; more.textContent = '+' + (items.length - 4); preview.appendChild(more); }
       });
     }
 
@@ -3016,8 +3024,8 @@
     }
 
     async function setFoodPhoto(event, meal) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
       const date = foodActiveDate;
       const report = getFoodReport(date);
       const input = event.target;
@@ -3025,20 +3033,27 @@
       input.disabled = true;
       showToast('正在壓縮' + FOOD_LABELS[meal] + '照片…', 2);
       try {
-        const compressedBlob = await compressFoodPhoto(file);
-        const compactFile = new File([compressedBlob], (file.name || meal).replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
-        if (report.meals[meal] && report.meals[meal].previewUrl) URL.revokeObjectURL(report.meals[meal].previewUrl);
-        report.meals[meal] = { previewUrl: URL.createObjectURL(compactFile), file: compactFile, size: compactFile.size, originalSize: file.size };
-        report.sent = false;
-        foodUploadingMeals[uploadKey] = true;
-        renderFoodMember();
-        showToast(FOOD_LABELS[meal] + '已壓縮為 ' + foodMb(compactFile.size) + ' MB，正在上傳…', 3);
         const token = await requestGoogleDriveToken();
         const folderId = await ensureFoodDriveFolder(token);
-        report.meals[meal] = await uploadFoodPhoto(token, folderId, date, meal, report.meals[meal]);
+        const items = foodMealItems(report, meal);
+        foodUploadingMeals[uploadKey] = true;
+        for (const file of files) {
+          const compressedBlob = await compressFoodPhoto(file);
+          const compactFile = new File([compressedBlob], (file.name || meal).replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+          const localItem = { previewUrl: URL.createObjectURL(compactFile), file: compactFile, size: compactFile.size, originalSize: file.size };
+          items.push(localItem);
+          report.meals[meal] = items;
+          report.sent = false;
+          renderFoodMember();
+          const uploaded = await uploadFoodPhoto(token, folderId, date, meal, localItem);
+          const index = items.indexOf(localItem);
+          if (index >= 0) items[index] = uploaded;
+          report.meals[meal] = items;
+          renderFoodMember();
+        }
         report.updatedAt = new Date().toISOString();
         await saveData({ ['foodReports.' + date]: foodReportForCloud(report) });
-        showToast('✅ ' + FOOD_LABELS[meal] + '已上傳，教練現在就看得到', 3);
+        showToast('✅ ' + FOOD_LABELS[meal] + '已上傳 ' + files.length + ' 張，教練現在就看得到', 3);
       } catch (err) {
         console.error('Food photo compression error:', err);
         showToast('上傳失敗：' + (err.message || '請重新授權 Google Drive 後再試'), 4, true);
@@ -3051,8 +3066,8 @@
 
     async function removeFoodPhoto(meal) {
       const report = getFoodReport();
-      if (report.meals[meal] && report.meals[meal].previewUrl) URL.revokeObjectURL(report.meals[meal].previewUrl);
-      report.meals[meal] = null;
+      foodMealItems(report, meal).forEach(item => { if (item.previewUrl) URL.revokeObjectURL(item.previewUrl); });
+      report.meals[meal] = [];
       document.getElementById('food-file-' + meal).value = '';
       renderFoodMember();
       report.sent = false;
@@ -3162,19 +3177,16 @@
       if (typeof liff === 'undefined' || !liff.isInClient()) return false;
       const note = (report.note || '').trim();
       const messages = [{ type: 'text', text: '🍱 Paul｜' + foodDateText(date) + ' 飲食回報\n早餐、午餐、晚餐已上傳。' + (note ? '\n備註：' + note : '') }];
-      ['breakfast', 'lunch', 'dinner'].forEach(meal => {
-        const url = report.meals[meal].url;
-        messages.push({ type: 'image', originalContentUrl: url, previewImageUrl: url });
-      });
-      await liff.sendMessages(messages);
+      ['breakfast', 'lunch', 'dinner'].forEach(meal => foodMealItems(report, meal).forEach(item => messages.push({ type: 'image', originalContentUrl: item.url, previewImageUrl: item.url })));
+      while (messages.length) await liff.sendMessages(messages.splice(0, messages[0].type === 'text' ? 5 : 5));
       return true;
     }
 
     async function sendFoodReport() {
       const report = getFoodReport();
-      const completed = Object.values(report.meals).filter(Boolean).length;
+      const completed = ['breakfast', 'lunch', 'dinner'].filter(meal => foodMealItems(report, meal).length).length;
       if (completed !== 3) return showToast('每一餐都會即時上傳；三餐齊了再回貼整日摘要到 LINE', 3, true);
-      if (Object.values(report.meals).some(item => !item || !item.url)) return showToast('仍有照片正在上傳，請稍候', 3, true);
+      if (['breakfast', 'lunch', 'dinner'].some(meal => foodMealItems(report, meal).some(item => !item.url))) return showToast('仍有照片正在上傳，請稍候', 3, true);
       const sendButton = document.getElementById('food-member-send');
       if (sendButton.disabled) return;
       sendButton.disabled = true;
@@ -3205,14 +3217,14 @@
     function renderFoodCoach() {
       const date = document.getElementById('food-coach-date').value || foodActiveDate;
       const report = foodReports[date] || { meals: {}, note: '' };
-      const completed = Object.values(report.meals).filter(Boolean).length;
+      const completed = ['breakfast', 'lunch', 'dinner'].filter(meal => foodMealItems(report, meal).length).length;
       document.getElementById('food-coach-title').textContent = 'Paul・' + foodDateText(date);
       document.getElementById('food-coach-count').textContent = completed + ' / 3 餐';
       document.getElementById('food-coach-note').textContent = report.note && report.note.trim() ? report.note : '這一天尚未留下備註。';
       document.querySelectorAll('[data-food-coach]').forEach(slot => {
-        const meal = slot.dataset.foodCoach, item = report.meals[meal];
-        slot.innerHTML = item
-          ? '<img src="' + foodImageUrl(item) + '" alt="Paul 的' + FOOD_LABELS[meal] + '照片"><div>' + FOOD_LABELS[meal] + '<small>已回報</small></div>'
+        const meal = slot.dataset.foodCoach, items = foodMealItems(report, meal);
+        slot.innerHTML = items.length
+          ? '<div class="food-coach-gallery">' + items.map(item => '<img src="' + foodImageUrl(item) + '" alt="Paul 的' + FOOD_LABELS[meal] + '照片">').join('') + '</div><div class="food-coach-caption">' + FOOD_LABELS[meal] + '<small>已回報 ' + items.length + ' 張</small></div>'
           : '<div class="food-coach-empty">' + FOOD_LABELS[meal] + '<br>尚未回報</div>';
       });
     }
