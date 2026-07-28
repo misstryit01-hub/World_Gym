@@ -1387,8 +1387,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.23"; // 多張餐點照片、單餐即時上傳與智慧壓縮
-    const VERSION_TAG = "V8.23 - 多張餐點照片與單餐即時上傳"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.24"; // 多張餐點照片、快速單次壓縮與單餐即時上傳
+    const VERSION_TAG = "V8.24 - 快速單次壓縮與多張餐點照片"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -3038,8 +3038,9 @@
         const items = foodMealItems(report, meal);
         foodUploadingMeals[uploadKey] = true;
         for (const file of files) {
-          const compressedBlob = await compressFoodPhoto(file);
-          const compactFile = new File([compressedBlob], (file.name || meal).replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+          const prepared = await compressFoodPhoto(file);
+          const extension = prepared.blob.type === 'image/jpeg' ? '.jpg' : ((file.name || '').match(/\.[^.]+$/) || ['.jpg'])[0];
+          const compactFile = new File([prepared.blob], (file.name || meal).replace(/\.[^.]+$/, '') + extension, { type: prepared.blob.type || file.type || 'image/jpeg' });
           const localItem = { previewUrl: URL.createObjectURL(compactFile), file: compactFile, size: compactFile.size, originalSize: file.size };
           items.push(localItem);
           report.meals[meal] = items;
@@ -3114,31 +3115,30 @@
     }
 
     async function compressFoodPhoto(file) {
-      // 原圖不會被修改；這裡只產生一份給 Google Drive 與 LINE 使用的副本。
-      const bitmap = await createImageBitmap(file);
-      const targetBytes = 1024 * 1024; // 優先目標約 1 MB，兼顧 LINE 傳送速度與食物細節。
-      const render = async (maxSide, startQuality) => {
-        const ratio = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(bitmap.width * ratio);
-        canvas.height = Math.round(bitmap.height * ratio);
-        canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-        let quality = startQuality;
-        let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
-        while (blob && blob.size > targetBytes && quality > 0.72) {
-          quality -= 0.03;
-          blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
-        }
-        return blob;
-      };
+      // LINE 是伺服器端壓縮；這裡改為手機端「只做一次」的輕量縮圖，避免 LINE 內建瀏覽器卡住。
+      if (!file.type || !file.type.startsWith('image/')) return { blob: file, compressed: false };
+      const objectUrl = URL.createObjectURL(file);
       try {
-        // 多數照片維持 1920px；只有仍偏大時才縮到 1600px，不犧牲必要的食物細節。
-        let blob = await render(1920, 0.82);
-        if (blob && blob.size > targetBytes * 1.2) blob = await render(1600, 0.78);
-        if (!blob) throw new Error('照片壓縮失敗');
-        return blob;
+        const image = await new Promise((resolve, reject) => {
+          const element = new Image();
+          element.onload = () => resolve(element);
+          element.onerror = reject;
+          element.src = objectUrl;
+        });
+        const maxSide = 1600;
+        const ratio = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+        if (ratio === 1 && file.size <= 1200 * 1024) return { blob: file, compressed: false };
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * ratio));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * ratio));
+        canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.78));
+        return blob ? { blob: blob, compressed: true } : { blob: file, compressed: false };
+      } catch (err) {
+        console.warn('使用原圖上傳：此照片無法在瀏覽器快速壓縮', err);
+        return { blob: file, compressed: false };
       } finally {
-        if (bitmap.close) bitmap.close();
+        URL.revokeObjectURL(objectUrl);
       }
     }
 
