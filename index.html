@@ -3001,14 +3001,26 @@
 
     function chooseFoodPhoto(meal) { document.getElementById('food-file-' + meal).click(); }
 
-    function setFoodPhoto(event, meal) {
+    async function setFoodPhoto(event, meal) {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
       const report = getFoodReport();
-      if (report.meals[meal] && report.meals[meal].previewUrl) URL.revokeObjectURL(report.meals[meal].previewUrl);
-      report.meals[meal] = { previewUrl: URL.createObjectURL(file), file: file, size: file.size };
-      renderFoodMember();
-      showToast(FOOD_LABELS[meal] + '已放到 ' + foodDateText(foodActiveDate) + ' 的紀錄', 2);
+      const input = event.target;
+      input.disabled = true;
+      showToast('正在壓縮' + FOOD_LABELS[meal] + '照片…', 2);
+      try {
+        const compressedBlob = await compressFoodPhoto(file);
+        const compactFile = new File([compressedBlob], (file.name || meal).replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+        if (report.meals[meal] && report.meals[meal].previewUrl) URL.revokeObjectURL(report.meals[meal].previewUrl);
+        report.meals[meal] = { previewUrl: URL.createObjectURL(compactFile), file: compactFile, size: compactFile.size, originalSize: file.size };
+        renderFoodMember();
+        showToast(FOOD_LABELS[meal] + '已壓縮為 ' + foodMb(compactFile.size) + ' MB（原始 ' + foodMb(file.size) + ' MB）', 3);
+      } catch (err) {
+        console.error('Food photo compression error:', err);
+        showToast('照片壓縮失敗，請換一張照片再試', 3, true);
+      } finally {
+        input.disabled = false;
+      }
     }
 
     function removeFoodPhoto(meal) {
@@ -3089,10 +3101,9 @@
     }
 
     async function uploadFoodPhoto(token, folderId, date, meal, item) {
-      const photo = await compressFoodPhoto(item.file);
       const form = new FormData();
       form.append('metadata', new Blob([JSON.stringify({ name: date + '_' + FOOD_LABELS[meal] + '.jpg', mimeType: 'image/jpeg', parents: [folderId] })], { type: 'application/json' }));
-      form.append('file', photo, date + '_' + meal + '.jpg');
+      form.append('file', item.file, date + '_' + meal + '.jpg');
       const file = await driveRequest('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', token, {
         method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: form
       });
@@ -3100,7 +3111,7 @@
         method: 'POST', headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ role: 'reader', type: 'anyone' })
       });
-      return { id: file.id, url: 'https://drive.google.com/uc?export=view&id=' + file.id, size: photo.size };
+      return { id: file.id, url: 'https://drive.google.com/uc?export=view&id=' + file.id, size: item.file.size, originalSize: item.originalSize || item.file.size };
     }
 
     async function sendFoodReportToLine(report, date) {
