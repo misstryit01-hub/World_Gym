@@ -963,9 +963,9 @@
 
     .food-date-row label { color: #7A5B43; font-size: 12px; font-weight: 900; }
     .food-date-row input { min-width: 0; flex: 1; border: 0; color: #1A1A1A; background: transparent; font-size: 15px; font-weight: 900; outline: none; }
-    .food-drive-connect { width: 100%; border: 0; border-radius: 13px; padding: 12px 14px; margin: -4px 0 12px; background: #1A73E8; color: #fff; font-size: 13px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 10px rgba(26,115,232,.2); }
-    .food-drive-connect.connected { background: #2E7D32; box-shadow: none; }
-    .food-drive-connect:disabled { opacity: .65; cursor: wait; }
+    .food-share-meal { display: none; margin-top: 9px; border: 0; border-radius: 10px; padding: 9px 11px; background: #06C755; color: #fff; font-size: 12px; font-weight: 900; cursor: pointer; }
+    .food-meal.done .food-share-meal { display: inline-block; }
+    .food-share-meal.sent { background: #2E7D32; }
     .food-progress {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -1185,7 +1185,6 @@
           </div>
 
           <div class="food-date-row"><span>📅</span><label for="food-member-date">回報日期</label><input id="food-member-date" type="date" onchange="onFoodMemberDateChange()"></div>
-          <button id="food-drive-connect" type="button" class="food-drive-connect" onclick="connectGoogleDrive()">🔐 先連線 Google Drive 才能上傳照片</button>
           <div class="food-progress">
             <div><small id="food-member-date-label">當日已完成</small><br><strong id="food-member-progress">0 / 3 餐</strong></div>
             <div class="food-progress-size"><small>預覽照片</small><br><strong id="food-member-size">0 MB</strong></div>
@@ -1197,24 +1196,23 @@
           <div class="food-meal-list">
             <article class="food-meal breakfast" data-food-member="breakfast">
               <div class="food-meal-main"><div class="food-meal-icon">🍳</div><div><div class="food-meal-title"><strong>早餐</strong><span>建議 06:00–10:30</span></div><p class="food-meal-guide">3 顆蛋；需要時以乳清補蛋白質。</p><span class="food-status">尚未回報</span></div></div>
-              <div class="food-actions"><button type="button" class="food-capture" onclick="chooseFoodPhoto('breakfast')">📷 新增早餐照片</button><button type="button" class="food-replace" onclick="chooseFoodPhoto('breakfast')">重拍</button><button type="button" class="food-remove" onclick="removeFoodPhoto('breakfast')">清空本餐</button></div>
+              <div class="food-actions"><button type="button" class="food-capture" onclick="chooseFoodPhoto('breakfast')">📷 新增早餐照片</button><button type="button" class="food-replace" onclick="chooseFoodPhoto('breakfast')">重拍</button><button type="button" class="food-remove" onclick="removeFoodPhoto('breakfast')">清空本餐</button><button type="button" class="food-share-meal" onclick="shareMealToLine('breakfast')">↗ 分享早餐到 LINE</button></div>
               <div class="food-preview"></div><input class="food-file" id="food-file-breakfast" type="file" accept="image/*" capture="environment" multiple onchange="setFoodPhoto(event, 'breakfast')">
             </article>
             <article class="food-meal lunch" data-food-member="lunch">
               <div class="food-meal-main"><div class="food-meal-icon">🍱</div><div><div class="food-meal-title"><strong>午餐</strong><span>建議 11:00–14:30</span></div><p class="food-meal-guide">雞胸／瘦肉 200g；熟白飯 150g。</p><span class="food-status">尚未回報</span></div></div>
-              <div class="food-actions"><button type="button" class="food-capture" onclick="chooseFoodPhoto('lunch')">📷 新增午餐照片</button><button type="button" class="food-replace" onclick="chooseFoodPhoto('lunch')">重拍</button><button type="button" class="food-remove" onclick="removeFoodPhoto('lunch')">清空本餐</button></div>
+              <div class="food-actions"><button type="button" class="food-capture" onclick="chooseFoodPhoto('lunch')">📷 新增午餐照片</button><button type="button" class="food-replace" onclick="chooseFoodPhoto('lunch')">重拍</button><button type="button" class="food-remove" onclick="removeFoodPhoto('lunch')">清空本餐</button><button type="button" class="food-share-meal" onclick="shareMealToLine('lunch')">↗ 分享午餐到 LINE</button></div>
               <div class="food-preview"></div><input class="food-file" id="food-file-lunch" type="file" accept="image/*" capture="environment" multiple onchange="setFoodPhoto(event, 'lunch')">
             </article>
             <article class="food-meal dinner" data-food-member="dinner">
               <div class="food-meal-main"><div class="food-meal-icon">🥗</div><div><div class="food-meal-title"><strong>晚餐</strong><span>建議 17:00–21:30</span></div><p class="food-meal-guide">雞胸／瘦肉 200g；熟白飯 150g。</p><span class="food-status">尚未回報</span></div></div>
-              <div class="food-actions"><button type="button" class="food-capture" onclick="chooseFoodPhoto('dinner')">📷 新增晚餐照片</button><button type="button" class="food-replace" onclick="chooseFoodPhoto('dinner')">重拍</button><button type="button" class="food-remove" onclick="removeFoodPhoto('dinner')">清空本餐</button></div>
+              <div class="food-actions"><button type="button" class="food-capture" onclick="chooseFoodPhoto('dinner')">📷 新增晚餐照片</button><button type="button" class="food-replace" onclick="chooseFoodPhoto('dinner')">重拍</button><button type="button" class="food-remove" onclick="removeFoodPhoto('dinner')">清空本餐</button><button type="button" class="food-share-meal" onclick="shareMealToLine('dinner')">↗ 分享晚餐到 LINE</button></div>
               <div class="food-preview"></div><input class="food-file" id="food-file-dinner" type="file" accept="image/*" capture="environment" multiple onchange="setFoodPhoto(event, 'dinner')">
             </article>
           </div>
 
           <div class="food-note"><label for="food-member-note">當日備註（選填）</label><textarea id="food-member-note" maxlength="160" placeholder="例如：晚餐有喝乳清一份、今天重訓腿部" oninput="saveFoodNote()"></textarea></div>
-          <button id="food-member-send" type="button" class="food-send" onclick="sendFoodReport()">還差 3 餐，完成後即可送出回報</button>
-          <p class="food-tip">先按「連線 Google Drive」完成一次授權；之後每張照片會立即存入你的 Drive，並同步到教練瀏覽頁。</p>
+          <p class="food-tip">照片不會上傳到網站或 Google Drive。每餐選好照片後，按該餐「分享至 LINE」；網站只記錄是否已交給 LINE。</p>
         </div>
         <div class="version-tag"></div>
       </div>
@@ -1387,12 +1385,11 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.25"; // 明確 Google Drive 連線、快速單次壓縮與多張餐點照片
-    const VERSION_TAG = "V8.25 - Google Drive 先連線再上傳"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.26"; // LINE 原生分享、各餐回報狀態記錄
+    const VERSION_TAG = "V8.26 - LINE 原生分享與回報狀態"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -1418,7 +1415,8 @@
     let currentLogonRole = 'member';
     let allMembersData = {}; // 存儲所有學員的預約數據 { name: { date: slots } }
     let memberList = []; // 存儲雲端學員名單
-    let foodReports = {}; // Google Drive 照片連結與飲食備註
+    let foodReports = {}; // 本次操作的本機照片與飲食備註
+    let foodShareStatus = {}; // 僅記錄各餐是否已交給 LINE，不儲存照片
     let selectedMemberInTrainerMode = ""; // 教練模式預設空值
     let adminViewingTarget = null; // Admin 上帝視角切換的對象
 
@@ -1464,12 +1462,7 @@
           allMembersData = d.members || {};
 
           trainerConfirmed = d.trainerConfirmed || {};
-          // 飲食照片只會在完成上傳後寫入雲端，避免背景同步覆蓋正在挑選的本機照片。
-          if (d.foodReports) {
-            Object.keys(d.foodReports).forEach(date => {
-              if (!foodReports[date] || d.foodReports[date].sent) foodReports[date] = d.foodReports[date];
-            });
-          }
+          foodShareStatus = d.foodShareStatus || {};
         }
         isDataLoaded = true;
         updateLockUI(); // 數據更新時同步 UI
@@ -3011,7 +3004,6 @@
       const report = getFoodReport();
       const dateInput = document.getElementById('food-member-date');
       dateInput.value = foodActiveDate;
-      renderGoogleDriveButton();
       document.getElementById('food-member-date-label').textContent = foodDateText(foodActiveDate) + '・已完成';
       document.getElementById('food-member-note').value = report.note || '';
       const completed = ['breakfast', 'lunch', 'dinner'].filter(meal => foodMealItems(report, meal).length).length;
@@ -3024,9 +3016,12 @@
       send.textContent = completed === 3 ? (report.sent ? '✓ 已回貼今日摘要（可再次回貼）' : '📤 回貼今日三餐摘要到 LINE') : (completed ? '已上傳 ' + completed + ' / 3 餐，繼續拍下一餐' : '先拍任一餐，會立即上傳給教練');
       document.querySelectorAll('[data-food-member]').forEach(card => {
         const meal = card.dataset.foodMember, items = foodMealItems(report, meal);
-        const uploadKey = foodActiveDate + '-' + meal;
+        const sent = !!(foodShareStatus[foodActiveDate] && foodShareStatus[foodActiveDate][meal]);
         card.classList.toggle('done', !!items.length);
-        card.querySelector('.food-status').textContent = foodUploadingMeals[uploadKey] ? '正在上傳到 Google Drive…' : (items.length ? '✓ 已上傳 ' + items.length + ' 張・' + foodMb(items.reduce((sum, item) => sum + (item.size || 0), 0)) + ' MB' : '尚未回報');
+        card.querySelector('.food-status').textContent = items.length ? (sent ? '✓ 已交給 LINE・' + items.length + ' 張' : '已選擇 ' + items.length + ' 張，等待分享') : '尚未選擇照片';
+        const share = card.querySelector('.food-share-meal');
+        share.classList.toggle('sent', sent);
+        share.textContent = sent ? '✓ 已交給 LINE（可再次分享）' : '↗ 分享' + FOOD_LABELS[meal] + '到 LINE';
         const preview = card.querySelector('.food-preview');
         preview.innerHTML = '';
         items.slice(0, 4).forEach(item => { const image = document.createElement('img'); image.src = foodImageUrl(item); image.alt = FOOD_LABELS[meal] + '預覽'; preview.appendChild(image); });
@@ -3035,8 +3030,6 @@
     }
 
     function chooseFoodPhoto(meal) {
-      if (foodUploadingMeals[foodActiveDate + '-' + meal]) return showToast(FOOD_LABELS[meal] + '正在上傳，請稍候', 2, true);
-      if (!hasGoogleDriveToken()) return showToast('請先按上方「連線 Google Drive」完成授權', 3, true);
       document.getElementById('food-file-' + meal).click();
     }
 
@@ -3046,40 +3039,12 @@
       const date = foodActiveDate;
       const report = getFoodReport(date);
       const input = event.target;
-      const uploadKey = date + '-' + meal;
-      input.disabled = true;
-      showToast('正在壓縮' + FOOD_LABELS[meal] + '照片…', 2);
-      try {
-        const token = await requestGoogleDriveToken();
-        const folderId = await ensureFoodDriveFolder(token);
-        const items = foodMealItems(report, meal);
-        foodUploadingMeals[uploadKey] = true;
-        for (const file of files) {
-          const prepared = await compressFoodPhoto(file);
-          const extension = prepared.blob.type === 'image/jpeg' ? '.jpg' : ((file.name || '').match(/\.[^.]+$/) || ['.jpg'])[0];
-          const compactFile = new File([prepared.blob], (file.name || meal).replace(/\.[^.]+$/, '') + extension, { type: prepared.blob.type || file.type || 'image/jpeg' });
-          const localItem = { previewUrl: URL.createObjectURL(compactFile), file: compactFile, size: compactFile.size, originalSize: file.size };
-          items.push(localItem);
-          report.meals[meal] = items;
-          report.sent = false;
-          renderFoodMember();
-          const uploaded = await uploadFoodPhoto(token, folderId, date, meal, localItem);
-          const index = items.indexOf(localItem);
-          if (index >= 0) items[index] = uploaded;
-          report.meals[meal] = items;
-          renderFoodMember();
-        }
-        report.updatedAt = new Date().toISOString();
-        await saveData({ ['foodReports.' + date]: foodReportForCloud(report) });
-        showToast('✅ ' + FOOD_LABELS[meal] + '已上傳 ' + files.length + ' 張，教練現在就看得到', 3);
-      } catch (err) {
-        console.error('Food photo compression error:', err);
-        showToast('上傳失敗：' + (err.message || '請重新授權 Google Drive 後再試'), 4, true);
-      } finally {
-        delete foodUploadingMeals[uploadKey];
-        input.disabled = false;
-        if (foodActiveDate === date) renderFoodMember();
-      }
+      const items = foodMealItems(report, meal);
+      files.forEach(file => items.push({ previewUrl: URL.createObjectURL(file), file: file, size: file.size }));
+      report.meals[meal] = items;
+      input.value = '';
+      renderFoodMember();
+      showToast(FOOD_LABELS[meal] + '已選擇 ' + files.length + ' 張，按「分享至 LINE」即可發送', 3);
     }
 
     async function removeFoodPhoto(meal) {
@@ -3088,15 +3053,37 @@
       report.meals[meal] = [];
       document.getElementById('food-file-' + meal).value = '';
       renderFoodMember();
-      report.sent = false;
-      report.updatedAt = new Date().toISOString();
-      await saveData({ ['foodReports.' + foodActiveDate]: foodReportForCloud(report) });
       showToast(FOOD_LABELS[meal] + '照片已移除', 2);
     }
 
     function saveFoodNote() {
       getFoodReport().note = document.getElementById('food-member-note').value;
-      if (document.getElementById('screen-food-coach').classList.contains('active')) renderFoodCoach();
+    }
+
+    async function shareMealToLine(meal) {
+      const date = foodActiveDate;
+      const report = getFoodReport(date);
+      const items = foodMealItems(report, meal);
+      if (!items.length) return showToast('請先選擇' + FOOD_LABELS[meal] + '照片', 2, true);
+      const files = items.map(item => item.file).filter(Boolean);
+      if (!files.length) return showToast('照片僅暫存在本次操作；請重新選擇後再分享', 3, true);
+      const note = (report.note || '').trim();
+      const text = '🍱 Paul｜' + foodDateText(date) + '｜' + FOOD_LABELS[meal] + (note ? '\n備註：' + note : '');
+      if (!navigator.share || (navigator.canShare && !navigator.canShare({ files: files }))) {
+        return showToast('此手機不支援直接分享圖片，請從相簿分享至 LINE', 4, true);
+      }
+      try {
+        await navigator.share({ title: '飲食回報｜' + FOOD_LABELS[meal], text: text, files: files });
+        if (!foodShareStatus[date]) foodShareStatus[date] = {};
+        foodShareStatus[date][meal] = { sentAt: new Date().toISOString(), photoCount: files.length, note: note };
+        await saveData({ ['foodShareStatus.' + date + '.' + meal]: foodShareStatus[date][meal] });
+        renderFoodMember();
+        showToast('✓ ' + FOOD_LABELS[meal] + '已交給 LINE，請在分享面板選教練聊天室並送出', 4);
+      } catch (err) {
+        if (err && err.name === 'AbortError') return showToast('已取消 LINE 分享', 2, true);
+        console.error('LINE share error:', err);
+        showToast('無法開啟 LINE 分享：' + (err.message || '請改從相簿分享'), 4, true);
+      }
     }
 
     function initGoogleDriveAuth() {
@@ -3108,23 +3095,6 @@
         });
       } else {
         window.setTimeout(initGoogleDriveAuth, 300);
-      }
-    }
-
-    window.addEventListener('load', initGoogleDriveAuth);
-
-    async function connectGoogleDrive() {
-      const button = document.getElementById('food-drive-connect');
-      if (button) { button.disabled = true; button.textContent = '正在開啟 Google 授權…'; }
-      try {
-        const token = await requestGoogleDriveToken();
-        await ensureFoodDriveFolder(token);
-        renderGoogleDriveButton();
-        showToast('✅ Google Drive 已連線，現在可直接新增照片', 3);
-      } catch (err) {
-        console.error('Google Drive auth error:', err);
-        if (button) { button.disabled = false; button.textContent = '🔐 重新連線 Google Drive'; }
-        showToast('Google Drive 授權未完成：' + (err.message || '請再試一次'), 4, true);
       }
     }
 
@@ -3248,15 +3218,16 @@
 
     function renderFoodCoach() {
       const date = document.getElementById('food-coach-date').value || foodActiveDate;
-      const report = foodReports[date] || { meals: {}, note: '' };
-      const completed = ['breakfast', 'lunch', 'dinner'].filter(meal => foodMealItems(report, meal).length).length;
+      const dayStatus = foodShareStatus[date] || {};
+      const completed = ['breakfast', 'lunch', 'dinner'].filter(meal => !!dayStatus[meal]).length;
       document.getElementById('food-coach-title').textContent = 'Paul・' + foodDateText(date);
       document.getElementById('food-coach-count').textContent = completed + ' / 3 餐';
-      document.getElementById('food-coach-note').textContent = report.note && report.note.trim() ? report.note : '這一天尚未留下備註。';
+      const noteRecord = Object.values(dayStatus).find(item => item && item.note && item.note.trim());
+      document.getElementById('food-coach-note').textContent = noteRecord ? noteRecord.note : '這一天沒有在網站留下備註。';
       document.querySelectorAll('[data-food-coach]').forEach(slot => {
-        const meal = slot.dataset.foodCoach, items = foodMealItems(report, meal);
-        slot.innerHTML = items.length
-          ? '<div class="food-coach-gallery">' + items.map(item => '<img src="' + foodImageUrl(item) + '" alt="Paul 的' + FOOD_LABELS[meal] + '照片">').join('') + '</div><div class="food-coach-caption">' + FOOD_LABELS[meal] + '<small>已回報 ' + items.length + ' 張</small></div>'
+        const meal = slot.dataset.foodCoach, status = dayStatus[meal];
+        slot.innerHTML = status
+          ? '<div class="food-coach-empty" style="color:#B8F0C6;">' + FOOD_LABELS[meal] + '<br>✓ 已交給 LINE<br><small>' + (status.photoCount || 0) + ' 張照片</small></div>'
           : '<div class="food-coach-empty">' + FOOD_LABELS[meal] + '<br>尚未回報</div>';
       });
     }
