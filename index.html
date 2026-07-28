@@ -1385,8 +1385,8 @@
 
   <script>
     /* --- 版本檢核與自動刷新機制 (防止行動瀏覽器強推舊快取) --- */
-    const APP_VERSION = "V8.20"; // 新增飲食照片回報展示入口
-    const VERSION_TAG = "V8.20 - 飲食照片回報展示入口"; // UI顯示標籤上的版號標籤
+    const APP_VERSION = "V8.21"; // 飲食照片智慧壓縮與 Google Drive 回報
+    const VERSION_TAG = "V8.21 - 飲食照片智慧壓縮與 Google Drive 回報"; // UI顯示標籤上的版號標籤
     (function () {
       // 1. 自動同步 UI 上的版號標籤
       document.addEventListener('DOMContentLoaded', () => {
@@ -3070,17 +3070,32 @@
     }
 
     async function compressFoodPhoto(file) {
+      // 原圖不會被修改；這裡只產生一份給 Google Drive 與 LINE 使用的副本。
       const bitmap = await createImageBitmap(file);
-      const maxSide = 1600;
-      const ratio = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(bitmap.width * ratio);
-      canvas.height = Math.round(bitmap.height * ratio);
-      canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      if (bitmap.close) bitmap.close();
-      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.82));
-      if (!blob) throw new Error('照片壓縮失敗');
-      return blob;
+      const targetBytes = 1024 * 1024; // 優先目標約 1 MB，兼顧 LINE 傳送速度與食物細節。
+      const render = async (maxSide, startQuality) => {
+        const ratio = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(bitmap.width * ratio);
+        canvas.height = Math.round(bitmap.height * ratio);
+        canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        let quality = startQuality;
+        let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+        while (blob && blob.size > targetBytes && quality > 0.72) {
+          quality -= 0.03;
+          blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+        }
+        return blob;
+      };
+      try {
+        // 多數照片維持 1920px；只有仍偏大時才縮到 1600px，不犧牲必要的食物細節。
+        let blob = await render(1920, 0.82);
+        if (blob && blob.size > targetBytes * 1.2) blob = await render(1600, 0.78);
+        if (!blob) throw new Error('照片壓縮失敗');
+        return blob;
+      } finally {
+        if (bitmap.close) bitmap.close();
+      }
     }
 
     async function driveRequest(url, token, options = {}) {
