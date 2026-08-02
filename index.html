@@ -1607,9 +1607,12 @@
     }
     function closeCustomConfirm() { document.getElementById('custom-confirm').style.display = 'none'; }
 
+    const LIFF_ID = '2009775588-tjfF8qqB';
+    const BOOKING_URL = `https://liff.line.me/${LIFF_ID}`;
+
     window.onload = () => {
       initRealtimeSync();
-      initLiff('2009775588-tjfF8qqB');
+      initLiff(LIFF_ID);
     };
 
     function initLiff(liffId) {
@@ -1628,7 +1631,9 @@
 
     function sendLineNotify(msg) {
       if (typeof liff !== 'undefined' && liff.isInClient()) {
-        liff.sendMessages([{ type: 'text', text: msg }])
+        // ✅ V8.21：訊息尾端附上課表連結（LINE 會自動轉為可點超連結）
+        const text = `${msg}\n━━━━━━━━━━━━━━━━\n🔗 查看課表：\n${BOOKING_URL}`;
+        liff.sendMessages([{ type: 'text', text }])
           .then(() => { console.log("LINE Message Sent"); })
           .catch(err => {
             console.error("LINE Send Error:", err);
