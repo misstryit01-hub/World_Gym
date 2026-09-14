@@ -1631,8 +1631,8 @@
 
     function sendLineNotify(msg) {
       if (typeof liff !== 'undefined' && liff.isInClient()) {
-        // ✅ V8.21：訊息尾端附上課表連結（LINE 會自動轉為可點超連結）
-        const text = `${msg}\n━━━━━━━━━━━━━━━━\n🔗 查看課表：\n${BOOKING_URL}`;
+        // ✅ 統一通知格式：所有 LINE 回覆最後都附上課表連結與操作提醒
+        const text = `${msg}\n━━━━━━━━━━━━━━━━\n🔗 查看最新課表與預約狀態：\n${BOOKING_URL}\n\n📌 點開連結即可查看最新安排\n💪 如需調整時段，歡迎回到這裡操作！`;
         liff.sendMessages([{ type: 'text', text }])
           .then(() => { console.log("LINE Message Sent"); })
           .catch(err => {
@@ -2690,9 +2690,9 @@
         msg += `\n🏋️ 教練：${removedInfo[0].trainer}\n❌ 已主動取消教練課表：\n${removedInfo[0].times.map(h => "• " + formatTimeRange(h)).join('\n')}`;
       } else {
         if (currentLogonRole === 'superuser') {
-          msg += `\n✅ 已成功更新【${memberDisplayName}】的個人課表\n✨ 請點擊連結查看最新狀況`;
+          msg += `\n✅ 已成功更新【${memberDisplayName}】的個人課表`;
         } else {
-          msg += `\n✅ 您已成功更新個人課表\n✨ 請點擊連結查看最新狀況`;
+          msg += `\n✅ 您已成功更新個人課表`;
         }
       }
       
