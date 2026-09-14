@@ -1632,7 +1632,7 @@
     function sendLineNotify(msg) {
       if (typeof liff !== 'undefined' && liff.isInClient()) {
         // ✅ 統一通知格式：所有 LINE 回覆最後都附上課表連結與操作提醒
-        const text = `${msg}\n━━━━━━━━━━━━━━━━\n🔗 查看最新課表與預約狀態：\n${BOOKING_URL}\n\n📌 點開連結即可查看最新安排\n💪 如需調整時段，歡迎回到這裡操作！`;
+        const text = `${msg}\n━━━━━━━━━━━━━━━━\n🔗 查看最新課表與預約狀態：\n${BOOKING_URL}`;
         liff.sendMessages([{ type: 'text', text }])
           .then(() => { console.log("LINE Message Sent"); })
           .catch(err => {
